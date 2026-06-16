@@ -46,12 +46,12 @@ function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) 
     <section className="relative overflow-hidden border-b border-line bg-surface">
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
         <div className="animate-fade-up">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-surface/70 px-3 py-1.5 text-xs font-medium text-brand-ink backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-surface px-3 py-1.5 text-xs font-medium text-brand-ink">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-2" />
             Українсько-естонське партнерство · 16–18.06.2026
           </span>
 
-          <h1 className="h-display mt-5 text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-[3.4rem]">
+          <h1 className="h-display mt-5 text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-[3.4rem]">
             Побачити дитину, яку <span className="text-brand">не бачить</span> жодна окрема система
           </h1>
 
@@ -96,7 +96,7 @@ function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <dd className="font-display text-3xl font-extrabold tnum text-ink">{value}</dd>
+      <dd className="font-display text-3xl font-bold tnum text-ink">{value}</dd>
       <dt className="mt-0.5 max-w-[12rem] text-xs text-muted">{label}</dt>
     </div>
   );
@@ -253,7 +253,7 @@ function Screens() {
             <Link
               key={n.href}
               href={n.href}
-              className="card group flex items-start gap-4 p-6 transition hover:-translate-y-0.5 hover:shadow-pop"
+              className="card group flex items-start gap-4 p-6 transition hover:-translate-y-0.5 hover:border-brand-line"
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line bg-surface text-brand transition group-hover:border-brand-line group-hover:bg-brand-soft">
                 <Icon className="h-5 w-5" />
@@ -334,7 +334,7 @@ function CtaBand() {
     <section className="px-4 py-16 sm:px-6">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-ink px-8 py-14 text-center sm:px-16">
         <div className="relative">
-          <h2 className="h-display text-3xl font-extrabold text-white sm:text-4xl">
+          <h2 className="h-display text-3xl font-bold text-white sm:text-4xl">
             Подивіться, як це працює
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-white/70">

@@ -110,7 +110,7 @@ export default async function DashboardPage() {
       </div>
 
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
-        ⚠️ <span className="font-medium text-ink-2">Decision support, не decision making.</span>{" "}
+        <span className="font-medium text-ink-2">Decision support, не decision making.</span>{" "}
         Система пріоритезує й пояснює; остаточне рішення щодо дитини ухвалює відповідальний
         спеціаліст.
       </p>

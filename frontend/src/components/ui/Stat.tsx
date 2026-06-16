@@ -33,7 +33,7 @@ export function KpiCard({
         <span className={`h-2 w-2 rounded-full ${t.dot}`} />
         <span className="text-xs font-medium uppercase tracking-wide text-muted">{label}</span>
       </div>
-      <div className={`mt-3 font-display text-4xl font-extrabold tnum tracking-tight ${t.num}`}>
+      <div className={`mt-3 font-display text-4xl font-bold tnum tracking-tight ${t.num}`}>
         {typeof value === "number" ? formatNumber(value) : value}
       </div>
       {hint && <p className="mt-1.5 text-xs text-faint">{hint}</p>}

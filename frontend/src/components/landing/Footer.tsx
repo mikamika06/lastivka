@@ -12,7 +12,7 @@ export function LandingFooter() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white">
                 <SwallowMark className="h-5 w-5" />
               </span>
-              <span className="font-display text-lg font-extrabold text-ink">Ластівка</span>
+              <span className="font-display text-lg font-bold text-ink">Ластівка</span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
               Проактивний privacy-preserving захист прав дитини. Виявляємо об&apos;єктивну депривацію

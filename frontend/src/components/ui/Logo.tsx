@@ -33,7 +33,7 @@ export function Logo({
         <SwallowMark className="h-5 w-5" />
       </span>
       <span className="leading-tight">
-        <span className={`block font-display text-[17px] font-extrabold tracking-tight ${invert ? "text-white" : "text-ink"}`}>
+        <span className={`block font-display text-[17px] font-bold tracking-tight ${invert ? "text-white" : "text-ink"}`}>
           Ластівка
         </span>
         {subtitle && (

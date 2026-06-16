@@ -115,7 +115,7 @@ export function CaseCard({ item, defaultOpen = false }: { item: QueueItem; defau
               })}
             </ul>
             <p className="mt-3 text-[11px] leading-relaxed text-faint">
-              ℹ️ Жодне порушення не доводить один реєстр — доводить <span className="font-medium">перетин</span>{" "}
+              Жодне порушення не доводить один реєстр — доводить <span className="font-medium">перетин</span>{" "}
               сигналів. Acuity ({Object.values(ACUITY_UA).join(" / ")}) відображає свіжість зламу.
             </p>
           </div>
@@ -126,7 +126,7 @@ export function CaseCard({ item, defaultOpen = false }: { item: QueueItem; defau
               <div className="flex items-end justify-between">
                 <div>
                   <div className="text-xs text-muted">Urgency score</div>
-                  <div className="font-display text-3xl font-extrabold tnum text-ink">
+                  <div className="font-display text-3xl font-bold tnum text-ink">
                     {formatScore(item.score)}
                   </div>
                 </div>

@@ -44,7 +44,7 @@ export function Donut({
           y="66"
           textAnchor="middle"
           transform="rotate(90 70 70)"
-          className="fill-ink font-display text-[26px] font-extrabold tnum"
+          className="fill-ink font-display text-[26px] font-bold tnum"
         >
           {total}
         </text>
