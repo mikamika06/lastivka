@@ -30,18 +30,23 @@ def _name_key(ln, fn, sn) -> str:
 def load_all_records() -> list[dict]:
     recs = []
     for reg in REGISTRIES:
+        idm = reg["id_map"]
         path = os.path.join(REG_DIR, reg["db"])
         con = sqlite3.connect(path)
         con.row_factory = sqlite3.Row
-        cur = con.execute(f"SELECT rowid AS _rowid, * FROM reg_{reg['code'].lower()}")
+        try:
+            cur = con.execute(f"SELECT rowid AS _rowid, * FROM reg_{reg['code'].lower()}")
+        except sqlite3.OperationalError:
+            con.close()
+            continue
         for r in cur.fetchall():
             d = dict(r)
-            unzr = d.get("unzr") or d.get("linked_child_unzr") or d.get("victim_unzr")
+            unzr = d.get(idm["unzr"]) or d.get("linked_child_unzr")
             recs.append({
                 "_reg": reg["code"], "_rowid": d["_rowid"],
                 "unzr": unzr if unzr not in (None, "", "None") else None,
-                "ln": d.get("last_name"), "fn": d.get("first_name"), "sn": d.get("second_name"),
-                "dob": d.get("birth_date"), "row": d,
+                "ln": d.get(idm["last"]), "fn": d.get(idm["first"]), "sn": d.get(idm["second"]),
+                "dob": d.get(idm["dob"]), "row": d,
             })
         con.close()
     return recs

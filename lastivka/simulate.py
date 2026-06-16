@@ -3,11 +3,11 @@
 population -> trajectories -> кожен реєстр-емітер пише у СВОЮ SQLite-базу (силоси) + god-view.
 """
 from __future__ import annotations
+import os
 import random
 import yaml
 
-from .entity import generate_population
-from .trajectory import build_trajectories
+from .realmodel import build_population
 from .emitters import REGISTRIES, EMITTERS
 from . import storage
 
@@ -27,14 +27,15 @@ def _apply_record_noise(rows, cfg, rng):
 
 def run(config_path: str, n_override: int | None = None, seed_override: int | None = None) -> dict:
     cfg = yaml.safe_load(open(config_path, encoding="utf-8"))
+    epi_path = os.path.join(os.path.dirname(config_path), "epidemiology.yaml")
+    epi = yaml.safe_load(open(epi_path, encoding="utf-8"))
     if n_override:
         cfg["population"]["n_children"] = n_override
     if seed_override is not None:
         cfg["seed"] = seed_override
     rng = random.Random(cfg["seed"])
 
-    children = generate_population(cfg, rng)
-    build_trajectories(children, cfg, rng)
+    children = build_population(cfg, epi, rng)
 
     stats = {}
     membership = []

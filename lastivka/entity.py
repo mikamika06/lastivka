@@ -1,22 +1,24 @@
 """
-Модуль 1а — Entity: генерація популяції дітей (god-view).
-Кожна дитина має реальні ідентифікатори (УНЗР/РНОКПП з валідними чексумами),
-ПІБ, дату народження, регіон та латентні атрибути (інвалідність, хронік тощо).
-Траєкторія (прихований стан у часі) додається модулем trajectory.
+Модуль 1а — Entity: дитина (god-view) з ідентифікаторами, демографією та
+латентними КОНТЕКСТ-факторами. Семплування й призначення ризиків — у realmodel.py.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 import random
 
 from . import identifiers as ids
 from . import names
 
-_OBLAST_CENTER = {
+OBLAST_CENTER = {
     "Київська": "м. Київ", "Харківська": "м. Харків", "Львівська": "м. Львів",
     "Дніпропетровська": "м. Дніпро", "Одеська": "м. Одеса", "Запорізька": "м. Запоріжжя",
     "Донецька": "м. Краматорськ", "Полтавська": "м. Полтава", "Вінницька": "м. Вінниця",
-    "Чернігівська": "м. Чернігів",
+    "Чернігівська": "м. Чернігів", "Закарпатська": "м. Ужгород", "Івано-Франківська": "м. Івано-Франківськ",
+    "Хмельницька": "м. Хмельницький", "Чернівецька": "м. Чернівці", "Волинська": "м. Луцьк",
+    "Рівненська": "м. Рівне", "Тернопільська": "м. Тернопіль", "Кіровоградська": "м. Кропивницький",
+    "Черкаська": "м. Черкаси", "Житомирська": "м. Житомир", "Миколаївська": "м. Миколаїв",
+    "Сумська": "м. Суми", "Херсонська": "м. Херсон", "Луганська": "м. Сєвєродонецьк",
 }
 
 
@@ -26,21 +28,31 @@ class Child:
     last_name: str
     first_name: str
     second_name: str
-    gender: str          # MALE / FEMALE
+    gender: str
     birth_date: date
     oblast: str
     settlement: str
-    unzr: str            # API-форма (13)
-    unzr_human: str      # YYYYMMDD-XXXXX
-    rnokpp: str | None   # None якщо no_tax_id
-    has_disability: bool
-    has_chronic: bool
-    parental_risk: bool          # залежність/психіатрія/кримінал у батьків
-    family_base: str             # intact / single_parent
-    # заповнюється trajectory:
-    states: list = field(default_factory=list)     # list[MonthState]
-    shocks: list = field(default_factory=list)      # list[Shock]
-    labels: dict = field(default_factory=dict)      # violation_id -> onset_month
+    urban_rural: str
+    unzr: str
+    unzr_human: str
+    rnokpp: str | None
+    # латентні контекст-фактори
+    geo_tier: str = "rear"
+    is_idp: bool = False
+    poverty: str = "ok"            # ok | poor | deep
+    family_type: str = "intact"    # intact | single_parent | many_children | guardianship | no_parental_care
+    par_unemployment: bool = False
+    par_addiction: bool = False
+    par_disability: bool = False
+    has_disability: bool = False
+    has_chronic: bool = False
+    # батьки (для ДРАЦС/ЕІССС тощо)
+    mother_rnokpp: str | None = None
+    father_rnokpp: str | None = None
+    # заповнюється realmodel:
+    states: list = field(default_factory=list)
+    shocks: list = field(default_factory=list)
+    labels: dict = field(default_factory=dict)
 
     @property
     def pib(self) -> str:
@@ -49,47 +61,44 @@ class Child:
     def age_at(self, sim_start: date, month: int) -> int:
         y = sim_start.year + (sim_start.month - 1 + month) // 12
         m = (sim_start.month - 1 + month) % 12 + 1
-        a = y - self.birth_date.year - ((m, 1) < (self.birth_date.month, self.birth_date.day))
-        return a
+        return y - self.birth_date.year - ((m, 1) < (self.birth_date.month, self.birth_date.day))
 
 
-def _random_birth_date(min_age: int, max_age: int, sim_start: date, rng: random.Random) -> date:
-    age = rng.randint(min_age, max_age)
+_AGE_BAND_RANGE = {"0-2": (0, 2), "3-5": (3, 5), "6-10": (6, 10), "11-14": (11, 14), "15-17": (15, 17)}
+
+
+def weighted_choice(weights: dict, rng: random.Random):
+    items = list(weights.items())
+    total = sum(w for _, w in items)
+    r = rng.uniform(0, total)
+    acc = 0.0
+    for k, w in items:
+        acc += w
+        if r <= acc:
+            return k
+    return items[-1][0]
+
+
+def birth_date_from_band(band: str, sim_start: date, rng: random.Random) -> date:
+    lo, hi = _AGE_BAND_RANGE[band]
+    age = rng.randint(lo, hi)
     year = sim_start.year - age
-    month = rng.randint(1, 12)
-    day = rng.randint(1, 28)
-    return date(year, month, day)
+    return date(year, rng.randint(1, 12), rng.randint(1, 28))
 
 
-def generate_population(cfg: dict, rng: random.Random) -> list[Child]:
-    pop_cfg = cfg["population"]
-    sim_start = date(pop_cfg["start_year"], 1, 1)
-    n = pop_cfg["n_children"]
-    oblasts = cfg["oblasts"]
-    no_rnokpp = cfg["noise"]["no_rnokpp_rate"]
-
-    children: list[Child] = []
-    for i in range(n):
-        gender = "MALE" if rng.random() < 0.512 else "FEMALE"
-        bd = _random_birth_date(pop_cfg["min_age"], pop_cfg["max_age"], sim_start, rng)
-        unzr_api, unzr_human = ids.gen_unzr(bd, rng)
-        rnokpp = None if rng.random() < no_rnokpp else ids.gen_rnokpp(bd, gender, rng)
-        oblast = rng.choice(oblasts)
-        children.append(Child(
-            internal_id=i,
-            last_name=names.gen_surname(gender, rng),
-            first_name=names.gen_first(gender, rng),
-            second_name=names.gen_patronymic(gender, rng),
-            gender=gender,
-            birth_date=bd,
-            oblast=oblast,
-            settlement=_OBLAST_CENTER.get(oblast, "м. ?"),
-            unzr=unzr_api,
-            unzr_human=unzr_human,
-            rnokpp=rnokpp,
-            has_disability=rng.random() < 0.06,
-            has_chronic=rng.random() < 0.10,
-            parental_risk=rng.random() < 0.08,
-            family_base="single_parent" if rng.random() < 0.18 else "intact",
-        ))
-    return children
+def make_child(i: int, gender: str, birth_date: date, oblast: str, urban_rural: str,
+               no_rnokpp_rate: float, rng: random.Random) -> Child:
+    unzr_api, unzr_human = ids.gen_unzr(birth_date, rng)
+    rnokpp = None if rng.random() < no_rnokpp_rate else ids.gen_rnokpp(birth_date, gender, rng)
+    return Child(
+        internal_id=i,
+        last_name=names.gen_surname(gender, rng),
+        first_name=names.gen_first(gender, rng),
+        second_name=names.gen_patronymic(gender, rng),
+        gender=gender, birth_date=birth_date, oblast=oblast,
+        settlement=OBLAST_CENTER.get(oblast, "м. ?"), urban_rural=urban_rural,
+        unzr=unzr_api, unzr_human=unzr_human, rnokpp=rnokpp,
+        mother_rnokpp=ids.gen_rnokpp(birth_date - timedelta(days=rng.randint(7000, 12000)), "FEMALE", rng),
+        father_rnokpp=(None if rng.random() < 0.12 else
+                       ids.gen_rnokpp(birth_date - timedelta(days=rng.randint(8000, 14000)), "MALE", rng)),
+    )

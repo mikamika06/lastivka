@@ -104,9 +104,11 @@ def write_godview(children, cfg):
     con.executemany(
         "INSERT INTO children VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
         [(c.internal_id, c.unzr, c.rnokpp, c.pib, c.birth_date.isoformat(), c.gender,
-          c.oblast, int(c.has_disability), int(c.has_chronic), int(c.parental_risk),
+          c.oblast, int(c.has_disability), int(c.has_chronic),
+          int(c.par_addiction or c.par_unemployment or c.par_disability),
           json.dumps(c.labels, ensure_ascii=False),
-          json.dumps([{"kind": s.kind, "month": s.month} for s in c.shocks], ensure_ascii=False))
+          json.dumps({"geo": c.geo_tier, "idp": c.is_idp, "poverty": c.poverty,
+                      "family": c.family_type}, ensure_ascii=False))
          for c in children])
     con.commit()
     con.close()
