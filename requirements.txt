@@ -1,0 +1,12 @@
+# Ядро (пайплайн працює лише на цих + stdlib)
+pandas>=2.0
+rapidfuzz>=3.0
+pyyaml>=6.0
+
+# Дашборд / API
+streamlit>=1.30
+fastapi>=0.110
+uvicorn>=0.27
+
+# Опційно (трекінг експериментів)
+mlflow>=2.10
