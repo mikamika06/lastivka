@@ -1,0 +1,77 @@
+# Ластівка — ваги тріажу (urgency-score). Seed-значення, калібруються на ground truth.
+
+# Порушення, що дають IMMEDIATE OVERRIDE -> одразу рівень T0 (без арифметики)
+immediate_override:
+  - W5_deportation
+  - W7_trafficking
+  - F6_sexual_abuse
+  - W4_death_injury
+  - W10_militarization
+
+# Тяжкість типу порушення (0..1)
+severity:
+  P1_physical_home: 0.90
+  P3_physical_institution: 0.90
+  F2_physical_punishment: 0.85
+  P4_physical_street: 0.80
+  W6_orphanhood: 0.85
+  W8_medical_access: 0.75
+  F3_neglect: 0.70
+  W9_identity: 0.70
+  F5_dv_witness: 0.65
+  W3_out_of_education: 0.65
+  F4_child_labor: 0.65
+  W2_psych_trauma: 0.60
+  F1_psych_violence: 0.60
+  W1_displacement: 0.55
+  E4_inclusion: 0.50
+  E1_bullying: 0.50
+  E2_discrimination: 0.45
+  E3_teacher_pressure: 0.40
+  E5_voice: 0.30
+  # immediate-порушення теж мають severity (для впорядкування всередині T0)
+  W5_deportation: 1.00
+  W7_trafficking: 1.00
+  F6_sexual_abuse: 1.00
+  W4_death_injury: 1.00
+  W10_militarization: 0.95
+
+# Сила доказів: множник за кількістю реєстрів, що підтверджують
+evidence:
+  "1": 0.6
+  "2": 1.0
+  "3": 1.3
+  "4+": 1.5
+
+# Гострота: множник за свіжістю/швидкістю
+acuity:
+  acute: 1.5        # різкий новий change-point (1-2 міс)
+  active: 1.0       # активне стабільне
+  chronic: 0.7      # без руху
+  improving: 0.5
+
+# Вразливість: множники-фактори (добуток, cap нижче)
+vulnerability:
+  age_under_6: 1.3
+  age_6_10: 1.15
+  disability: 1.3
+  already_in_ssd: 1.2
+  no_guardian: 1.4
+  displaced: 1.2
+  parental_risk_factor: 1.25   # залежність/психіатрія/кримінал (через PSI-булеан)
+  cap: 2.0
+
+# Збірка score = (max_contrib + 0.2*sum_other) * vulnerability
+aggregation:
+  secondary_weight: 0.2
+
+# Пороги рівнів черги
+tiers:
+  T0: 1.8     # >= -> сьогодні  (або immediate_override)
+  T1: 0.9     # >= -> цей тиждень
+  T2: 0.35    # >= -> спостереження; нижче -> не флагаємо
+
+# Анти-застій: підняти рівень нерозглянутого кейсу (днів)
+escalation_days:
+  T2_to_T1: 14
+  T1_to_T0: 7
