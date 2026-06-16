@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Ластівка — дизайн-система (GovTech · довіра · спокій)
+   Світлий фон, графітовий текст, один бренд-акцент (sky-teal),
+   наскрізні кольори терміновості T0/T1/T2.
+   ============================================================ */
+
+@theme {
+  /* ── шрифти ── */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-manrope), var(--font-inter), ui-sans-serif, sans-serif;
+
+  /* ── нейтралі (паперовий графіт) ── */
+  --color-paper: #f5f7f9;
+  --color-paper-2: #eef1f5;
+  --color-surface: #ffffff;
+  --color-ink: #0d1726;
+  --color-ink-2: #36414f;
+  --color-muted: #677387;
+  --color-faint: #98a2b1;
+  --color-line: #e5e9ee;
+  --color-line-2: #eef1f5;
+
+  /* ── бренд (ластівка / небо-бірюза) ── */
+  --color-brand: #0e7c86;
+  --color-brand-2: #18b5c0;
+  --color-brand-glow: #34d6e0;
+  --color-brand-ink: #0a565e;
+  --color-brand-soft: #e6f6f7;
+  --color-brand-line: #c9ebed;
+
+  /* ── терміновість ── */
+  --color-t0: #dc2626;
+  --color-t0-soft: #fdf0f0;
+  --color-t0-ink: #971b1b;
+  --color-t0-line: #f6d4d4;
+
+  --color-t1: #e1701f;
+  --color-t1-soft: #fdf3ea;
+  --color-t1-ink: #9a4513;
+  --color-t1-line: #f5dcc4;
+
+  --color-t2: #c08a06;
+  --color-t2-soft: #fbf6e4;
+  --color-t2-ink: #7c5806;
+  --color-t2-line: #efe2b4;
+
+  /* ── семантика ── */
+  --color-ok: #0e9f6e;
+  --color-ok-soft: #e7f7f0;
+  --color-ok-ink: #07623f;
+  --color-lock: #6d5bd0;
+  --color-lock-soft: #efecfb;
+  --color-lock-ink: #483a9c;
+
+  /* ── радіуси ── */
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+
+  /* ── тіні ── */
+  --shadow-xs: 0 1px 2px rgba(13, 23, 38, 0.05);
+  --shadow-card: 0 1px 2px rgba(13, 23, 38, 0.04), 0 14px 32px -18px rgba(13, 23, 38, 0.18);
+  --shadow-pop: 0 8px 16px -6px rgba(13, 23, 38, 0.12), 0 24px 48px -24px rgba(13, 23, 38, 0.28);
+
+  /* ── анімації ── */
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.4s ease both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================================
+   База
+   ============================================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink-2);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: var(--color-brand);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* тонкий скролбар */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #d3dae2;
+  border-radius: 999px;
+  border: 2px solid var(--color-paper);
+}
+::-webkit-scrollbar-thumb:hover { background: #bcc6d1; }
+
+/* ============================================================
+   Утиліти / повторювані патерни
+   ============================================================ */
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-flat {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-2xl);
+  }
+
+  .h-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+
+  /* великі цифри-індекси розділів */
+  .section-index {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.8;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* паперовий фон з ледь помітною сіткою (для hero) */
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(13, 23, 38, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(13, 23, 38, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .glow-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    opacity: 0.45;
+    pointer-events: none;
+  }
+}
+
+/* tabular-nums для метрик */
+.tnum { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
