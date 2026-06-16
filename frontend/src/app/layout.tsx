@@ -1,19 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { eUkraine, eUkraineHead } from "./fonts";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin", "cyrillic"],
-  display: "swap",
-});
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin", "cyrillic"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Ластівка — проактивний захист прав дитини",
@@ -31,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="uk" className={`${inter.variable} ${manrope.variable} h-full`}>
+    <html lang="uk" className={`${eUkraine.variable} ${eUkraineHead.variable} h-full`}>
       <body className="min-h-full antialiased">{children}</body>
     </html>
   );

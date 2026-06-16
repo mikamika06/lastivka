@@ -1,76 +1,76 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Ластівка — дизайн-система (GovTech · довіра · спокій)
-   Світлий фон, графітовий текст, один бренд-акцент (sky-teal),
-   наскрізні кольори терміновості T0/T1/T2.
+   Ластівка — дизайн-система у стилі Дія / Мінцифра
+   Чорно-біла основа · плоский дизайн · e-Ukraine · повітря.
+   Чорний — головний колір; синій #2F7BF5 — єдиний функціональний
+   акцент; статусні кольори несуть СЕНС (терміновість T0/T1/T2).
    ============================================================ */
 
 @theme {
-  /* ── шрифти ── */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-manrope), var(--font-inter), ui-sans-serif, sans-serif;
+  /* ── шрифти (e-Ukraine / e-Ukraine Head) ── */
+  --font-sans: var(--font-e-ukraine), -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-display: var(--font-e-ukraine-head), var(--font-e-ukraine), sans-serif;
 
-  /* ── нейтралі (паперовий графіт) ── */
-  --color-paper: #f5f7f9;
-  --color-paper-2: #eef1f5;
+  /* ── нейтралі (база) ── */
+  --color-paper: #f5f8fb;
+  --color-paper-2: #ecf2f7;
   --color-surface: #ffffff;
-  --color-ink: #0d1726;
-  --color-ink-2: #36414f;
-  --color-muted: #677387;
-  --color-faint: #98a2b1;
-  --color-line: #e5e9ee;
-  --color-line-2: #eef1f5;
+  --color-ink: #0b0b0c;
+  --color-ink-2: rgba(0, 0, 0, 0.66);
+  --color-muted: rgba(0, 0, 0, 0.48);
+  --color-faint: rgba(0, 0, 0, 0.34);
+  --color-line: #dde4ed;
+  --color-line-2: #eaeff5;
 
-  /* ── бренд (ластівка / небо-бірюза) ── */
-  --color-brand: #0e7c86;
-  --color-brand-2: #18b5c0;
-  --color-brand-glow: #34d6e0;
-  --color-brand-ink: #0a565e;
-  --color-brand-soft: #e6f6f7;
-  --color-brand-line: #c9ebed;
+  /* ── функціональний акцент (синій, точково) ── */
+  --color-brand: #2f7bf5;
+  --color-brand-2: #5e97f7;
+  --color-brand-ink: #1b5fd0;
+  --color-brand-soft: #eaf1fe;
+  --color-brand-line: #cfe0fb;
 
-  /* ── терміновість ── */
-  --color-t0: #dc2626;
-  --color-t0-soft: #fdf0f0;
-  --color-t0-ink: #971b1b;
-  --color-t0-line: #f6d4d4;
+  /* ── терміновість (статусні кольори Дія) ── */
+  --color-t0: #ca2f28;
+  --color-t0-soft: #fbeae9;
+  --color-t0-ink: #971c18;
+  --color-t0-line: #f0cdcb;
 
-  --color-t1: #e1701f;
-  --color-t1-soft: #fdf3ea;
-  --color-t1-ink: #9a4513;
-  --color-t1-line: #f5dcc4;
+  --color-t1: #de6b12;
+  --color-t1-soft: #fbefe2;
+  --color-t1-ink: #8f470d;
+  --color-t1-line: #f3d6bd;
 
-  --color-t2: #c08a06;
-  --color-t2-soft: #fbf6e4;
-  --color-t2-ink: #7c5806;
-  --color-t2-line: #efe2b4;
+  --color-t2: #bd920a;
+  --color-t2-soft: #faf3da;
+  --color-t2-ink: #795c07;
+  --color-t2-line: #ead9a3;
 
   /* ── семантика ── */
-  --color-ok: #0e9f6e;
-  --color-ok-soft: #e7f7f0;
-  --color-ok-ink: #07623f;
-  --color-lock: #6d5bd0;
-  --color-lock-soft: #efecfb;
-  --color-lock-ink: #483a9c;
+  --color-ok: #19be6f;
+  --color-ok-soft: #e3f7ee;
+  --color-ok-ink: #0a7544;
+  --color-lock: #5b6573;
+  --color-lock-soft: #eef1f5;
+  --color-lock-ink: #3a4250;
 
-  /* ── радіуси ── */
-  --radius-xl: 0.875rem;
-  --radius-2xl: 1.125rem;
-  --radius-3xl: 1.5rem;
+  /* ── радіуси (Дія: 8 контролі / 12 картки / 16 великі) ── */
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
 
-  /* ── тіні ── */
-  --shadow-xs: 0 1px 2px rgba(13, 23, 38, 0.05);
-  --shadow-card: 0 1px 2px rgba(13, 23, 38, 0.04), 0 14px 32px -18px rgba(13, 23, 38, 0.18);
-  --shadow-pop: 0 8px 16px -6px rgba(13, 23, 38, 0.12), 0 24px 48px -24px rgba(13, 23, 38, 0.28);
+  /* ── тіні (плоско: майже без depth) ── */
+  --shadow-xs: 0 1px 1px rgba(11, 18, 30, 0.03);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-pop: 0 10px 30px -10px rgba(16, 24, 40, 0.22);
 
   /* ── анімації ── */
-  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-fade-in: fade-in 0.4s ease both;
+  --animate-fade-up: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.35s ease both;
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fade-in {
@@ -85,6 +85,12 @@
 /* ============================================================
    База
    ============================================================ */
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -93,12 +99,13 @@ body {
   background-color: var(--color-paper);
   color: var(--color-ink-2);
   font-family: var(--font-sans);
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background-color: var(--color-brand);
+  background-color: var(--color-ink);
   color: #fff;
 }
 
@@ -112,14 +119,14 @@ body {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #d3dae2;
+  background: #cdd6e0;
   border-radius: 999px;
   border: 2px solid var(--color-paper);
 }
-::-webkit-scrollbar-thumb:hover { background: #bcc6d1; }
+::-webkit-scrollbar-thumb:hover { background: #b6c1cd; }
 
 /* ============================================================
-   Утиліти / повторювані патерни
+   Повторювані патерни
    ============================================================ */
 @layer components {
   .card {
@@ -137,7 +144,8 @@ body {
 
   .h-display {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     color: var(--color-ink);
   }
 
@@ -145,29 +153,12 @@ body {
   .section-index {
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 0.8;
+    letter-spacing: -0.02em;
+    line-height: 0.85;
     font-variant-numeric: tabular-nums;
-  }
-
-  /* паперовий фон з ледь помітною сіткою (для hero) */
-  .grid-bg {
-    background-image:
-      linear-gradient(to right, rgba(13, 23, 38, 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(13, 23, 38, 0.04) 1px, transparent 1px);
-    background-size: 56px 56px;
-  }
-
-  .glow-blob {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(80px);
-    opacity: 0.45;
-    pointer-events: none;
   }
 }
 
-/* tabular-nums для метрик */
 .tnum { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {

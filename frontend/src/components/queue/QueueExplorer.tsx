@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { QueueItem, Tier } from "@/lib/types";
 import { violName } from "@/lib/registries";
 import { plural } from "@/lib/format";
+import { oblastOf } from "@/lib/api";
 import { CaseCard } from "./CaseCard";
 import { IconSearch, IconFilter } from "@/components/ui/icons";
 
@@ -13,6 +14,7 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
   const [tiers, setTiers] = useState<Set<Tier>>(new Set(["T0", "T1", "T2"]));
   const [immediateOnly, setImmediateOnly] = useState(false);
   const [violFilter, setViolFilter] = useState<Set<string>>(new Set());
+  const [regionFilter, setRegionFilter] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(30);
 
@@ -22,16 +24,26 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
     return [...s].sort((a, b) => violName(a).localeCompare(violName(b), "uk"));
   }, [items]);
 
+  const regionOptions = useMemo(() => {
+    const s = new Set<string>();
+    items.forEach((i) => {
+      const o = oblastOf(i.entity_id);
+      if (o !== "—") s.add(o);
+    });
+    return [...s].sort((a, b) => a.localeCompare(b, "uk"));
+  }, [items]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return items.filter((i) => {
       if (!tiers.has(i.tier)) return false;
       if (immediateOnly && !i.immediate) return false;
       if (violFilter.size && !i.violations.some((v) => violFilter.has(v))) return false;
+      if (regionFilter.size && !regionFilter.has(oblastOf(i.entity_id))) return false;
       if (q && !i.pib.toLowerCase().includes(q) && !String(i.unzr ?? "").includes(q)) return false;
       return true;
     });
-  }, [items, tiers, immediateOnly, violFilter, search]);
+  }, [items, tiers, immediateOnly, violFilter, regionFilter, search]);
 
   const shown = filtered.slice(0, limit);
 
@@ -93,28 +105,22 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
         </div>
 
         {/* типи порушень */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-          <span className="mr-1 text-xs font-medium text-muted">Тип порушення</span>
-          {violOptions.map((v) => {
-            const on = violFilter.has(v);
-            return (
-              <button
-                key={v}
-                onClick={() => setViolFilter((s) => toggle(s, v))}
-                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition ${
-                  on ? "bg-brand text-white ring-brand" : "bg-surface text-muted ring-line hover:text-ink-2"
-                }`}
-              >
-                {violName(v)}
-              </button>
-            );
-          })}
-          {violFilter.size > 0 && (
-            <button onClick={() => setViolFilter(new Set())} className="text-[11px] font-medium text-brand hover:underline">
-              скинути
-            </button>
-          )}
-        </div>
+        <FilterChips
+          label="Тип порушення"
+          options={violOptions.map((v) => ({ value: v, label: violName(v) }))}
+          selected={violFilter}
+          onToggle={(v) => setViolFilter((s) => toggle(s, v))}
+          onReset={() => setViolFilter(new Set())}
+        />
+
+        {/* регіони */}
+        <FilterChips
+          label="Регіон"
+          options={regionOptions.map((o) => ({ value: o, label: `${o} обл.` }))}
+          selected={regionFilter}
+          onToggle={(v) => setRegionFilter((s) => toggle(s, v))}
+          onReset={() => setRegionFilter(new Set())}
+        />
       </div>
 
       <p className="px-1 text-sm text-muted">
@@ -143,6 +149,45 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
             Показати ще ({filtered.length - shown.length})
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function FilterChips({
+  label,
+  options,
+  selected,
+  onToggle,
+  onReset,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: Set<string>;
+  onToggle: (v: string) => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+      <span className="mr-1 text-xs font-medium text-muted">{label}</span>
+      {options.map((o) => {
+        const on = selected.has(o.value);
+        return (
+          <button
+            key={o.value}
+            onClick={() => onToggle(o.value)}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition ${
+              on ? "bg-ink text-white ring-ink" : "bg-surface text-muted ring-line hover:text-ink-2"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+      {selected.size > 0 && (
+        <button onClick={onReset} className="text-[11px] font-medium text-brand hover:underline">
+          скинути
+        </button>
       )}
     </div>
   );

@@ -1,8 +1,7 @@
 /**
- * Демо-дані Ластівки (синтетичні, структурно ідентичні реальним реєстрам).
+ * Демо-дані Ластівки (синтетичні, структурно ідентичні реальним реєстрам Фази 2).
  * Детерміновані (seeded PRNG) — однаковий результат на сервері й клієнті,
- * без hydration-mismatch. 12 деталізованих «геро»-кейсів + згенерована
- * популяція для реалістичних графіків управлінської панелі.
+ * без hydration-mismatch. Деталізовані «геро»-кейси + згенерована популяція.
  */
 import type {
   QueueItem,
@@ -15,7 +14,7 @@ import type {
   Tier,
   Acuity,
 } from "./types";
-import { IMMEDIATE_VIOLATIONS } from "./registries";
+import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
 
 /* ── детермінований PRNG (mulberry32) ── */
 function rng(seed: number) {
@@ -30,52 +29,43 @@ function rng(seed: number) {
 }
 
 const OBLASTS = [
-  "Київська",
-  "Харківська",
-  "Львівська",
-  "Дніпропетровська",
-  "Одеська",
-  "Запорізька",
-  "Донецька",
-  "Полтавська",
-  "Вінницька",
-  "Чернігівська",
+  "Київська", "Харківська", "Львівська", "Дніпропетровська", "Одеська", "Запорізька",
+  "Донецька", "Полтавська", "Вінницька", "Чернігівська", "Закарпатська", "Івано-Франківська",
 ];
-// частоти регіонів (прифронтові — частіше)
-const OBLAST_W = [12, 20, 9, 14, 10, 16, 18, 7, 6, 8];
+const OBLAST_W = [12, 20, 9, 14, 10, 16, 18, 7, 6, 8, 5, 5];
 
-const LAST_M = ["Коваленко", "Бондаренко", "Ткаченко", "Мельник", "Шевченко", "Кравчук", "Бойко", "Поліщук", "Савченко", "Гнатюк", "Лисенко", "Марченко", "Гончар", "Руденко", "Захарченко", "Петренко"];
-const LAST_F = LAST_M; // прізвища в демо не відмінюємо
+const LAST = ["Коваленко", "Бондаренко", "Ткаченко", "Мельник", "Шевченко", "Кравчук", "Бойко", "Поліщук", "Савченко", "Гнатюк", "Лисенко", "Марченко", "Гончар", "Руденко", "Захарченко", "Петренко"];
 const FIRST_M = ["Олександр", "Михайло", "Данило", "Артем", "Максим", "Назар", "Дмитро", "Богдан", "Андрій", "Іван", "Тимофій", "Владислав"];
 const FIRST_F = ["Софія", "Анна", "Марія", "Олена", "Дарина", "Вероніка", "Катерина", "Поліна", "Злата", "Ангеліна", "Юлія", "Соломія"];
 const PATR_M = ["Олександрович", "Іванович", "Миколайович", "Андрійович", "Сергійович", "Петрович", "Васильович"];
 const PATR_F = ["Олександрівна", "Іванівна", "Миколаївна", "Андріївна", "Сергіївна", "Петрівна", "Василівна"];
 
-/* ── профілі порушень (severity з scoring.yaml, типові докази з detection.py) ── */
+/* ── профілі порушень (severity з scoring.yaml, докази з detection.py Фази 2) ── */
 interface VProfile {
   sev: number;
   evidence: RegistryCode[];
 }
 const VPROFILE: Record<string, VProfile> = {
-  W7_trafficking: { sev: 1.0, evidence: ["ERDR", "SSD"] },
+  W7_trafficking: { sev: 1.0, evidence: ["ERDR", "DITY"] },
   F6_sexual_abuse: { sev: 1.0, evidence: ["ERDR"] },
-  W5_deportation: { sev: 1.0, evidence: ["CHILDWAR", "SSD"] },
-  P1_physical_home: { sev: 0.9, evidence: ["EHEALTH", "VIOLENCE", "ERDR", "SSD"] },
-  W6_orphanhood: { sev: 0.85, evidence: ["DRACS", "SSD"] },
+  W5_deportation: { sev: 1.0, evidence: ["CHILDWAR", "DITY"] },
+  P1_physical_home: { sev: 0.9, evidence: ["EHEALTH", "DV", "ERDR", "DITY"] },
+  W6_orphanhood: { sev: 0.85, evidence: ["DRACS", "EDRSR", "DITY"] },
   W8_medical_access: { sev: 0.75, evidence: ["EHEALTH", "VPO"] },
-  F3_neglect: { sev: 0.7, evidence: ["EHEALTH", "ISUO", "SSD"] },
-  W3_out_of_education: { sev: 0.65, evidence: ["EDEBO", "ISUO"] },
+  F3_neglect: { sev: 0.7, evidence: ["EHEALTH", "AIKOM", "DITY"] },
+  W3_out_of_education: { sev: 0.65, evidence: ["EDEBO", "AIKOM"] },
+  F4_child_labor: { sev: 0.65, evidence: ["AIKOM"] },
   W2_psych_trauma: { sev: 0.6, evidence: ["EHEALTH", "CHILDWAR"] },
   W1_displacement: { sev: 0.55, evidence: ["VPO", "EDEBO", "EHEALTH", "CHILDWAR"] },
-  E1_bullying: { sev: 0.5, evidence: ["ISUO", "EHEALTH"] },
+  E4_inclusion: { sev: 0.5, evidence: ["CBI", "EDEBO"] },
+  E1_bullying: { sev: 0.5, evidence: ["AIKOM", "EHEALTH"] },
 };
 const ALL_VIOL = Object.keys(VPROFILE);
 
-// ваги вибору порушення (з config.yaml shock_weights) — immediate рідкісні
 const SELECT_WEIGHT: Record<string, number> = {
   W1_displacement: 32, P1_physical_home: 22, E1_bullying: 20, F3_neglect: 18,
-  W3_out_of_education: 16, W2_psych_trauma: 14, W8_medical_access: 10,
-  W6_orphanhood: 7, W5_deportation: 6, W7_trafficking: 4, F6_sexual_abuse: 4,
+  W3_out_of_education: 16, W2_psych_trauma: 14, W8_medical_access: 10, F4_child_labor: 10,
+  E4_inclusion: 8, W6_orphanhood: 7, W5_deportation: 6, W7_trafficking: 4, F6_sexual_abuse: 4,
 };
 const NONIMMEDIATE = ALL_VIOL.filter((v) => !IMMEDIATE_VIOLATIONS.has(v));
 const IMMEDIATE_LIST = ALL_VIOL.filter((v) => IMMEDIATE_VIOLATIONS.has(v));
@@ -126,7 +116,8 @@ function vulnerability(
   const f: string[] = [];
   if (age !== null && age < 6) { m *= 1.3; f.push("вік<6"); }
   else if (age !== null && age <= 10) { m *= 1.15; f.push("вік 6–10"); }
-  if (registries.includes("SSD")) { m *= 1.2; f.push("уже в «Дітях»"); }
+  if (registries.includes("CBI")) { m *= 1.3; f.push("інвалідність"); }
+  if (registries.includes("DITY")) { m *= 1.2; f.push("уже в «Дітях»"); }
   if (viols.includes("W5_deportation") || viols.includes("W7_trafficking")) { m *= 1.4; f.push("без опікуна"); }
   if (registries.includes("VPO") || viols.includes("W1_displacement")) { m *= 1.2; f.push("ВПО"); }
   if (registries.includes("ERDR")) { m *= 1.25; f.push("фактор ризику (ЄРДР)"); }
@@ -136,7 +127,7 @@ function vulnerability(
 type Gender = "m" | "f";
 function makeName(r: () => number): { pib: string; gender: Gender } {
   const gender: Gender = r() < 0.5 ? "m" : "f";
-  const last = (gender === "m" ? LAST_M : LAST_F)[Math.floor(r() * LAST_M.length)];
+  const last = LAST[Math.floor(r() * LAST.length)];
   const first = (gender === "m" ? FIRST_M : FIRST_F)[Math.floor(r() * FIRST_M.length)];
   const patr = (gender === "m" ? PATR_M : PATR_F)[Math.floor(r() * PATR_M.length)];
   return { pib: `${last} ${first} ${patr}`, gender };
@@ -160,20 +151,24 @@ interface FullCase extends QueueItem {
   attendance: AttendanceSeries | null;
 }
 
+/** Подія таймлайну з автоматичною позначкою Рівня-1 за рівнем доступу реєстру. */
+function tev(date: string, registry: RegistryCode, label: string): TimelineEvent {
+  return { date, registry, label, level1: regAccess(registry) === 1 };
+}
+
 /* ── генератор одного кейсу ── */
 function genCase(i: number): FullCase {
   const r = rng(1000 + i * 2654435761);
   const { pib } = makeName(r);
-  const age = 3 + Math.floor(r() * 15); // 3..17
+  const age = 3 + Math.floor(r() * 15);
   const birthYear = 2024 - age;
   const birth_date = `${birthYear}-${String(1 + Math.floor(r() * 12)).padStart(2, "0")}-${String(1 + Math.floor(r() * 27)).padStart(2, "0")}`;
   const oblast = pickOblast(r);
 
-  // вибір порушень: immediate-кейси рідкісні (~8%), решта — звичайні зважені
   const chosen: string[] = [];
   if (r() < 0.08) {
     chosen.push(wpick(r, IMMEDIATE_LIST));
-    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE)); // напр. супутнє переміщення
+    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE));
   } else {
     const nViol = r() < 0.6 ? 1 : r() < 0.9 ? 2 : 3;
     const pool = [...NONIMMEDIATE];
@@ -194,7 +189,6 @@ function genCase(i: number): FullCase {
   contribs.sort((a, b) => b.value - a.value);
 
   const registries = Array.from(new Set(contribs.flatMap((c) => c.evidence))) as RegistryCode[];
-  // додамо опорні реєстри (всі діти є в ЄДДР/ДРАЦС)
   if (!registries.includes("EDDR")) registries.push("EDDR");
   if (r() < 0.6 && !registries.includes("DRACS")) registries.push("DRACS");
 
@@ -220,13 +214,13 @@ function genCase(i: number): FullCase {
     registries: registries.sort(),
     contributions: contribs,
     oblast,
-    timeline: deriveTimeline(contribs, registries, r),
-    attendance: registries.includes("ISUO") ? deriveAttendance(r, contribs.some((c) => c.acuity === "acute")) : null,
+    timeline: deriveTimeline(registries, r),
+    attendance: registries.includes("AIKOM") ? deriveAttendance(r, contribs.some((c) => c.acuity === "acute")) : null,
   };
 }
 
 /* ── похідний таймлайн із доказових реєстрів ── */
-function deriveTimeline(contribs: Contribution[], registries: RegistryCode[], r: () => number): TimelineEvent[] {
+function deriveTimeline(registries: RegistryCode[], r: () => number): TimelineEvent[] {
   const ev: TimelineEvent[] = [];
   const d = (mFrom = 0, mTo = 23) => {
     const m = mFrom + Math.floor(r() * (mTo - mFrom + 1));
@@ -235,26 +229,28 @@ function deriveTimeline(contribs: Contribution[], registries: RegistryCode[], r:
     return `${y}-${String(mm).padStart(2, "0")}-${String(5 + Math.floor(r() * 22)).padStart(2, "0")}`;
   };
   const has = (c: RegistryCode) => registries.includes(c);
-  ev.push({ date: d(0, 2), registry: "DRACS", label: "Запис про народження / акт цив. стану" });
-  if (has("VPO")) ev.push({ date: d(2, 10), registry: "VPO", label: "Взято на облік як внутрішньо переміщену особу" });
-  if (has("EHEALTH")) ev.push({ date: d(8, 16), registry: "EHEALTH", label: "Декларацію із сімейним лікарем закрито" });
-  if (has("EDEBO")) ev.push({ date: d(8, 18), registry: "EDEBO", label: "Вихід зі школи (статус: переведено/відраховано)" });
-  if (has("ISUO")) ev.push({ date: d(10, 20), registry: "ISUO", label: "Різкий стрибок пропусків + падіння успішності" });
-  if (has("VIOLENCE")) ev.push({ date: d(12, 22), registry: "VIOLENCE", label: "Виклик поліції за місцем проживання" });
-  if (has("SSD")) ev.push({ date: d(12, 22), registry: "SSD", label: "Взято на облік ССД («складні життєві обставини»)" });
-  if (has("CHILDWAR")) ev.push({ date: d(6, 18), registry: "CHILDWAR", label: 'Статус у реєстрі «Діти війни»' });
-  if (has("ERDR")) ev.push({ date: d(14, 23), registry: "ERDR", label: "Внесено до ЄРДР досудове розслідування", level1: true });
+  ev.push(tev(d(0, 2), "DRACS", "Актовий запис про народження"));
+  if (has("VPO")) ev.push(tev(d(2, 10), "VPO", "Взято на облік ВПО (переміщення)"));
+  if (has("EHEALTH")) ev.push(tev(d(8, 16), "EHEALTH", "Декларацію із сімейним лікарем закрито"));
+  if (has("EDEBO")) ev.push(tev(d(8, 18), "EDEBO", "Вихід зі школи (статус: переведено/відраховано)"));
+  if (has("AIKOM")) ev.push(tev(d(10, 20), "AIKOM", "Різкий стрибок пропусків + падіння оцінок"));
+  if (has("DV")) ev.push(tev(d(12, 22), "DV", "Виклик поліції за фактом домашнього насильства"));
+  if (has("CBI")) ev.push(tev(d(2, 12), "CBI", "Встановлено інвалідність / потреба супроводу"));
+  if (has("DITY")) ev.push(tev(d(12, 22), "DITY", "Взято на облік ССД (складні життєві обставини)"));
+  if (has("CHILDWAR")) ev.push(tev(d(6, 18), "CHILDWAR", "Статус у реєстрі «Діти війни»"));
+  if (has("EDRSR")) ev.push(tev(d(12, 22), "EDRSR", "Судове рішення щодо батьківських прав"));
+  if (has("ERDR")) ev.push(tev(d(14, 23), "ERDR", "Внесено до ЄРДР досудове розслідування"));
   return ev.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/* ── похідна відвідуваність зі зламом (change-point) ── */
+/* ── похідна відвідуваність зі зламом (change-point); score_12 у шкалі 0..12 ── */
 function deriveAttendance(r: () => number, acute: boolean): AttendanceSeries {
   const points = [];
   const cp = acute ? 7 + Math.floor(r() * 2) : 5 + Math.floor(r() * 3);
   for (let m = 0; m < 12; m++) {
     const after = m >= cp;
     const absences = after ? 5 + Math.floor(r() * 8) : Math.floor(r() * 3);
-    const gpa = after ? +(3.2 + r() * 2.4).toFixed(1) : +(7.4 + r() * 3.8).toFixed(1);
+    const gpa = after ? +(3.2 + r() * 2.4).toFixed(1) : +(7.6 + r() * 4.0).toFixed(1);
     const y = 2023 + Math.floor((m + 8) / 12);
     const mm = ((m + 8) % 12) + 1;
     points.push({ period: `${y}-${String(mm).padStart(2, "0")}`, absences, gpa });
@@ -265,288 +261,227 @@ function deriveAttendance(r: () => number, acute: boolean): AttendanceSeries {
 /* ============================================================
    ГЕРО-КЕЙСИ — деталізовані сценарії для пітчу
    ============================================================ */
-function hero(): FullCase[] {
-  const cases: FullCase[] = [];
+function makeHero(
+  args: {
+    id: number; pib: string; birth: string; age: number; oblast: string;
+    contribs: Contribution[]; registries: RegistryCode[]; immediate?: boolean;
+    unzr: string | null; timeline: TimelineEvent[]; attendance?: AttendanceSeries | null;
+  },
+): FullCase {
+  const contribs = [...args.contribs].sort((a, b) => b.value - a.value);
+  const viols = contribs.map((c) => c.violation);
+  const { mult, factors } = vulnerability(args.age, args.registries, viols);
+  const immediate = !!args.immediate;
+  const score = scoreOf(contribs, mult);
+  return {
+    rank: 0, entity_id: args.id, unzr: args.unzr, pib: args.pib,
+    birth_date: args.birth, age: args.age, tier: tierOf(score, immediate) ?? "T2",
+    score, immediate, vulnerability: mult, vuln_factors: factors,
+    violations: viols, registries: [...args.registries].sort(), contributions: contribs,
+    oblast: args.oblast, timeline: args.timeline, attendance: args.attendance ?? null,
+  };
+}
 
-  // 1 ── Сигнатурний кейс: дитина випала у щілину між країнами
-  {
-    const contribs = [
-      mkContribution("W1_displacement", ["VPO", "EDEBO", "EHEALTH"], "acute"),
-      mkContribution("W3_out_of_education", ["EDEBO", "ISUO"], "acute"),
-      mkContribution("W8_medical_access", ["EHEALTH", "VPO"], "active"),
-    ].sort((a, b) => b.value - a.value);
-    const registries: RegistryCode[] = ["EDDR", "DRACS", "VPO", "EDEBO", "ISUO", "EHEALTH"];
-    const { mult, factors } = vulnerability(8, registries, ["W1_displacement"]);
-    cases.push({
-      rank: 0, entity_id: 5001, unzr: "20160312-48217",
-      pib: "Ткаченко Софія Андріївна", birth_date: "2016-03-12", age: 8,
-      tier: "T0", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Харківська",
+function hero(): FullCase[] {
+  return [
+    // 1 ── Сигнатурний кейс: дитина випала у щілину між системами
+    makeHero({
+      id: 5001, pib: "Ткаченко Софія Андріївна", birth: "2016-03-12", age: 8, oblast: "Харківська",
+      unzr: "20160312-48217",
+      contribs: [
+        mkContribution("W1_displacement", ["VPO", "EDEBO", "EHEALTH"], "acute"),
+        mkContribution("W3_out_of_education", ["EDEBO", "AIKOM"], "acute"),
+        mkContribution("W8_medical_access", ["EHEALTH", "VPO"], "active"),
+      ],
+      registries: ["EDDR", "DRACS", "VPO", "EDEBO", "AIKOM", "EHEALTH"],
       timeline: [
-        { date: "2023-02-18", registry: "VPO", label: "Облік ВПО: переміщення Харківська → Львівська обл." },
-        { date: "2023-05-20", registry: "EDEBO", label: "Вихід зі школи (статус: переведено), нова не зафіксована" },
-        { date: "2023-06-15", registry: "ISUO", label: "Останній запис відвідуваності — далі тиша" },
-        { date: "2023-09-04", registry: "EHEALTH", label: "Декларацію із сімейним лікарем закрито, нову не відкрито" },
-        { date: "2023-11-12", registry: "VPO", label: "Не підтверджено повторне зарахування до школи / лікаря" },
+        tev("2023-02-18", "VPO", "Облік ВПО: переміщення Харківська → Львівська обл."),
+        tev("2023-05-20", "EDEBO", "Вихід зі школи (переведено), нову не зафіксовано"),
+        tev("2023-06-15", "AIKOM", "Останній запис відвідуваності — далі тиша"),
+        tev("2023-09-04", "EHEALTH", "Декларацію із сімейним лікарем закрито, нову не відкрито"),
       ],
       attendance: {
         points: [
-          { period: "2022-09", absences: 1, gpa: 9.4 }, { period: "2022-10", absences: 0, gpa: 9.6 },
-          { period: "2022-11", absences: 2, gpa: 9.1 }, { period: "2022-12", absences: 1, gpa: 9.3 },
-          { period: "2023-01", absences: 2, gpa: 8.9 }, { period: "2023-02", absences: 6, gpa: 7.8 },
-          { period: "2023-03", absences: 9, gpa: 6.2 }, { period: "2023-04", absences: 12, gpa: 5.1 },
-          { period: "2023-05", absences: 16, gpa: 4.0 }, { period: "2023-06", absences: 18, gpa: 3.4 },
+          { period: "2022-09", absences: 1, gpa: 11.2 }, { period: "2022-10", absences: 0, gpa: 11.5 },
+          { period: "2022-11", absences: 2, gpa: 10.8 }, { period: "2022-12", absences: 1, gpa: 11.0 },
+          { period: "2023-01", absences: 2, gpa: 10.4 }, { period: "2023-02", absences: 7, gpa: 8.6 },
+          { period: "2023-03", absences: 11, gpa: 6.8 }, { period: "2023-04", absences: 14, gpa: 5.4 },
+          { period: "2023-05", absences: 18, gpa: 4.2 }, { period: "2023-06", absences: 20, gpa: 3.6 },
         ],
         changePointIndex: 5,
       },
-    });
-  }
+    }),
 
-  // 2 ── Торгівля людьми [immediate], Рівень-1 ЄРДР
-  {
-    const contribs = [
-      mkContribution("W7_trafficking", ["ERDR", "SSD"], "acute"),
-      mkContribution("W1_displacement", ["VPO", "CHILDWAR"], "active"),
-    ].sort((a, b) => b.value - a.value);
-    const registries: RegistryCode[] = ["EDDR", "VPO", "CHILDWAR", "SSD", "ERDR"];
-    const { mult, factors } = vulnerability(15, registries, ["W7_trafficking", "W1_displacement"]);
-    cases.push({
-      rank: 0, entity_id: 5002, unzr: "20090721-77104",
-      pib: "Бойко Ангеліна Сергіївна", birth_date: "2009-07-21", age: 15,
-      tier: "T0", score: scoreOf(contribs, mult), immediate: true,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Одеська",
-      timeline: [
-        { date: "2023-03-10", registry: "VPO", label: "Облік ВПО: переміщення з Запорізької обл." },
-        { date: "2024-01-22", registry: "SSD", label: "Сигнал ССД: підозра на залучення до експлуатації" },
-        { date: "2024-02-05", registry: "ERDR", label: "Досудове розслідування ст.149 ККУ (торгівля людьми)", level1: true },
+    // 2 ── Торгівля людьми [immediate]
+    makeHero({
+      id: 5002, pib: "Бойко Ангеліна Сергіївна", birth: "2009-07-21", age: 15, oblast: "Одеська",
+      unzr: "20090721-77104", immediate: true,
+      contribs: [
+        mkContribution("W7_trafficking", ["ERDR", "DITY"], "acute"),
+        mkContribution("W1_displacement", ["VPO", "CHILDWAR"], "active"),
       ],
-      attendance: null,
-    });
-  }
-
-  // 3 ── Фізичне насильство вдома — класичний перетин 4 реєстрів
-  {
-    const contribs = [
-      mkContribution("P1_physical_home", ["EHEALTH", "VIOLENCE", "ERDR", "SSD"], "acute"),
-      mkContribution("W2_psych_trauma", ["EHEALTH"], "active"),
-    ].sort((a, b) => b.value - a.value);
-    const registries: RegistryCode[] = ["EDDR", "DRACS", "EHEALTH", "VIOLENCE", "ERDR", "SSD"];
-    const { mult, factors } = vulnerability(7, registries, ["P1_physical_home"]);
-    cases.push({
-      rank: 0, entity_id: 5003, unzr: "20170518-30945",
-      pib: "Мельник Данило Олександрович", birth_date: "2017-05-18", age: 7,
-      tier: "T0", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Дніпропетровська",
+      registries: ["EDDR", "VPO", "CHILDWAR", "DITY", "ERDR"],
       timeline: [
-        { date: "2023-10-03", registry: "EHEALTH", label: "Звернення: травма (домашня обстановка)" },
-        { date: "2023-11-19", registry: "VIOLENCE", label: "Виклик поліції за адресою (дитина присутня)" },
-        { date: "2024-01-14", registry: "EHEALTH", label: "Повторна травма + звернення до психолога" },
-        { date: "2024-02-02", registry: "ERDR", label: "Досудове розслідування ст.126-1 ККУ (домашнє насильство)", level1: true },
-        { date: "2024-02-20", registry: "SSD", label: "Взято на облік ССД" },
+        tev("2023-03-10", "VPO", "Облік ВПО: переміщення із Запорізької обл."),
+        tev("2024-01-22", "DITY", "Сигнал ССД: підозра на залучення до експлуатації"),
+        tev("2024-02-05", "ERDR", "Досудове розслідування ст.149 ККУ (торгівля людьми)"),
       ],
-      attendance: null,
-    });
-  }
+    }),
 
-  // 4 ── Депортація [immediate]
-  {
-    const contribs = [
-      mkContribution("W5_deportation", ["CHILDWAR", "SSD"], "acute"),
-    ];
-    const registries: RegistryCode[] = ["EDDR", "CHILDWAR", "SSD"];
-    const { mult, factors } = vulnerability(11, registries, ["W5_deportation"]);
-    cases.push({
-      rank: 0, entity_id: 5004, unzr: "20130208-61530",
-      pib: "Гнатюк Максим Іванович", birth_date: "2013-02-08", age: 11,
-      tier: "T0", score: scoreOf(contribs, mult), immediate: true,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Донецька",
-      timeline: [
-        { date: "2023-07-15", registry: "CHILDWAR", label: "Статус «Діти війни»: депортовано, опікун — розрив звʼязку" },
-        { date: "2023-08-01", registry: "SSD", label: "Облік ССД: дитина без супроводу (unaccompanied)" },
+    // 3 ── Фізичне насильство вдома — перетин 4 реєстрів
+    makeHero({
+      id: 5003, pib: "Мельник Данило Олександрович", birth: "2017-05-18", age: 7, oblast: "Дніпропетровська",
+      unzr: "20170518-30945",
+      contribs: [
+        mkContribution("P1_physical_home", ["EHEALTH", "DV", "ERDR", "DITY"], "acute"),
+        mkContribution("W2_psych_trauma", ["EHEALTH"], "active"),
       ],
-      attendance: null,
-    });
-  }
-
-  // 5 ── Сексуальне насильство [immediate], Рівень-1
-  {
-    const contribs = [mkContribution("F6_sexual_abuse", ["ERDR"], "acute")];
-    const registries: RegistryCode[] = ["EDDR", "DRACS", "ERDR"];
-    const { mult, factors } = vulnerability(13, registries, ["F6_sexual_abuse"]);
-    cases.push({
-      rank: 0, entity_id: 5005, unzr: "20110930-55218",
-      pib: "Савченко Поліна Миколаївна", birth_date: "2011-09-30", age: 13,
-      tier: "T0", score: scoreOf(contribs, mult), immediate: true,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Київська",
+      registries: ["EDDR", "DRACS", "EHEALTH", "DV", "ERDR", "DITY"],
       timeline: [
-        { date: "2024-03-08", registry: "ERDR", label: "Досудове розслідування ст.152 ККУ", level1: true },
+        tev("2023-10-03", "EHEALTH", "Звернення: травма (домашня обстановка)"),
+        tev("2023-11-19", "DV", "Виклик поліції за адресою (дитина присутня)"),
+        tev("2024-01-14", "EHEALTH", "Повторна травма + звернення до психолога"),
+        tev("2024-02-02", "ERDR", "Досудове розслідування ст.126-1 ККУ (домашнє насильство)"),
+        tev("2024-02-20", "DITY", "Взято на облік ССД"),
       ],
-      attendance: null,
-    });
-  }
+    }),
 
-  // 6 ── Сирітство / втрата опіки (T1)
-  {
-    const contribs = [
-      mkContribution("W6_orphanhood", ["DRACS", "SSD"], "active"),
-    ];
-    const registries: RegistryCode[] = ["EDDR", "DRACS", "SSD", "EHEALTH"];
-    const { mult, factors } = vulnerability(5, registries, ["W6_orphanhood"]);
-    cases.push({
-      rank: 0, entity_id: 5006, unzr: "20190415-19022",
-      pib: "Кравчук Злата Андріївна", birth_date: "2019-04-15", age: 5,
-      tier: "T1", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Полтавська",
+    // 4 ── Депортація [immediate]
+    makeHero({
+      id: 5004, pib: "Гнатюк Максим Іванович", birth: "2013-02-08", age: 11, oblast: "Донецька",
+      unzr: "20130208-61530", immediate: true,
+      contribs: [mkContribution("W5_deportation", ["CHILDWAR", "DITY"], "acute")],
+      registries: ["EDDR", "CHILDWAR", "DITY"],
       timeline: [
-        { date: "2023-12-02", registry: "DRACS", label: "Акт про смерть одного з батьків" },
-        { date: "2024-01-18", registry: "SSD", label: "Взято на облік: загроза втрати батьківського піклування" },
+        tev("2023-07-15", "CHILDWAR", "Статус «Діти війни»: депортовано, розрив звʼязку з опікуном"),
+        tev("2023-08-01", "DITY", "Облік ССД: дитина без супроводу"),
       ],
-      attendance: null,
-    });
-  }
+    }),
 
-  // 7 ── Нехтування потребами (T1)
-  {
-    const contribs = [
-      mkContribution("F3_neglect", ["EHEALTH", "ISUO", "SSD"], "active"),
-    ];
-    const registries: RegistryCode[] = ["EDDR", "EHEALTH", "ISUO", "SSD"];
-    const { mult, factors } = vulnerability(9, registries, ["F3_neglect"]);
-    cases.push({
-      rank: 0, entity_id: 5007, unzr: null,
-      pib: "Лисенко Артем Петрович", birth_date: "2015-06-25", age: 9,
-      tier: "T1", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Запорізька",
+    // 5 ── Сексуальне насильство [immediate]
+    makeHero({
+      id: 5005, pib: "Савченко Поліна Миколаївна", birth: "2011-09-30", age: 13, oblast: "Київська",
+      unzr: "20110930-55218", immediate: true,
+      contribs: [mkContribution("F6_sexual_abuse", ["ERDR"], "acute")],
+      registries: ["EDDR", "DRACS", "ERDR"],
+      timeline: [tev("2024-03-08", "ERDR", "Досудове розслідування ст.152 ККУ")],
+    }),
+
+    // 6 ── Сирітство / втрата опіки (суд + ССД)
+    makeHero({
+      id: 5006, pib: "Кравчук Злата Андріївна", birth: "2019-04-15", age: 5, oblast: "Полтавська",
+      unzr: "20190415-19022",
+      contribs: [mkContribution("W6_orphanhood", ["DRACS", "EDRSR", "DITY"], "active")],
+      registries: ["EDDR", "DRACS", "EDRSR", "DITY", "EHEALTH"],
       timeline: [
-        { date: "2023-09-10", registry: "ISUO", label: "Систематичні пропуски без поважної причини" },
-        { date: "2023-10-05", registry: "EHEALTH", label: "Пропущено плановий медичний огляд" },
-        { date: "2023-11-20", registry: "SSD", label: "Облік: малозабезпечена родина" },
+        tev("2023-12-02", "DRACS", "Актовий запис про смерть одного з батьків"),
+        tev("2024-01-10", "EDRSR", "Судове рішення: позбавлення батьківських прав"),
+        tev("2024-01-18", "DITY", "Взято на облік: загроза втрати піклування"),
+      ],
+    }),
+
+    // 7 ── Нехтування потребами
+    makeHero({
+      id: 5007, pib: "Лисенко Артем Петрович", birth: "2015-06-25", age: 9, oblast: "Запорізька",
+      unzr: null,
+      contribs: [mkContribution("F3_neglect", ["EHEALTH", "AIKOM", "DITY"], "active")],
+      registries: ["EDDR", "EHEALTH", "AIKOM", "DITY"],
+      timeline: [
+        tev("2023-09-10", "AIKOM", "Систематичні пропуски без поважної причини"),
+        tev("2023-10-05", "EHEALTH", "Пропущено планову імунізацію / огляд"),
+        tev("2023-11-20", "DITY", "Облік: малозабезпечена родина"),
       ],
       attendance: deriveAttendance(rng(70007), false),
-    });
-  }
+    }),
 
-  // 8 ── Булінг (T1)
-  {
-    const contribs = [
-      mkContribution("E1_bullying", ["ISUO", "EHEALTH"], "active"),
-    ];
-    const registries: RegistryCode[] = ["EDDR", "ISUO", "EHEALTH"];
-    const { mult, factors } = vulnerability(12, registries, ["E1_bullying"]);
-    cases.push({
-      rank: 0, entity_id: 5008, unzr: "20120111-44760",
-      pib: "Марченко Вероніка Сергіївна", birth_date: "2012-01-11", age: 12,
-      tier: "T1", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Львівська",
+    // 8 ── Булінг
+    makeHero({
+      id: 5008, pib: "Марченко Вероніка Сергіївна", birth: "2012-01-11", age: 12, oblast: "Львівська",
+      unzr: "20120111-44760",
+      contribs: [mkContribution("E1_bullying", ["AIKOM", "EHEALTH"], "active")],
+      registries: ["EDDR", "AIKOM", "EHEALTH"],
       timeline: [
-        { date: "2023-11-02", registry: "ISUO", label: "Стрибок пропусків + падіння успішності" },
-        { date: "2023-12-10", registry: "EHEALTH", label: "Звернення до психолога" },
-        { date: "2024-01-15", registry: "ISUO", label: "Засідання комісії з протидії булінгу" },
+        tev("2023-11-02", "AIKOM", "Стрибок пропусків + падіння оцінок"),
+        tev("2023-12-10", "EHEALTH", "Звернення до психолога"),
+        tev("2024-01-15", "AIKOM", "Засідання комісії з протидії булінгу"),
       ],
       attendance: deriveAttendance(rng(80008), true),
-    });
-  }
+    }),
 
-  // 9 ── Психотравма (T2)
-  {
-    const contribs = [mkContribution("W2_psych_trauma", ["EHEALTH", "CHILDWAR"], "chronic")];
-    const registries: RegistryCode[] = ["EDDR", "EHEALTH", "CHILDWAR"];
-    const { mult, factors } = vulnerability(10, registries, ["W2_psych_trauma"]);
-    cases.push({
-      rank: 0, entity_id: 5009, unzr: "20140822-28819",
-      pib: "Руденко Богдан Олександрович", birth_date: "2014-08-22", age: 10,
-      tier: "T2", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Чернігівська",
+    // 9 ── Психотравма (спостереження)
+    makeHero({
+      id: 5009, pib: "Руденко Богдан Олександрович", birth: "2014-08-22", age: 10, oblast: "Чернігівська",
+      unzr: "20140822-28819",
+      contribs: [mkContribution("W2_psych_trauma", ["EHEALTH", "CHILDWAR"], "chronic")],
+      registries: ["EDDR", "EHEALTH", "CHILDWAR"],
       timeline: [
-        { date: "2023-05-14", registry: "CHILDWAR", label: "Статус «Діти війни»: переміщення" },
-        { date: "2023-08-30", registry: "EHEALTH", label: "Повторні звернення до психолога" },
+        tev("2023-05-14", "CHILDWAR", "Статус «Діти війни»: переміщення"),
+        tev("2023-08-30", "EHEALTH", "Повторні звернення до психолога"),
       ],
-      attendance: null,
-    });
-  }
+    }),
 
-  // 10 ── Поза освітою — dropout ІСУО (T1)
-  {
-    const contribs = [mkContribution("W3_out_of_education", ["EDEBO", "ISUO"], "active")];
-    const registries: RegistryCode[] = ["EDDR", "EDEBO", "ISUO"];
-    const { mult, factors } = vulnerability(14, registries, ["W3_out_of_education"]);
-    cases.push({
-      rank: 0, entity_id: 5010, unzr: "20100503-90233",
-      pib: "Захарченко Назар Іванович", birth_date: "2010-05-03", age: 14,
-      tier: "T1", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Вінницька",
+    // 10 ── Поза освітою — dropout АІКОМ
+    makeHero({
+      id: 5010, pib: "Захарченко Назар Іванович", birth: "2010-05-03", age: 14, oblast: "Вінницька",
+      unzr: "20100503-90233",
+      contribs: [mkContribution("W3_out_of_education", ["EDEBO", "AIKOM"], "active")],
+      registries: ["EDDR", "EDEBO", "AIKOM"],
       timeline: [
-        { date: "2023-10-01", registry: "ISUO", label: "Останній запис відвідуваності" },
-        { date: "2023-10-20", registry: "EDEBO", label: "Відраховано без переведення до іншого закладу" },
+        tev("2023-10-01", "AIKOM", "Останній запис відвідуваності"),
+        tev("2023-10-20", "EDEBO", "Відраховано без переведення до іншого закладу"),
       ],
       attendance: deriveAttendance(rng(100010), false),
-    });
-  }
+    }),
 
-  // 11 ── Медичний доступ + переміщення (T2)
-  {
-    const contribs = [
-      mkContribution("W8_medical_access", ["EHEALTH", "VPO"], "active"),
-      mkContribution("W1_displacement", ["VPO"], "chronic"),
-    ].sort((a, b) => b.value - a.value);
-    const registries: RegistryCode[] = ["EDDR", "VPO", "EHEALTH"];
-    const { mult, factors } = vulnerability(4, registries, ["W1_displacement"]);
-    cases.push({
-      rank: 0, entity_id: 5011, unzr: "20201207-13408",
-      pib: "Петренко Марія Андріївна", birth_date: "2020-12-07", age: 4,
-      tier: "T2", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Запорізька",
-      timeline: [
-        { date: "2023-04-11", registry: "VPO", label: "Облік ВПО" },
-        { date: "2023-10-22", registry: "EHEALTH", label: "Декларацію закрито; хронічний діагноз без супроводу" },
+    // 11 ── Медичний доступ + переміщення (спостереження)
+    makeHero({
+      id: 5011, pib: "Петренко Марія Андріївна", birth: "2020-12-07", age: 4, oblast: "Запорізька",
+      unzr: "20201207-13408",
+      contribs: [
+        mkContribution("W8_medical_access", ["EHEALTH", "VPO"], "active"),
+        mkContribution("W1_displacement", ["VPO"], "chronic"),
       ],
-      attendance: null,
-    });
-  }
-
-  // 12 ── Переміщення (T2, спостереження)
-  {
-    const contribs = [mkContribution("W1_displacement", ["VPO", "EDEBO"], "chronic")];
-    const registries: RegistryCode[] = ["EDDR", "DRACS", "VPO", "EDEBO"];
-    const { mult, factors } = vulnerability(16, registries, ["W1_displacement"]);
-    cases.push({
-      rank: 0, entity_id: 5012, unzr: "20081119-67001",
-      pib: "Поліщук Дмитро Миколайович", birth_date: "2008-11-19", age: 16,
-      tier: "T2", score: scoreOf(contribs, mult), immediate: false,
-      vulnerability: mult, vuln_factors: factors,
-      violations: contribs.map((c) => c.violation), registries, contributions: contribs,
-      oblast: "Харківська",
+      registries: ["EDDR", "VPO", "EHEALTH"],
       timeline: [
-        { date: "2023-03-22", registry: "VPO", label: "Облік ВПО" },
-        { date: "2023-09-01", registry: "EDEBO", label: "Переведення до іншого закладу освіти" },
+        tev("2023-04-11", "VPO", "Облік ВПО"),
+        tev("2023-10-22", "EHEALTH", "Декларацію закрито; хронічний діагноз без супроводу"),
       ],
-      attendance: null,
-    });
-  }
+    }),
 
-  return cases;
+    // 12 ── Інклюзія: дитина з інвалідністю без супроводу (НОВЕ порушення E4)
+    makeHero({
+      id: 5012, pib: "Гончар Іван Миколайович", birth: "2015-11-19", age: 9, oblast: "Івано-Франківська",
+      unzr: "20151119-67001",
+      contribs: [mkContribution("E4_inclusion", ["CBI", "EDEBO"], "active")],
+      registries: ["EDDR", "CBI", "EDEBO"],
+      timeline: [
+        tev("2023-03-05", "CBI", "Встановлено інвалідність; потреба інклюзивного супроводу"),
+        tev("2023-09-01", "EDEBO", "Зараховано без інклюзивного класу / асистента"),
+      ],
+    }),
+
+    // 13 ── Дитяча праця (НОВЕ порушення F4)
+    makeHero({
+      id: 5013, pib: "Поліщук Дмитро Васильович", birth: "2009-03-14", age: 15, oblast: "Закарпатська",
+      unzr: "20090314-2855",
+      contribs: [mkContribution("F4_child_labor", ["AIKOM"], "active")],
+      registries: ["EDDR", "AIKOM"],
+      timeline: [tev("2023-10-08", "AIKOM", "Систематичні денні пропуски без ознак булінгу/хвороби")],
+      attendance: deriveAttendance(rng(130013), false),
+    }),
+
+    // 14 ── Переміщення (спостереження)
+    makeHero({
+      id: 5014, pib: "Бондаренко Соломія Петрівна", birth: "2008-11-19", age: 16, oblast: "Харківська",
+      unzr: "20081119-67230",
+      contribs: [mkContribution("W1_displacement", ["VPO", "EDEBO"], "chronic")],
+      registries: ["EDDR", "DRACS", "VPO", "EDEBO"],
+      timeline: [
+        tev("2023-03-22", "VPO", "Облік ВПО"),
+        tev("2023-09-01", "EDEBO", "Переведення до іншого закладу освіти"),
+      ],
+    }),
+  ];
 }
 
 /* ============================================================
@@ -558,7 +493,6 @@ function build() {
   for (let i = 0; i < 235; i++) generated.push(genCase(i));
 
   const all = [...featured, ...generated];
-  // сортування як у scoring.score_all: tier → immediate → -score
   const order: Record<Tier, number> = { T0: 0, T1: 1, T2: 2 };
   all.sort((a, b) => order[a.tier] - order[b.tier] || Number(b.immediate) - Number(a.immediate) || b.score - a.score);
   all.forEach((c, idx) => (c.rank = idx + 1));
@@ -574,18 +508,11 @@ function build() {
   for (const c of all) {
     const records: Partial<Record<RegistryCode, number>> = {};
     for (const reg of c.registries) {
-      // правдоподібна кількість записів на реєстр
-      records[reg] = reg === "ISUO" ? 10 : reg === "EHEALTH" ? 2 + (c.entity_id % 3) : 1;
+      records[reg] = reg === "AIKOM" ? 10 : reg === "EHEALTH" ? 2 + (c.entity_id % 3) : 1;
     }
     entities[c.entity_id] = {
-      entity_id: c.entity_id,
-      unzr: c.unzr,
-      pib: c.pib,
-      birth_date: c.birth_date,
-      registries: c.registries,
-      n_registries: c.registries.length,
-      records,
-      oblast: c.oblast,
+      entity_id: c.entity_id, unzr: c.unzr, pib: c.pib, birth_date: c.birth_date,
+      registries: c.registries, n_registries: c.registries.length, records, oblast: c.oblast,
     };
     timelines[c.entity_id] = c.timeline;
     attendance[c.entity_id] = c.attendance;
@@ -599,36 +526,29 @@ const DATA = build();
 /* ── метрики (відповідають README: ~5000 дітей) ── */
 export const MOCK_METRICS: Metrics = {
   matching: {
-    true_children: 5000,
-    entities: 5218,
-    reconstruction_rate: 0.961,
-    pure_clusters: 4894,
-    fuzzy_attached: 612,
+    true_children: 5000, entities: 5218, reconstruction_rate: 0.961, pure_clusters: 4894, fuzzy_attached: 612,
   },
   detection: {
-    overall: { precision: 0.98, recall: 0.89, f1: 0.93 },
+    overall: { precision: 0.97, recall: 0.88, f1: 0.92 },
     per_violation: {
       W7_trafficking: { tp: 34, fp: 0, fn: 2, precision: 1.0, recall: 0.94 },
       F6_sexual_abuse: { tp: 31, fp: 0, fn: 3, precision: 1.0, recall: 0.91 },
       W5_deportation: { tp: 46, fp: 1, fn: 4, precision: 0.98, recall: 0.92 },
       P1_physical_home: { tp: 152, fp: 4, fn: 17, precision: 0.97, recall: 0.9 },
       W6_orphanhood: { tp: 58, fp: 1, fn: 6, precision: 0.98, recall: 0.91 },
+      E4_inclusion: { tp: 71, fp: 3, fn: 9, precision: 0.96, recall: 0.89 },
       W8_medical_access: { tp: 121, fp: 6, fn: 19, precision: 0.95, recall: 0.86 },
       F3_neglect: { tp: 138, fp: 9, fn: 24, precision: 0.94, recall: 0.85 },
       W3_out_of_education: { tp: 174, fp: 7, fn: 21, precision: 0.96, recall: 0.89 },
+      F4_child_labor: { tp: 63, fp: 8, fn: 16, precision: 0.89, recall: 0.8 },
       W2_psych_trauma: { tp: 96, fp: 8, fn: 22, precision: 0.92, recall: 0.81 },
       W1_displacement: { tp: 287, fp: 11, fn: 28, precision: 0.96, recall: 0.91 },
       E1_bullying: { tp: 142, fp: 12, fn: 26, precision: 0.92, recall: 0.85 },
     },
   },
-  privacy: {
-    n_pairs: 5218,
-    precision: 1.0,
-    recall: 0.95,
-  },
+  privacy: { n_pairs: 5218, precision: 1.0, recall: 0.95 },
 };
 
-/* ── публічний доступ до моків ── */
 export const mockData = {
   items: DATA.items,
   full: DATA.all,

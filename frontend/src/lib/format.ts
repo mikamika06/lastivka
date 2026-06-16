@@ -12,9 +12,15 @@ const MONTHS_SHORT = [
 
 export function formatDate(iso: string | null): string {
   if (!iso || iso === "None") return "—";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  return `${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
+  // Парсимо YYYY-MM-DD вручну — без new Date(), щоб уникнути зсуву через
+  // часовий пояс (UTC-парсинг + локальні getters) і hydration mismatch.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (month < 1 || month > 12) return iso;
+  return `${day} ${MONTHS_GEN[month - 1]} ${year}`;
 }
 
 /** YYYY-MM → «вер 2023» */

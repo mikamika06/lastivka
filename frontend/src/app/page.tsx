@@ -43,11 +43,7 @@ export default async function LandingPage() {
 /* ───────────────────────── HERO ───────────────────────── */
 function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) {
   return (
-    <section className="relative overflow-hidden">
-      <div className="grid-bg absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_75%)]" />
-      <span className="glow-blob -left-20 -top-24 h-72 w-72 bg-brand-glow/40" />
-      <span className="glow-blob right-0 top-10 h-72 w-72 bg-brand/20" />
-
+    <section className="relative overflow-hidden border-b border-line bg-surface">
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
         <div className="animate-fade-up">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-surface/70 px-3 py-1.5 text-xs font-medium text-brand-ink backdrop-blur">
@@ -69,7 +65,7 @@ function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-brand-ink"
+              className="inline-flex items-center gap-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#23232a]"
             >
               Відкрити систему
               <IconArrowRight className="h-4 w-4" />
@@ -337,8 +333,6 @@ function CtaBand() {
   return (
     <section className="px-4 py-16 sm:px-6">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-ink px-8 py-14 text-center sm:px-16">
-        <span className="glow-blob -left-10 top-0 h-60 w-60 bg-brand/40" />
-        <span className="glow-blob -right-10 bottom-0 h-60 w-60 bg-brand-glow/30" />
         <div className="relative">
           <h2 className="h-display text-3xl font-extrabold text-white sm:text-4xl">
             Подивіться, як це працює

@@ -68,7 +68,7 @@ export function ProfileExplorer({ items, initialId }: { items: QueueItem[]; init
 
       {/* шапка профілю */}
       <Card className="overflow-hidden">
-        <div className="border-b border-line bg-gradient-to-br from-brand-soft/60 to-surface px-5 py-5 sm:px-6">
+        <div className="border-b border-line bg-surface px-5 py-5 sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="h-display text-2xl font-bold">{item.pib}</h2>
