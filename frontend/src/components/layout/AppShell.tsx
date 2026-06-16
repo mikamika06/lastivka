@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { SidebarContent } from "./Sidebar";
 import { Logo } from "@/components/ui/Logo";
@@ -8,6 +8,15 @@ import { IconMenu, IconClose } from "@/components/ui/icons";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[290px_1fr]">
@@ -22,6 +31,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <button
           onClick={() => setOpen(true)}
           aria-label="Відкрити меню"
+          aria-expanded={open}
+          aria-controls="mobile-nav"
           className="grid h-10 w-10 place-items-center rounded-xl border border-line text-ink-2"
         >
           <IconMenu className="h-5 w-5" />
@@ -30,9 +41,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* mobile drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Навігація">
           <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-[290px] animate-[fade-in_0.2s_ease] border-r border-line bg-surface shadow-pop">
+          <div id="mobile-nav" className="absolute left-0 top-0 h-full w-[290px] animate-[fade-in_0.2s_ease] border-r border-line bg-surface shadow-pop">
             <button
               onClick={() => setOpen(false)}
               aria-label="Закрити меню"

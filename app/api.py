@@ -124,7 +124,7 @@ def timeline(entity_id: int):
     for r in R.get("DV", []):
         add(r.get("incident_datetime"), "DV", f"Виклик поліції ({r.get('form_of_violence')})")
     for r in R.get("CBI", []):
-        add(r.get("registration_date") or r.get("decision_date"), "CBI", "Встановлено інвалідність / потреба супроводу")
+        add(r.get("date_established") or r.get("registration_date_cbi"), "CBI", "Встановлено інвалідність / потреба супроводу")
 
     ev.sort(key=lambda x: x["date"])
     return {"events": ev}

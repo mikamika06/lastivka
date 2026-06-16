@@ -49,9 +49,12 @@ export function ProfileExplorer({ items, initialId }: { items: QueueItem[]; init
     <div className="space-y-5">
       {/* селектор */}
       <div className="relative max-w-xl">
-        <label className="mb-1.5 block text-xs font-medium text-muted">Оберіть дитину з черги</label>
+        <label htmlFor="child-select" className="mb-1.5 block text-xs font-medium text-muted">
+          Оберіть дитину з черги
+        </label>
         <div className="relative">
           <select
+            id="child-select"
             value={selectedId}
             onChange={(e) => setSelectedId(Number(e.target.value))}
             className="w-full appearance-none rounded-xl border border-line bg-surface py-3 pl-4 pr-10 text-sm font-medium text-ink outline-none focus:border-brand"

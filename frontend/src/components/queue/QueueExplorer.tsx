@@ -69,6 +69,7 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
                 <button
                   key={t}
                   onClick={() => setTiers((s) => toggle(s, t))}
+                  aria-pressed={on}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
                     on
                       ? t === "T0"
@@ -85,11 +86,12 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
             })}
             <button
               onClick={() => setImmediateOnly((v) => !v)}
+              aria-pressed={immediateOnly}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
                 immediateOnly ? "bg-t0 text-white ring-t0" : "bg-surface text-faint ring-line hover:text-ink-2"
               }`}
             >
-              🚨 Лише негайні
+              Лише негайні
             </button>
           </div>
 
@@ -98,6 +100,7 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Пошук за ПІБ або УНЗР"
               placeholder="Пошук за ПІБ або УНЗР…"
               className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-faint focus:border-brand"
             />
@@ -125,7 +128,7 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
 
       <p className="px-1 text-sm text-muted">
         Показано <span className="font-semibold text-ink">{Math.min(shown.length, filtered.length)}</span> із{" "}
-        {plural(filtered.length, "сигналу", "сигналів", "сигналів")}. Сортування — за терміновістю.
+        {plural(filtered.length, "сигнал", "сигнали", "сигналів")}. Сортування — за терміновістю.
       </p>
 
       {/* список */}
@@ -176,6 +179,7 @@ function FilterChips({
           <button
             key={o.value}
             onClick={() => onToggle(o.value)}
+            aria-pressed={on}
             className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition ${
               on ? "bg-ink text-white ring-ink" : "bg-surface text-muted ring-line hover:text-ink-2"
             }`}

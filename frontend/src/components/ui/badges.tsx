@@ -27,11 +27,8 @@ export function TierBadge({ tier, withHorizon = true }: { tier: Tier; withHorizo
 
 export function ImmediateBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-t0 px-2.5 py-1 text-xs font-bold text-white">
-      <span className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
-      </span>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-t0 px-2.5 py-1 text-xs font-bold text-white">
+      <span className="h-1.5 w-1.5 rounded-full bg-white" />
       НЕГАЙНО
     </span>
   );
