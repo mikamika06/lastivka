@@ -3,7 +3,7 @@ import { LockIcon } from "@/components/ui/badges";
 
 /** Превʼю продукту для hero: кейс «дитина у щілині» зібраний із силосів. */
 export function HeroPreview() {
-  const silos = ["ВПО", "ЄДЕБО", "eHealth", "ІСУО", "ДРАЦС"];
+  const silos = ["ВПО", "ЄДЕБО", "eHealth", "АІКОМ", "ДРАЦС"];
   return (
     <div className="relative">
       {/* плаваючі чіпи реєстрів */}
@@ -38,7 +38,7 @@ export function HeroPreview() {
       <div className="card relative animate-fade-up p-5">
         <div className="mb-4 flex items-center justify-between">
           <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand">
+            <span className="grid h-6 w-6 place-items-center rounded-md bg-ink text-white">
               <SwallowMark className="h-3.5 w-3.5" />
             </span>
             Черга реагування

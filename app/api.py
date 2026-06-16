@@ -39,7 +39,7 @@ def entities():
 
 def oblast_of(ent) -> str:
     for r in ent.get("rows_by_reg", {}).get("EDDR", []):
-        addr = r.get("registered_address") or ""
+        addr = r.get("registered_residence") or ""
         if "обл" in addr:
             return addr.split(" обл")[0].split(",")[-1].strip()
     return "—"
@@ -92,33 +92,39 @@ def timeline(entity_id: int):
     R = e["rows_by_reg"]
     ev = []
 
-    def add(date, reg, label, level1=False):
+    def add(date, reg, label):
         if date and date != "None":
-            ev.append({"date": str(date)[:10], "registry": reg, "label": label, "level1": level1})
+            ev.append({"date": str(date)[:10], "registry": reg, "label": label,
+                       "level1": REG_ACCESS.get(reg) == 1})
 
     for r in R.get("VPO", []):
-        add(r.get("displacement_date"), "VPO", f"Переміщення → {r.get('current_address')}")
+        add(r.get("displacement_date"), "VPO", f"Переміщення → {r.get('actual_residence_place')}")
     for r in R.get("EDEBO", []):
-        if r.get("exit_date"):
-            add(r.get("exit_date"), "EDEBO", f"Вихід зі школи (статус: {r.get('study_status')})")
+        if r.get("study_status") in ("transferred", "expelled"):
+            add(r.get("status_effective_date"), "EDEBO", f"Вихід зі школи (статус: {r.get('study_status')})")
     for r in R.get("EHEALTH", []):
-        if r.get("record_type") == "DECLARATION" and r.get("status") == "terminated":
+        if r.get("resource_type") == "declaration" and r.get("status") == "terminated":
             add(r.get("end_date"), "EHEALTH", "Декларацію із сімейним лікарем закрито")
-        if r.get("category") in ("trauma", "psych") and r.get("date"):
-            tag = "травма" if r.get("category") == "trauma" else "психолог"
+        if r.get("condition_category") in ("trauma", "psych") and r.get("date"):
+            tag = "травма" if r.get("condition_category") == "trauma" else "психолог"
             rep = " (повторне)" if str(r.get("is_repeat")) in ("1", "True", "true") else ""
             add(r.get("date"), "EHEALTH", f"Звернення: {tag}{rep}")
     for r in R.get("DRACS", []):
-        if r.get("act_type") == "DEATH":
-            add(r.get("reg_date"), "DRACS", "Акт про смерть одного з батьків")
+        if r.get("act_type") == "смерть":
+            add(r.get("registration_date") or r.get("reg_date"), "DRACS", "Акт про смерть одного з батьків")
     for r in R.get("CHILDWAR", []):
-        add(r.get("event_date"), "CHILDWAR", f"Статус «Діти війни»: {r.get('status')}")
-    for r in R.get("SSD", []):
-        add(r.get("open_date"), "SSD", f"Облік ССД: {r.get('status')}")
+        add(r.get("incident_date"), "CHILDWAR", f"Статус «Діти війни»: {r.get('status_category')}")
+    for r in R.get("DITY", []):
+        add(r.get("primary_registration_date"), "DITY", f"Облік ССД: {r.get('child_status')}")
+    for r in R.get("EDRSR", []):
+        add(r.get("decision_date") or r.get("adjudication_date"), "EDRSR", "Судове рішення щодо батьківських прав")
     for r in R.get("ERDR", []):
-        add(r.get("open_date"), "ERDR", f"Провадження ст.{r.get('article')} (Рівень 1)", level1=True)
-    for r in R.get("VIOLENCE", []):
-        add(r.get("call_date"), "VIOLENCE", "Виклик поліції за адресою")
+        add(r.get("register_entry_datetime"), "ERDR",
+            f"Провадження: {r.get('preliminary_legal_qualification')}")
+    for r in R.get("DV", []):
+        add(r.get("incident_datetime"), "DV", f"Виклик поліції ({r.get('form_of_violence')})")
+    for r in R.get("CBI", []):
+        add(r.get("registration_date") or r.get("decision_date"), "CBI", "Встановлено інвалідність / потреба супроводу")
 
     ev.sort(key=lambda x: x["date"])
     return {"events": ev}
@@ -129,11 +135,11 @@ def attendance(entity_id: int):
     e = entities().get(entity_id)
     if not e:
         raise HTTPException(404, "Не знайдено")
-    isuo = sorted(e["rows_by_reg"].get("ISUO", []), key=lambda x: x.get("period", ""))
-    if not isuo:
+    aikom = sorted(e["rows_by_reg"].get("AIKOM", []), key=lambda x: x.get("attendance_period", ""))
+    if not aikom:
         return {"points": [], "changePointIndex": None}
-    points = [{"period": r.get("period"),
-               "absences": int(float(r.get("absences_unexcused") or 0)),
-               "gpa": float(r.get("gpa") or 0)} for r in isuo]
+    points = [{"period": r.get("attendance_period"),
+               "absences": int(float(r.get("missed_lessons_count") or 0)),
+               "gpa": float(r.get("score_12") or 0)} for r in aikom]
     cp_idx, _, cp_dir = detection.change_point([p["absences"] for p in points])
     return {"points": points, "changePointIndex": cp_idx if cp_dir > 0 else None}

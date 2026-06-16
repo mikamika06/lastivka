@@ -10,12 +10,15 @@ export type RegistryCode =
   | "EDDR"
   | "EHEALTH"
   | "EDEBO"
-  | "ISUO"
+  | "AIKOM"
   | "VPO"
   | "CHILDWAR"
-  | "SSD"
+  | "DITY"
   | "ERDR"
-  | "VIOLENCE";
+  | "DV"
+  | "CBI"
+  | "EISSS"
+  | "EDRSR";
 
 /** Внесок одного порушення в urgency-score (scoring.score_entity). */
 export interface Contribution {

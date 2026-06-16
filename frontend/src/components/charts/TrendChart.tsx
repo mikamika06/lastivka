@@ -41,7 +41,7 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
           <span className="h-2.5 w-2.5 rounded-sm bg-t1" /> Пропуски (без поважної причини)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-0.5 w-4 rounded bg-brand" /> Середній бал (GPA)
+          <span className="h-0.5 w-4 rounded bg-brand" /> Успішність (12-бальна)
         </span>
         <span className="flex items-center gap-1.5 text-t0-ink">
           <span className="h-3 w-0 border-l-2 border-dashed border-t0" /> Точка зламу
@@ -70,7 +70,7 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
               width={barW}
               height={Math.max(0, h)}
               rx="2"
-              fill={after ? "var(--color-t1)" : "#e9c9ad"}
+              fill={after ? "var(--color-t1)" : "#cbd5e1"}
             >
               <title>{`${formatPeriod(p.period)}: ${p.absences} пропусків`}</title>
             </rect>

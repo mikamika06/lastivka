@@ -27,7 +27,7 @@ export function LandingHeader() {
         </nav>
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-ink"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#23232a]"
         >
           Відкрити систему
           <IconArrowRight className="h-4 w-4" />

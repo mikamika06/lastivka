@@ -1,29 +1,32 @@
 /**
- * Метадані реєстрів і порушень — дзеркало backend
- * (emitters/registries.py REGISTRIES, dashboard.py VIOL_UA, scoring.yaml severity).
+ * Метадані реєстрів і порушень — дзеркало backend Фази 2
+ * (emitters/registries.py REGISTRIES, dashboard.py VIOL_UA, scoring.yaml, detection.py).
  */
 import type { RegistryCode, Tier, Acuity } from "./types";
 
 export interface RegistryMeta {
   code: RegistryCode;
-  ua: string; // коротка назва
-  short: string; // дуже коротка (для чіпів/таймлайну)
+  ua: string; // повна назва
+  short: string; // дуже коротка (чіпи/таймлайн)
   owner: string;
   subsystem: string;
   access: 1 | 2 | 3; // правовий рівень доступу
 }
 
 export const REGISTRIES: RegistryMeta[] = [
-  { code: "DRACS", ua: "ДРАЦС — акти цив. стану", short: "ДРАЦС", owner: "Мінʼюст", subsystem: "3_MJU_DRACS_prod", access: 2 },
-  { code: "EDDR", ua: "ЄДДР — демографічний реєстр", short: "ЄДДР", owner: "МВС", subsystem: "20_DMS_EDDR_prod", access: 2 },
-  { code: "EHEALTH", ua: "eHealth / ЕСОЗ", short: "eHealth", owner: "НСЗУ", subsystem: "50_ESOZ_prod_ME_EHR", access: 2 },
+  { code: "DRACS", ua: "ДРАЦС — акти цивільного стану", short: "ДРАЦС", owner: "Мінʼюст", subsystem: "3_MJU_DRACS_prod", access: 2 },
+  { code: "EDDR", ua: "ЄДДР — демографічний реєстр", short: "ЄДДР", owner: "ДМС / МВС", subsystem: "20_DMS_EDDR_prod", access: 2 },
+  { code: "EHEALTH", ua: "eHealth / ЕСОЗ", short: "eHealth", owner: "НСЗУ", subsystem: "50_ESOZ_prod_ME_EHR", access: 1 },
   { code: "EDEBO", ua: "ЄДЕБО — освіта", short: "ЄДЕБО", owner: "МОН", subsystem: "38_EDBO_prod", access: 2 },
-  { code: "ISUO", ua: "ІСУО / AIKOM — відвідуваність", short: "ІСУО", owner: "МОН", subsystem: "38_AIKOM_prod", access: 2 },
-  { code: "VPO", ua: "Реєстр ВПО", short: "ВПО", owner: "Мінсоцполітики", subsystem: "85_OISSS_VPO_prod", access: 2 },
+  { code: "AIKOM", ua: "ІСУО / АІКОМ — е-журнал", short: "АІКОМ", owner: "МОН", subsystem: "38_AIKOM_prod", access: 2 },
+  { code: "VPO", ua: "ЄІБД ВПО", short: "ВПО", owner: "Мінсоцполітики", subsystem: "85_OISSS_VPO_prod", access: 2 },
   { code: "CHILDWAR", ua: "«Діти війни»", short: "Діти війни", owner: "Нацсоцслужба", subsystem: "childrenofwar_prod", access: 2 },
-  { code: "SSD", ua: "ССД / ЕІАС «Діти»", short: "ССД", owner: "Нацсоцслужба", subsystem: "85_OISSS_DITY_prod", access: 2 },
+  { code: "DITY", ua: "ЄІАС «Діти» / ССД", short: "ССД", owner: "Нацсоцслужба", subsystem: "85_OISSS_DITY_prod", access: 2 },
   { code: "ERDR", ua: "ЄРДР — досудові розслідування", short: "ЄРДР", owner: "Офіс Генпрокурора", subsystem: "ERDR_prod", access: 1 },
-  { code: "VIOLENCE", ua: "Реєстр домашнього насильства", short: "Насильство", owner: "МВС / Мінсоц", subsystem: "20_MVS_DN_prod", access: 2 },
+  { code: "DV", ua: "Реєстр домашнього насильства", short: "Насильство", owner: "МВС / Мінсоц", subsystem: "20_MVS_DN_prod", access: 2 },
+  { code: "CBI", ua: "Банк даних з інвалідності", short: "Інвалідність", owner: "Мінсоцполітики", subsystem: "CBI_prod", access: 2 },
+  { code: "EISSS", ua: "ЄІССС — соціальні допомоги", short: "ЄІССС", owner: "Мінсоцполітики", subsystem: "EISSS_prod", access: 2 },
+  { code: "EDRSR", ua: "ЄДРСР — судові рішення", short: "ЄДРСР", owner: "ДСА", subsystem: "EDRSR_prod", access: 3 },
 ];
 
 export const REG_BY_CODE: Record<RegistryCode, RegistryMeta> = Object.fromEntries(
@@ -38,7 +41,7 @@ export function regAccess(code: RegistryCode): 1 | 2 | 3 {
   return REG_BY_CODE[code]?.access ?? 2;
 }
 
-/** Назви порушень українською (dashboard.VIOL_UA, розширено). */
+/** Назви порушень українською (dashboard.VIOL_UA, Фаза 2). */
 export const VIOLATION_UA: Record<string, string> = {
   W1_displacement: "Вимушене переміщення",
   W3_out_of_education: "Поза освітою",
@@ -51,6 +54,8 @@ export const VIOLATION_UA: Record<string, string> = {
   P1_physical_home: "Фізичне насильство вдома",
   E1_bullying: "Булінг",
   F6_sexual_abuse: "Сексуальне насильство",
+  F4_child_labor: "Дитяча праця",
+  E4_inclusion: "Доступ до інклюзії",
 };
 
 export function violName(v: string): string {
@@ -82,24 +87,25 @@ export const ACUITY_UA: Record<Acuity, string> = {
   improving: "покращення",
 };
 
-/** Кольори tier для графіків/бейджів. */
 export const TIER_COLOR: Record<Tier, string> = {
   T0: "var(--color-t0)",
   T1: "var(--color-t1)",
   T2: "var(--color-t2)",
 };
 
-/** Палітра для діаграм порушень (один акцент + нейтральні відтінки). */
+/** Монохромна шкала для діаграм (синій акцент Дія, від темного до світлого). */
 export const CHART_PALETTE = [
-  "#0e7c86",
-  "#18b5c0",
-  "#3b82a6",
-  "#5b8fa8",
-  "#7aa3b0",
-  "#9bb3bd",
-  "#b8c4cb",
-  "#c9d2d8",
-  "#d8dfe4",
-  "#e3e8ec",
-  "#edf0f3",
+  "#1b4fa0",
+  "#2f7bf5",
+  "#5e97f7",
+  "#7fb0f8",
+  "#9ac2fa",
+  "#b5d2fb",
+  "#c9defc",
+  "#d8e6fd",
+  "#e4edfd",
+  "#eef3fe",
+  "#f4f8ff",
+  "#f7faff",
+  "#fbfdff",
 ];

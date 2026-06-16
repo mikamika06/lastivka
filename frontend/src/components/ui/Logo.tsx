@@ -27,7 +27,7 @@ export function Logo({
     <Link href={href} className="group inline-flex items-center gap-2.5" aria-label="Ластівка — на головну">
       <span
         className={`grid h-9 w-9 place-items-center rounded-xl transition-transform group-hover:-translate-y-0.5 ${
-          invert ? "bg-white/10 text-white" : "bg-brand-soft text-brand"
+          invert ? "bg-white/10 text-white" : "bg-ink text-white"
         }`}
       >
         <SwallowMark className="h-5 w-5" />
