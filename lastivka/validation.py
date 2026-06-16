@@ -90,7 +90,7 @@ def eval_privacy(entities, cfg, sample_n: int = 400) -> dict:
                       "unzr": e["unzr"]}))
     A = [x[0] for x in recs]
     B = [x[1] for x in recs]
-    res = privacy.pprl_selfcheck(A, B, key, threshold=0.80)
+    res = privacy.pprl_selfcheck(A, B, key, threshold=0.70)
     res["n_pairs"] = len(recs)
     return res
 
@@ -103,8 +103,7 @@ def log_mlflow(matching_m, detection_m, privacy_m, cfg):
     mlflow.set_experiment("lastivka")
     with mlflow.start_run():
         mlflow.log_params({"n_children": cfg["population"]["n_children"],
-                           "months": cfg["population"]["months"],
-                           "violation_rate": cfg["violation_rate"]})
+                           "months": cfg["population"]["months"]})
         mlflow.log_metrics({
             "match_reconstruction_rate": matching_m["reconstruction_rate"],
             "detect_precision": detection_m["overall"]["precision"],

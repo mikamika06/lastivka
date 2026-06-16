@@ -27,7 +27,8 @@ VIOL_UA = {
     "W6_orphanhood": "Сирітство / втрата опіки", "W5_deportation": "Депортація",
     "W7_trafficking": "Торгівля людьми", "F3_neglect": "Нехтування потребами",
     "P1_physical_home": "Фізичне насильство вдома", "E1_bullying": "Булінг",
-    "F6_sexual_abuse": "Сексуальне насильство",
+    "F6_sexual_abuse": "Сексуальне насильство", "F4_child_labor": "Дитяча праця",
+    "E4_inclusion": "Доступ до інклюзії",
 }
 
 
@@ -53,7 +54,7 @@ def vname(v):
 
 def oblast_of(ent):
     for r in ent.get("rows_by_reg", {}).get("EDDR", []):
-        addr = r.get("registered_address") or ""
+        addr = r.get("registered_residence") or ""
         if "обл" in addr:
             return addr.split(" обл")[0].split(",")[-1].strip()
     return "—"
@@ -183,36 +184,36 @@ elif page.startswith("①"):
     events = []
     R = ent["rows_by_reg"]
     for r in R.get("VPO", []):
-        events.append((r.get("displacement_date"), "ВПО", f"Переміщення → {r.get('current_address')}"))
+        events.append((r.get("displacement_date"), "ВПО", f"Переміщення → {r.get('actual_residence_place')}"))
     for r in R.get("EDEBO", []):
-        if r.get("exit_date") and r.get("exit_date") != "None":
-            events.append((r.get("exit_date"), "ЄДЕБО", f"Вихід зі школи (статус: {r.get('study_status')})"))
+        if r.get("study_status") in ("transferred", "expelled"):
+            events.append((r.get("status_effective_date"), "ЄДЕБО", f"Вихід зі школи (статус: {r.get('study_status')})"))
     for r in R.get("EHEALTH", []):
-        if r.get("record_type") == "DECLARATION" and r.get("status") == "terminated":
+        if r.get("resource_type") == "declaration" and r.get("status") == "terminated":
             events.append((r.get("end_date"), "eHealth", "Декларацію з лікарем закрито"))
-        if r.get("category") in ("trauma", "psych") and r.get("date"):
-            tag = "травма" if r.get("category") == "trauma" else "психолог"
+        if r.get("condition_category") in ("trauma", "psych") and r.get("date"):
+            tag = "травма" if r.get("condition_category") == "trauma" else "психолог"
             events.append((r.get("date"), "eHealth", f"Звернення: {tag}"
-                           + (" (повторне)" if r.get("is_repeat") in ("1", True) else "")))
+                           + (" (повторне)" if str(r.get("is_repeat")) == "true" else "")))
     for r in R.get("CHILDWAR", []):
-        events.append((r.get("event_date"), "Діти війни", f"Статус: {r.get('status')}"))
-    for r in R.get("SSD", []):
-        events.append((r.get("open_date"), "ССД", f"Облік: {r.get('status')}"))
+        events.append((r.get("incident_date"), "Діти війни", f"Статус: {r.get('status_category')}"))
+    for r in R.get("DITY", []):
+        events.append((r.get("primary_registration_date"), "ССД", f"Облік: {r.get('child_status')}"))
     for r in R.get("ERDR", []):
-        events.append((r.get("open_date"), "ЄРДР 🔒", f"Провадження ст.{r.get('article')} (Рівень 1)"))
-    for r in R.get("VIOLENCE", []):
-        events.append((r.get("call_date"), "Нас-во", "Виклик поліції за адресою"))
+        events.append((r.get("register_entry_datetime"), "ЄРДР 🔒", f"Провадження: {r.get('preliminary_legal_qualification')} (Рівень 1)"))
+    for r in R.get("DV", []):
+        events.append((r.get("incident_datetime"), "Дом. насильство", f"Виклик поліції ({r.get('form_of_violence')})"))
     ev = pd.DataFrame([e for e in events if e[0] and e[0] != "None"],
                       columns=["дата", "реєстр", "подія"]).sort_values("дата")
     st.dataframe(ev, hide_index=True, use_container_width=True)
 
     # графік відвідуваності (change-point)
-    isuo = sorted(R.get("ISUO", []), key=lambda x: x.get("period", ""))
-    if isuo:
+    aikom = sorted(R.get("AIKOM", []), key=lambda x: x.get("attendance_period", ""))
+    if aikom:
         st.markdown("##### Відвідуваність / успішність (виявлення зламу)")
-        df = pd.DataFrame([{"період": r.get("period"),
-                            "пропуски": float(r.get("absences_unexcused") or 0),
-                            "GPA": float(r.get("gpa") or 0)} for r in isuo]).set_index("період")
+        df = pd.DataFrame([{"період": r.get("attendance_period"),
+                            "пропуски": float(r.get("missed_lessons_count") or 0),
+                            "оцінка(12)": float(r.get("score_12") or 0)} for r in aikom]).set_index("період")
         st.line_chart(df)
 
 

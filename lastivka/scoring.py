@@ -38,7 +38,7 @@ def _vulnerability(det, entity, cfg, w) -> tuple[float, list[str]]:
         mult *= vw["age_6_10"]; factors.append("вік 6–10")
     regs = set(entity.get("registries", []))
     vids = {d["violation"] for d in det}
-    if "SSD" in regs:
+    if "DITY" in regs:
         mult *= vw["already_in_ssd"]; factors.append("уже в «Дітях»")
     if vids & {"W5_deportation", "W7_trafficking"}:
         mult *= vw["no_guardian"]; factors.append("без опікуна")

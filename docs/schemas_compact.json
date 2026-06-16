@@ -1,0 +1,4160 @@
+{
+  "DRACS": {
+    "name": "Державний реєстр актів цивільного стану громадян (ДРАЦС) — а",
+    "access": 2,
+    "ids": [
+      "Реєстраційний номер актового запису (унікальний номер запису в реєстрі)",
+      "Номер актового запису про народження (порядковий)",
+      "Серія та номер свідоцтва про народження",
+      "УНЗР (унікальний номер запису в Єдиному державному демографічному реєстрі) — за наявності/після присвоєння",
+      "РНОКПП дитини (присвоюється; в історичних записах може бути відсутній)",
+      "РНОКПП матері та батька (за наявності)"
+    ],
+    "child_fields": [
+      "surname_child",
+      "name_child",
+      "patronymic_child",
+      "sex_child",
+      "birth_date",
+      "birth_place",
+      "live_or_stillborn",
+      "child_order",
+      "mother_full_name",
+      "father_full_name",
+      "basis_father_record",
+      "registration_date",
+      "act_number",
+      "mother_citizenship",
+      "father_citizenship"
+    ],
+    "n_fields": 39,
+    "fields": [
+      {
+        "en": "register_record_id",
+        "ua": "Реєстраційний номер запису в Реєстрі",
+        "type": "string",
+        "fmt": "числовий унікальний ідентифікатор запису ДРАЦС",
+        "fid": "approximated"
+      },
+      {
+        "en": "act_type",
+        "ua": "Тип актового запису",
+        "type": "enum",
+        "fmt": "народження | смерть | шлюб | розірвання шлюбу | зміна імені | усиновлення",
+        "fid": "legal"
+      },
+      {
+        "en": "act_number",
+        "ua": "Номер актового запису",
+        "type": "string",
+        "fmt": "порядковий номер у книзі реєстрації за рік",
+        "fid": "legal"
+      },
+      {
+        "en": "registration_date",
+        "ua": "Дата складання актового запису (державної реєстрації)",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "registration_body",
+        "ua": "Орган державної реєстрації актів цивільного стану",
+        "type": "string",
+        "fmt": "найменування відділу ДРАЦС / органу",
+        "fid": "legal"
+      },
+      {
+        "en": "surname_child",
+        "ua": "Прізвище дитини",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "legal"
+      },
+      {
+        "en": "name_child",
+        "ua": "Власне ім'я дитини",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "legal"
+      },
+      {
+        "en": "patronymic_child",
+        "ua": "По батькові дитини",
+        "type": "string",
+        "fmt": "кирилиця; може бути відсутнє за правилами походження",
+        "fid": "legal"
+      },
+      {
+        "en": "sex_child",
+        "ua": "Стать дитини",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_date",
+        "ua": "Дата народження дитини",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_time",
+        "ua": "Час народження дитини",
+        "type": "string",
+        "fmt": "HH:MM (за медичним свідоцтвом)",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_place",
+        "ua": "Місце народження дитини",
+        "type": "string",
+        "fmt": "держава, область, район, місто/селище/село",
+        "fid": "legal"
+      },
+      {
+        "en": "live_or_stillborn",
+        "ua": "Живонароджена / мертвонароджена",
+        "type": "enum",
+        "fmt": "живонароджена | мертвонароджена",
+        "fid": "legal"
+      },
+      {
+        "en": "child_order",
+        "ua": "Котра дитина у матері (порядок народження)",
+        "type": "number",
+        "fmt": "ціле число (враховуючи раніше народжених)",
+        "fid": "legal"
+      },
+      {
+        "en": "number_of_children_born",
+        "ua": "Кількість народжених дітей (одно-/багатоплідні пологи)",
+        "type": "number",
+        "fmt": "ціле число",
+        "fid": "documented"
+      },
+      {
+        "en": "birth_proof_document",
+        "ua": "Документ, що підтверджує факт народження",
+        "type": "string",
+        "fmt": "найменування, серія/номер, дата, заклад",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_certificate_series_number",
+        "ua": "Серія та номер свідоцтва про народження",
+        "type": "string",
+        "fmt": "серія (2 літери) + номер",
+        "fid": "legal"
+      },
+      {
+        "en": "mother_full_name",
+        "ua": "Прізвище, ім'я, по батькові матері",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "legal"
+      },
+      {
+        "en": "mother_birth_date",
+        "ua": "Дата народження матері",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "mother_citizenship",
+        "ua": "Громадянство матері",
+        "type": "string",
+        "fmt": "назва держави",
+        "fid": "legal"
+      },
+      {
+        "en": "mother_nationality",
+        "ua": "Національність матері (за бажанням, за заявою)",
+        "type": "string",
+        "fmt": "вільний текст; зазначається за заявою",
+        "fid": "documented"
+      },
+      {
+        "en": "mother_address",
+        "ua": "Місце проживання матері",
+        "type": "string",
+        "fmt": "адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "mother_id_document",
+        "ua": "Документ, що посвідчує особу матері",
+        "type": "string",
+        "fmt": "вид, серія/номер, ким виданий",
+        "fid": "documented"
+      },
+      {
+        "en": "mother_rnokpp",
+        "ua": "РНОКПП матері",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "approximated"
+      },
+      {
+        "en": "father_full_name",
+        "ua": "Прізвище, ім'я, по батькові батька",
+        "type": "string",
+        "fmt": "кирилиця; може бути відсутнім або записаним за ч.1 ст.135 СК",
+        "fid": "legal"
+      },
+      {
+        "en": "father_birth_date",
+        "ua": "Дата народження батька",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "father_citizenship",
+        "ua": "Громадянство батька",
+        "type": "string",
+        "fmt": "назва держави",
+        "fid": "legal"
+      },
+      {
+        "en": "father_nationality",
+        "ua": "Національність батька (за бажанням, за заявою)",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "documented"
+      },
+      {
+        "en": "father_address",
+        "ua": "Місце проживання батька",
+        "type": "string",
+        "fmt": "адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "father_rnokpp",
+        "ua": "РНОКПП батька",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "approximated"
+      },
+      {
+        "en": "basis_father_record",
+        "ua": "Підстава внесення відомостей про батька",
+        "type": "enum",
+        "fmt": "шлюб батьків | спільна заява | заява матері (ч.1 ст.135 СК) | рішення суду | заява чоловіка, який вважає себе батьком",
+        "fid": "legal"
+      },
+      {
+        "en": "applicant_full_name",
+        "ua": "Прізвище, ім'я, по батькові заявника",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "legal"
+      },
+      {
+        "en": "applicant_document",
+        "ua": "Відомості про документ заявника / підпис",
+        "type": "string",
+        "fmt": "вид документа, серія/номер, підпис",
+        "fid": "documented"
+      },
+      {
+        "en": "child_rnokpp",
+        "ua": "Присвоєний дитині РНОКПП",
+        "type": "string",
+        "fmt": "10 цифр (присвоюється при реєстрації народження)",
+        "fid": "approximated"
+      },
+      {
+        "en": "child_unzr",
+        "ua": "УНЗР дитини (Єдиний демографічний реєстр)",
+        "type": "string",
+        "fmt": "РРРРММДД-XXXXX",
+        "fid": "approximated"
+      },
+      {
+        "en": "record_annotations",
+        "ua": "Відмітки/зміни до актового запису",
+        "type": "array",
+        "fmt": "перелік внесених змін, поновлень, виправлень із датами та підставами",
+        "fid": "legal"
+      },
+      {
+        "en": "record_status",
+        "ua": "Статус актового запису",
+        "type": "enum",
+        "fmt": "чинний | анульований | поновлений | змінений",
+        "fid": "documented"
+      },
+      {
+        "en": "linked_records",
+        "ua": "Посилання на пов'язані актові записи",
+        "type": "array",
+        "fmt": "ідентифікатори записів (усиновлення, смерть, зміна імені)",
+        "fid": "approximated"
+      },
+      {
+        "en": "official_signatory",
+        "ua": "Посадова особа, яка склала запис / керівник органу",
+        "type": "string",
+        "fmt": "ПІБ, посада, підпис",
+        "fid": "legal"
+      }
+    ]
+  },
+  "EDDR": {
+    "name": "Єдиний державний демографічний реєстр (ЄДДР)",
+    "access": 2,
+    "ids": [
+      "УНЗР (унікальний номер запису в Реєстрі) — формат РРРРММДД-XXXXX",
+      "РНОКПП (податковий номер)",
+      "Реквізити документа, виданого засобами Реєстру (№ паспорта-картки, № проїзного документа дитини)",
+      "Реквізити актового запису про народження та свідоцтва про народження (для дитини)"
+    ],
+    "child_fields": [
+      "Дата народження",
+      "Місце народження",
+      "Відомості про батьків (усиновлювачів), опікунів, піклувальників та інших законних представників",
+      "Відомості про громадянство та підстави набуття громадянства України",
+      "Реквізити свідоцтва / актового запису про народження",
+      "Відцифрований образ обличчя дитини",
+      "Відцифровані відбитки пальців (для проїзного документа дитини/паспорта для виїзду за кордон)",
+      "Зареєстроване/задеклароване місце проживання дитини",
+      "Додаткова змінна інформація про народження дітей (зв'язок батько/мати — дитина)"
+    ],
+    "n_fields": 26,
+    "fields": [
+      {
+        "en": "Unique Register Record Number (UNZR)",
+        "ua": "Унікальний номер запису в Реєстрі (УНЗР)",
+        "type": "string",
+        "fmt": "РРРРММДД-XXXXX (8 цифр дати народження, дефіс, 5-значний код; чоловіки непарний, жінки парний); незмінний",
+        "fid": "legal"
+      },
+      {
+        "en": "Surname",
+        "ua": "Прізвище особи",
+        "type": "string",
+        "fmt": "кирилиця; для дитини — з актового запису про народження",
+        "fid": "documented"
+      },
+      {
+        "en": "Given name",
+        "ua": "Власне ім'я",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "legal"
+      },
+      {
+        "en": "Patronymic",
+        "ua": "По батькові",
+        "type": "string",
+        "fmt": "кирилиця; за наявності",
+        "fid": "documented"
+      },
+      {
+        "en": "Name in Latin transliteration",
+        "ua": "Прізвище та ім'я латиницею (транслітерація)",
+        "type": "string",
+        "fmt": "латиниця за Постановою КМУ № 55",
+        "fid": "documented"
+      },
+      {
+        "en": "Date of birth",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Date of death",
+        "ua": "Дата смерті",
+        "type": "date",
+        "fmt": "DD.MM.YYYY; за наявності",
+        "fid": "legal"
+      },
+      {
+        "en": "Place of birth",
+        "ua": "Місце народження",
+        "type": "string",
+        "fmt": "населений пункт, район, область, країна",
+        "fid": "legal"
+      },
+      {
+        "en": "Sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "legal"
+      },
+      {
+        "en": "Date of entry into Register",
+        "ua": "Дата внесення інформації про особу до Реєстру",
+        "type": "date",
+        "fmt": "DD.MM.YYYY (формується ВІС автоматично)",
+        "fid": "legal"
+      },
+      {
+        "en": "Registered/declared place of residence",
+        "ua": "Відомості про зареєстроване або задеклароване місце проживання (перебування)",
+        "type": "string",
+        "fmt": "адреса; дата реєстрації/декларування",
+        "fid": "legal"
+      },
+      {
+        "en": "Documents for permanent residence abroad / return",
+        "ua": "Відомості про оформлені документи на постійне проживання за кордоном / повернення в Україну",
+        "type": "string",
+        "fmt": "реквізити документа",
+        "fid": "legal"
+      },
+      {
+        "en": "Information about parents/adopters/guardians/representatives",
+        "ua": "Відомості про батьків (усиновлювачів), опікунів, піклувальників та інших представників",
+        "type": "array",
+        "fmt": "перелік осіб: ПІБ, УНЗР/РНОКПП, тип зв'язку (мати/батько/опікун/піклувальник/усиновлювач)",
+        "fid": "legal"
+      },
+      {
+        "en": "Citizenship and grounds of acquisition",
+        "ua": "Відомості про громадянство або його відсутність та підстави набуття громадянства України",
+        "type": "string",
+        "fmt": "громадянство; підстава набуття",
+        "fid": "legal"
+      },
+      {
+        "en": "Details of documents issued via Register",
+        "ua": "Реквізити документів, виданих особі засобами Реєстру",
+        "type": "array",
+        "fmt": "тип документа, серія/номер, дата видачі, орган, строк дії, статус",
+        "fid": "legal"
+      },
+      {
+        "en": "Death-confirming documents",
+        "ua": "Реквізити документів, що підтверджують смерть особи",
+        "type": "string",
+        "fmt": "реквізити свідоцтва/актового запису про смерть",
+        "fid": "legal"
+      },
+      {
+        "en": "Digitized signature sample",
+        "ua": "Відцифрований зразок підпису особи",
+        "type": "string",
+        "fmt": "растровий образ підпису; для малолітньої дитини може бути відсутній",
+        "fid": "legal"
+      },
+      {
+        "en": "Digitized facial image",
+        "ua": "Відцифрований образ обличчя особи",
+        "type": "string",
+        "fmt": "біометричне фотозображення (ICAO); растровий образ",
+        "fid": "legal"
+      },
+      {
+        "en": "Digitized fingerprints (mandatory)",
+        "ua": "Відцифровані відбитки пальців рук (обов'язково)",
+        "type": "string",
+        "fmt": "біометричні шаблони — у разі оформлення паспорта для виїзду за кордон / проїзного документа дитини (з визначеного віку)",
+        "fid": "legal"
+      },
+      {
+        "en": "Digitized fingerprints (with consent)",
+        "ua": "Відцифровані відбитки пальців рук (за згодою)",
+        "type": "string",
+        "fmt": "за згодою особи (дитини — законного представника) при оформленні паспорта громадянина України (картки)",
+        "fid": "legal"
+      },
+      {
+        "en": "Additional variable information",
+        "ua": "Додаткова змінна інформація (народження дітей, шлюб, зміна імені, податковий номер, місце роботи/посада)",
+        "type": "array",
+        "fmt": "структуроване: РНОКПП, відомості про народження дітей, шлюб/розлучення, зміну імені",
+        "fid": "legal"
+      },
+      {
+        "en": "Taxpayer registration number",
+        "ua": "РНОКПП (податковий номер)",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "Birth act record / birth certificate details",
+        "ua": "Реквізити актового запису про народження / свідоцтва про народження (для дитини)",
+        "type": "string",
+        "fmt": "номер актового запису, дата, орган ДРАЦС, серія/номер свідоцтва",
+        "fid": "documented"
+      },
+      {
+        "en": "Note on absence/change of data",
+        "ua": "Відмітка про відсутність / зміну даних",
+        "type": "string",
+        "fmt": "службова відмітка (за відсутності даних пп.3,6,9-14 або зберігання змінених даних)",
+        "fid": "legal"
+      },
+      {
+        "en": "VIS subject identifier / entry timestamp",
+        "ua": "Відомості ВІС уповноваженого суб'єкта (час і дата внесення)",
+        "type": "string",
+        "fmt": "службові метадані: ВІС, що внесла запис; час/дата",
+        "fid": "approximated"
+      },
+      {
+        "en": "Special status",
+        "ua": "Спеціальний статус особи",
+        "type": "enum",
+        "fmt": "напр. посвідка на проживання, статус біженця, додатковий захист (для іноземців/ОБГ; для дитини — за наявності)",
+        "fid": "approximated"
+      }
+    ]
+  },
+  "ehealth_esoz": {
+    "name": "Електронна система охорони здоровʼя (ЕСОЗ / eHealth) — Реєст",
+    "access": 1,
+    "ids": [
+      "РНОКПП (tax_id) — реєстраційний номер облікової картки платника податків",
+      "УНЗР (unzr) — унікальний номер запису в ЄДДР, формат РРРРММДД-XXXXX",
+      "Номер свідоцтва про народження (documents[].number, type=BIRTH_CERTIFICATE) — ключовий для дитини без РНОКПП",
+      "person_id (UUID) — внутрішній ідентифікатор пацієнта в ЕСОЗ",
+      "declaration_number — номер декларації про вибір лікаря ПМД",
+      "no_tax_id (bool) — ознака відмови/відсутності РНОКПП (типово для немовлят)"
+    ],
+    "child_fields": [
+      "birth_date",
+      "no_tax_id",
+      "documents (BIRTH_CERTIFICATE)",
+      "confidant_person",
+      "confidant_person.documents_relationship",
+      "authentication_methods (THIRD_PERSON)",
+      "legal_representative (законний представник)",
+      "declaration_number"
+    ],
+    "n_fields": 42,
+    "fields": [
+      {
+        "en": "id / person_id",
+        "ua": "Внутрішній ідентифікатор пацієнта",
+        "type": "string",
+        "fmt": "UUID v4",
+        "fid": "documented"
+      },
+      {
+        "en": "first_name",
+        "ua": "Імʼя",
+        "type": "string",
+        "fmt": "вільний текст (кирилиця)",
+        "fid": "documented"
+      },
+      {
+        "en": "last_name",
+        "ua": "Прізвище",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "documented"
+      },
+      {
+        "en": "second_name",
+        "ua": "По батькові",
+        "type": "string",
+        "fmt": "вільний текст (необовʼязкове)",
+        "fid": "documented"
+      },
+      {
+        "en": "birth_date",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "YYYY-MM-DD (ISO 8601)",
+        "fid": "documented"
+      },
+      {
+        "en": "birth_country",
+        "ua": "Країна народження",
+        "type": "string",
+        "fmt": "назва країни",
+        "fid": "documented"
+      },
+      {
+        "en": "birth_settlement",
+        "ua": "Населений пункт народження",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "documented"
+      },
+      {
+        "en": "gender",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "MALE | FEMALE",
+        "fid": "documented"
+      },
+      {
+        "en": "email",
+        "ua": "Електронна пошта",
+        "type": "string",
+        "fmt": "email",
+        "fid": "documented"
+      },
+      {
+        "en": "tax_id",
+        "ua": "РНОКПП (ІПН)",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "no_tax_id",
+        "ua": "Ознака відсутності РНОКПП",
+        "type": "bool",
+        "fmt": "true/false (true — для дитини без коду)",
+        "fid": "documented"
+      },
+      {
+        "en": "unzr",
+        "ua": "УНЗР (номер запису в ЄДДР)",
+        "type": "string",
+        "fmt": "РРРРММДД-XXXXC",
+        "fid": "legal"
+      },
+      {
+        "en": "secret",
+        "ua": "Секретне слово",
+        "type": "string",
+        "fmt": "вільний текст (для відновлення/верифікації)",
+        "fid": "documented"
+      },
+      {
+        "en": "documents",
+        "ua": "Документи, що посвідчують особу",
+        "type": "array",
+        "fmt": "масив обʼєктів {type,number,issued_at,expiration_date,issued_by}",
+        "fid": "legal"
+      },
+      {
+        "en": "documents[].type",
+        "ua": "Тип документа",
+        "type": "enum",
+        "fmt": "BIRTH_CERTIFICATE | PASSPORT | NATIONAL_ID | TEMPORARY_CERTIFICATE | REFUGEE_CERTIFICATE …",
+        "fid": "documented"
+      },
+      {
+        "en": "documents[].number",
+        "ua": "Серія/номер документа",
+        "type": "string",
+        "fmt": "для свідоцтва про народження: серія літерами + 6 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "documents[].issued_by",
+        "ua": "Ким виданий документ",
+        "type": "string",
+        "fmt": "вільний текст (орган РАЦС/ДМС)",
+        "fid": "documented"
+      },
+      {
+        "en": "documents[].issued_at",
+        "ua": "Дата видачі документа",
+        "type": "date",
+        "fmt": "YYYY-MM-DD",
+        "fid": "documented"
+      },
+      {
+        "en": "documents[].expiration_date",
+        "ua": "Дата закінчення дії документа",
+        "type": "date",
+        "fmt": "YYYY-MM-DD (для свідоцтва про народження зазвичай відсутня)",
+        "fid": "documented"
+      },
+      {
+        "en": "addresses",
+        "ua": "Адреси",
+        "type": "array",
+        "fmt": "масив обʼєктів {type,country,area,region,settlement,settlement_id,street,building,apartment,zip}",
+        "fid": "legal"
+      },
+      {
+        "en": "phones",
+        "ua": "Телефони",
+        "type": "array",
+        "fmt": "масив {type:MOBILE, number:'+380XXXXXXXXX'}",
+        "fid": "documented"
+      },
+      {
+        "en": "authentication_methods",
+        "ua": "Способи автентифікації",
+        "type": "array",
+        "fmt": "масив {type, phone_number, value/alias}",
+        "fid": "documented"
+      },
+      {
+        "en": "authentication_methods[].type",
+        "ua": "Тип автентифікації",
+        "type": "enum",
+        "fmt": "OTP | OFFLINE | THIRD_PERSON | NA",
+        "fid": "documented"
+      },
+      {
+        "en": "confidant_person",
+        "ua": "Законний представник / довірена особа",
+        "type": "array",
+        "fmt": "масив обʼєктів PRIMARY/SECONDARY {relation_type, documents_person[], documents_relationship[], phones[], email}",
+        "fid": "documented"
+      },
+      {
+        "en": "confidant_person[].relation_type",
+        "ua": "Тип звʼязку довіреної особи",
+        "type": "enum",
+        "fmt": "PRIMARY | SECONDARY",
+        "fid": "documented"
+      },
+      {
+        "en": "confidant_person[].documents_person",
+        "ua": "Документи довіреної особи (паспорт/РНОКПП)",
+        "type": "array",
+        "fmt": "масив документів представника",
+        "fid": "documented"
+      },
+      {
+        "en": "confidant_person[].documents_relationship",
+        "ua": "Документи, що підтверджують звʼязок з дитиною",
+        "type": "array",
+        "fmt": "масив {type,number,issued_at,issued_by}",
+        "fid": "documented"
+      },
+      {
+        "en": "documents_relationship[].type",
+        "ua": "Тип документа звʼязку",
+        "type": "enum",
+        "fmt": "BIRTH_CERTIFICATE | CONFIDANT_CERTIFICATE | COURT_DECISION | MARRIAGE_CERTIFICATE | GUARDIANSHIP_CERTIFICATE | ADOPTION_CERTIFICATE",
+        "fid": "documented"
+      },
+      {
+        "en": "preferred_way_communication",
+        "ua": "Бажаний спосіб комунікації",
+        "type": "enum",
+        "fmt": "email | phone",
+        "fid": "documented"
+      },
+      {
+        "en": "emergency_contact",
+        "ua": "Контакт для екстрених випадків",
+        "type": "object",
+        "fmt": "{first_name,last_name,second_name,phones[]}",
+        "fid": "documented"
+      },
+      {
+        "en": "inserted_at / status",
+        "ua": "Дата інактивації запису пацієнта",
+        "type": "enum",
+        "fmt": "ACTIVE | INACTIVE",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.declaration_number",
+        "ua": "Номер декларації про вибір лікаря ПМД",
+        "type": "string",
+        "fmt": "NNNN-XXXX-XXXX",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.employee_id",
+        "ua": "Ідентифікатор лікаря в декларації",
+        "type": "string",
+        "fmt": "UUID",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.division_id",
+        "ua": "Підрозділ надавача",
+        "type": "string",
+        "fmt": "UUID",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.legal_entity_id",
+        "ua": "Заклад (юр.особа) надавача ПМД",
+        "type": "string",
+        "fmt": "UUID",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.start_date",
+        "ua": "Дата початку дії декларації",
+        "type": "date",
+        "fmt": "YYYY-MM-DD",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.end_date",
+        "ua": "Дата завершення дії декларації",
+        "type": "date",
+        "fmt": "YYYY-MM-DD",
+        "fid": "documented"
+      },
+      {
+        "en": "declaration.status",
+        "ua": "Статус декларації",
+        "type": "enum",
+        "fmt": "ACTIVE | PENDING_VERIFICATION | CLOSED | REJECTED | TERMINATED",
+        "fid": "documented"
+      },
+      {
+        "en": "encounter",
+        "ua": "Медична взаємодія (звернення)",
+        "type": "object",
+        "fmt": "FHIR-подібний ресурс {id, date, episode, diagnoses[], performer, division}",
+        "fid": "documented"
+      },
+      {
+        "en": "condition",
+        "ua": "Діагноз/стан",
+        "type": "object",
+        "fmt": "{id, code (ICD-10/ICPC-2), clinical_status, onset_date, context}",
+        "fid": "documented"
+      },
+      {
+        "en": "observation",
+        "ua": "Спостереження",
+        "type": "object",
+        "fmt": "{id, code, value, effective_date, interpretation}",
+        "fid": "documented"
+      },
+      {
+        "en": "immunization",
+        "ua": "Імунізація (щеплення)",
+        "type": "object",
+        "fmt": "{id, vaccine_code, date, dose_quantity, lot_number, reactions[]}",
+        "fid": "documented"
+      }
+    ]
+  },
+  "EDEBO": {
+    "name": "Єдина державна електронна база з питань освіти (ЄДЕБО)",
+    "access": 2,
+    "ids": [
+      "РНОКПП (реєстраційний номер облікової картки платника податків) — за наявності",
+      "УНЗР (унікальний номер запису в Єдиному державному демографічному реєстрі) — за наявності",
+      "Серія та номер документа, що посвідчує особу (паспорт / свідоцтво про народження для дітей)",
+      "ІД картки здобувача освіти (внутрішній ідентифікатор ЄДЕБО)",
+      "ІД фізичної особи в ЄДЕБО",
+      "Серія та номер студентського (учнівського) квитка + індивідуальний штрих-код",
+      "Серія/реєстраційний номер документа про освіту"
+    ],
+    "child_fields": [
+      "Прізвище, ім'я, по батькові",
+      "Дата народження",
+      "Стать",
+      "Документ, що посвідчує особу (для дитини — свідоцтво про народження)",
+      "РНОКПП",
+      "УНЗР",
+      "Заклад освіти",
+      "Форма навчання",
+      "Статус навчання",
+      "Джерело фінансування",
+      "Студентський (учнівський) квиток",
+      "Цифрова фотографія",
+      "Категорія спеціальних умов вступу/навчання"
+    ],
+    "n_fields": 27,
+    "fields": [
+      {
+        "en": "Full name (surname, given name, patronymic)",
+        "ua": "Прізвище, ім'я, по батькові",
+        "type": "string",
+        "fmt": "кирилиця; для іноземців — також латиниця",
+        "fid": "legal"
+      },
+      {
+        "en": "Date of birth",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "Sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "чоловіча / жіноча",
+        "fid": "legal"
+      },
+      {
+        "en": "Citizenship",
+        "ua": "Громадянство",
+        "type": "enum",
+        "fmt": "країна за класифікатором; «Україна» / «іноземець» / «особа без громадянства»",
+        "fid": "legal"
+      },
+      {
+        "en": "Identity document (series, number, issuer, date)",
+        "ua": "Документ, що посвідчує особу та підтверджує громадянство (серія, номер, ким і коли виданий)",
+        "type": "string",
+        "fmt": "тип документа + серія/номер + орган видачі + дата; для дитини зазвичай свідоцтво про народження",
+        "fid": "legal"
+      },
+      {
+        "en": "Taxpayer registration number",
+        "ua": "РНОКПП (реєстраційний номер облікової картки платника податків)",
+        "type": "string",
+        "fmt": "10 цифр; за наявності",
+        "fid": "legal"
+      },
+      {
+        "en": "Unique record number in Unified State Demographic Register",
+        "ua": "УНЗР (унікальний номер запису в ЄДДР)",
+        "type": "string",
+        "fmt": "РРРРММДД-NNNNN; за наявності",
+        "fid": "legal"
+      },
+      {
+        "en": "Document on prior education",
+        "ua": "Документ про попередню освіту (тип, серія, номер, рівень/ступінь, спеціальність/професія, дата)",
+        "type": "string",
+        "fmt": "тип документа + реквізити + рівень освіти",
+        "fid": "legal"
+      },
+      {
+        "en": "Educational institution",
+        "ua": "Заклад освіти (місце навчання)",
+        "type": "string",
+        "fmt": "найменування + код ЄДЕБО закладу; структурний підрозділ/факультет",
+        "fid": "legal"
+      },
+      {
+        "en": "Education level/degree being obtained",
+        "ua": "Рівень / ступінь освіти, що здобувається (ОС/ОПС/ОКР)",
+        "type": "enum",
+        "fmt": "базова середня / повна загальна середня / кваліфікований робітник / молодший спеціаліст / фаховий молодший бакалавр / бакалавр / магістр тощо",
+        "fid": "legal"
+      },
+      {
+        "en": "Educational programme / specialty / profession",
+        "ua": "Освітня програма / спеціальність / професія",
+        "type": "string",
+        "fmt": "назва + код спеціальності за класифікатором",
+        "fid": "legal"
+      },
+      {
+        "en": "Form of study",
+        "ua": "Форма навчання",
+        "type": "enum",
+        "fmt": "очна (денна/вечірня) / заочна / дистанційна / мережева / екстернатна / сімейна (домашня) / на робочому місці",
+        "fid": "legal"
+      },
+      {
+        "en": "Year of study",
+        "ua": "Курс / рік навчання",
+        "type": "number",
+        "fmt": "ціле число",
+        "fid": "documented"
+      },
+      {
+        "en": "Department/faculty/group number",
+        "ua": "Структурний підрозділ / факультет / номер групи",
+        "type": "string",
+        "fmt": "текст / номер",
+        "fid": "legal"
+      },
+      {
+        "en": "Source of study financing",
+        "ua": "Джерело (умови) фінансування навчання",
+        "type": "enum",
+        "fmt": "державний бюджет / місцевий бюджет / за кошти фізичних/юридичних осіб (контракт)",
+        "fid": "legal"
+      },
+      {
+        "en": "Study status",
+        "ua": "Статус навчання",
+        "type": "enum",
+        "fmt": "Зараховано / Поновлено / Переведено / Поновлено (з іншого ЗО) / Переведено (з іншого ЗО) / Змінено фінансування / Надано академічну відпустку / Продовжено академвідпустку / Відраховано із ЗО / Завершено навчання / Скасовано запис про навчання",
+        "fid": "legal"
+      },
+      {
+        "en": "Order (type, number, date) on status change",
+        "ua": "Наказ (тип, номер, дата) про зміну статусу навчання",
+        "type": "string",
+        "fmt": "тип наказу + № + дата; підписується КЕП",
+        "fid": "documented"
+      },
+      {
+        "en": "Status effective date",
+        "ua": "Дата початку дії статусу («Діє з»)",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "documented"
+      },
+      {
+        "en": "Study history / name-change history",
+        "ua": "Історія навчання / історія зміни ПІБ",
+        "type": "array",
+        "fmt": "перелік записів зі статусами, датами, наказами",
+        "fid": "documented"
+      },
+      {
+        "en": "Admission competitive score",
+        "ua": "Конкурсний бал при вступі",
+        "type": "number",
+        "fmt": "число з десятковими",
+        "fid": "documented"
+      },
+      {
+        "en": "Special admission/study category",
+        "ua": "Категорія спеціальних умов вступу/навчання (пільгова категорія)",
+        "type": "enum",
+        "fmt": "діти-сироти/позбавлені батьківського піклування; особи з інвалідністю; діти учасників бойових дій; внутрішньо переміщені особи тощо",
+        "fid": "documented"
+      },
+      {
+        "en": "Student/pupil ID card",
+        "ua": "Студентський (учнівський) квиток (серія, номер, дата видачі, строк дії)",
+        "type": "string",
+        "fmt": "серія/номер + дати; стан (активний/анульований)",
+        "fid": "legal"
+      },
+      {
+        "en": "Student card barcode",
+        "ua": "Індивідуальний штрих-код студентського/учнівського квитка",
+        "type": "string",
+        "fmt": "штрих-код / номер",
+        "fid": "legal"
+      },
+      {
+        "en": "Digital photograph",
+        "ua": "Цифрова фотографія",
+        "type": "string",
+        "fmt": "растрове зображення (бінарні дані/посилання); за наявності",
+        "fid": "legal"
+      },
+      {
+        "en": "Issued education document",
+        "ua": "Документ про здобуту освіту (тип, серія, номер, дата, додаток)",
+        "type": "string",
+        "fmt": "тип документа + реквізити; з верифікацією справжності",
+        "fid": "legal"
+      },
+      {
+        "en": "Recognition certificate for foreign education document",
+        "ua": "Свідоцтво про визнання іноземного документа про освіту",
+        "type": "string",
+        "fmt": "реквізити свідоцтва; для іноземних здобувачів",
+        "fid": "documented"
+      },
+      {
+        "en": "Special status of person",
+        "ua": "Спеціальний статус особи (за документом, що підтверджує)",
+        "type": "enum",
+        "fmt": "замість громадянства/паспорта — документ, що підтверджує спеціальний статус (напр., посвідка)",
+        "fid": "legal"
+      }
+    ]
+  },
+  "isuo_aikom_pupil_attendance": {
+    "name": "ІСУО / АІКОМ — Автоматизований інформаційний комплекс освітн",
+    "access": 2,
+    "ids": [
+      "РНОКПП учня (за наявності — як ідентифікатор у держреєстрах, інтегрованих з АІКОМ)",
+      "УНЗР (запис у Єдиному державному демографічному реєстрі — для свідоцтва про народження нового зразка)",
+      "Серія/номер свідоцтва про народження",
+      "Внутрішній ID учня в системі / № за алфавітною книгою (№ алфавітки)",
+      "ЄДРПОУ + код ЗЗСО (ідентифікація закладу, до якого прив'язаний запис дитини)"
+    ],
+    "child_fields": [
+      "Відвідування та пропуски занять (н / хв та кількість пропущених уроків)",
+      "Причина відсутності та її поважність",
+      "Кількість послідовних робочих днів відсутності (тригер 10 днів)",
+      "Статус «дитина, не охоплена навчанням»",
+      "Факт/дата інформування Нацполіції та служби у справах дітей",
+      "Пільгова категорія учня",
+      "Підсумкове/атестаційне оцінювання та переведення/відрахування",
+      "Дані батьків/законних представників та контакти",
+      "Місце проживання дитини"
+    ],
+    "n_fields": 37,
+    "fields": [
+      {
+        "en": "pupil_record_id",
+        "ua": "Унікальний ідентифікатор запису учня в системі",
+        "type": "string",
+        "fmt": "UUID / внутрішній числовий ID",
+        "fid": "approximated"
+      },
+      {
+        "en": "last_name",
+        "ua": "Прізвище",
+        "type": "string",
+        "fmt": "кирилиця, текст",
+        "fid": "legal"
+      },
+      {
+        "en": "first_name",
+        "ua": "Ім'я",
+        "type": "string",
+        "fmt": "кирилиця, текст",
+        "fid": "legal"
+      },
+      {
+        "en": "patronymic",
+        "ua": "По батькові (за наявності)",
+        "type": "string",
+        "fmt": "кирилиця, текст, опційно",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_date",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "{жіноча, чоловіча}",
+        "fid": "legal"
+      },
+      {
+        "en": "rnokpp",
+        "ua": "РНОКПП учня (за наявності)",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "approximated"
+      },
+      {
+        "en": "unzr",
+        "ua": "УНЗР (унікальний номер запису в ЄДДР)",
+        "type": "string",
+        "fmt": "RRRRMMDD-XXXXX",
+        "fid": "approximated"
+      },
+      {
+        "en": "id_document",
+        "ua": "Реквізити документа, що посвідчує особу / свідоцтва про народження",
+        "type": "string",
+        "fmt": "серія+номер, ким видано, дата",
+        "fid": "legal"
+      },
+      {
+        "en": "registered_address",
+        "ua": "Задеклароване/зареєстроване місце проживання",
+        "type": "string",
+        "fmt": "текст адреси",
+        "fid": "legal"
+      },
+      {
+        "en": "school",
+        "ua": "Заклад освіти (ЗЗСО)",
+        "type": "string",
+        "fmt": "назва + код/ЄДРПОУ закладу",
+        "fid": "legal"
+      },
+      {
+        "en": "class_grade",
+        "ua": "Клас / паралель",
+        "type": "string",
+        "fmt": "номер+літера",
+        "fid": "documented"
+      },
+      {
+        "en": "alphabet_book_no",
+        "ua": "Номер за алфавітною книгою (№ алфавітки)",
+        "type": "string",
+        "fmt": "літера+номер",
+        "fid": "documented"
+      },
+      {
+        "en": "enrollment_date",
+        "ua": "Дата зарахування до закладу/класу",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "withdrawal_date_basis",
+        "ua": "Дата та підстава вибуття/відрахування",
+        "type": "string",
+        "fmt": "дата + № наказу/підстава",
+        "fid": "documented"
+      },
+      {
+        "en": "benefit_category",
+        "ua": "Пільгова категорія",
+        "type": "enum",
+        "fmt": "{сирота, ВПО, дитина з інвалідністю, малозабезпечена, дитина учасника бойових дій, ...}",
+        "fid": "documented"
+      },
+      {
+        "en": "attendance_date",
+        "ua": "Дата відмітки відвідування",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "presence_mark",
+        "ua": "Позначка присутності/відсутності на уроці",
+        "type": "enum",
+        "fmt": "{присутній, н (відсутній), хв (хвороба)}",
+        "fid": "documented"
+      },
+      {
+        "en": "missed_lessons_count",
+        "ua": "Кількість пропущених уроків/годин",
+        "type": "number",
+        "fmt": "ціле число (знаменник дробу н/К)",
+        "fid": "documented"
+      },
+      {
+        "en": "absence_reason",
+        "ua": "Причина відсутності",
+        "type": "string",
+        "fmt": "текст (хвороба, сімейні обставини, без причини)",
+        "fid": "documented"
+      },
+      {
+        "en": "absence_is_valid",
+        "ua": "Поважність причини",
+        "type": "bool",
+        "fmt": "true/false (поважна/неповажна)",
+        "fid": "documented"
+      },
+      {
+        "en": "absence_document",
+        "ua": "Підтвердний документ відсутності (медична довідка/заява)",
+        "type": "string",
+        "fmt": "тип+№+дата документа",
+        "fid": "documented"
+      },
+      {
+        "en": "consecutive_absent_days",
+        "ua": "Кількість послідовних робочих днів відсутності",
+        "type": "number",
+        "fmt": "ціле число",
+        "fid": "legal"
+      },
+      {
+        "en": "out_of_education_flag",
+        "ua": "Статус «дитина, не охоплена навчанням»",
+        "type": "bool",
+        "fmt": "true/false",
+        "fid": "legal"
+      },
+      {
+        "en": "police_notified_date",
+        "ua": "Дата інформування Нацполіції",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "child_service_notified_date",
+        "ua": "Дата інформування служби у справах дітей (ССД)",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "subject",
+        "ua": "Навчальний предмет/інтегрований курс",
+        "type": "string",
+        "fmt": "текст",
+        "fid": "documented"
+      },
+      {
+        "en": "assessment_type",
+        "ua": "Тип оцінювання",
+        "type": "enum",
+        "fmt": "{поточне, тематичне, підсумкове (семестрове/річне), атестаційне (ДПА)}",
+        "fid": "documented"
+      },
+      {
+        "en": "nush_level",
+        "ua": "Рівень досягнень НУШ",
+        "type": "enum",
+        "fmt": "{В — високий, Д — достатній, С — середній, П — початковий}",
+        "fid": "documented"
+      },
+      {
+        "en": "score_12",
+        "ua": "Бал (12-бальна шкала)",
+        "type": "number",
+        "fmt": "ціле число 1–12",
+        "fid": "documented"
+      },
+      {
+        "en": "grade_date",
+        "ua": "Дата виставлення оцінки",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "achievement_certificate",
+        "ua": "Свідоцтво досягнень (зведений запис за рік/семестр)",
+        "type": "array",
+        "fmt": "масив рівнів/балів за предметами+характеристика",
+        "fid": "documented"
+      },
+      {
+        "en": "promotion_decision",
+        "ua": "Рішення про переведення/повторне навчання",
+        "type": "enum",
+        "fmt": "{переведено, залишено на повторний курс, випущено, відраховано}",
+        "fid": "documented"
+      },
+      {
+        "en": "parents_name",
+        "ua": "ПІБ батьків/законних представників",
+        "type": "string",
+        "fmt": "текст (для кожного з батьків)",
+        "fid": "documented"
+      },
+      {
+        "en": "parents_contacts",
+        "ua": "Контактна інформація батьків",
+        "type": "string",
+        "fmt": "телефон / e-mail",
+        "fid": "documented"
+      },
+      {
+        "en": "account_login",
+        "ua": "Логін/обліковий запис доступу (учня/батьків) до е-щоденника",
+        "type": "string",
+        "fmt": "e-mail/телефон/ідентифікатор",
+        "fid": "approximated"
+      },
+      {
+        "en": "created_updated_at",
+        "ua": "Дата створення / останньої зміни запису",
+        "type": "date",
+        "fmt": "DD.MM.YYYY HH:MM (timestamp)",
+        "fid": "approximated"
+      }
+    ]
+  },
+  "EIBD_VPO": {
+    "name": "Єдина інформаційна база даних про внутрішньо переміщених осі",
+    "access": 2,
+    "ids": [
+      "РНОКПП (реєстраційний номер облікової картки платника податків) ВПО",
+      "Номер довідки про взяття на облік ВПО (унікальний реєстраційний номер запису в базі — присвоюється автоматично)",
+      "Серія (за наявності) та номер паспорта громадянина України",
+      "УНЗР (унікальний номер запису в Єдиному державному демографічному реєстрі) — для ID-картки/біометричних документів",
+      "Серія та номер свідоцтва про народження дитини (для дітей до 14 років, які не мають РНОКПП/паспорта)"
+    ],
+    "child_fields": [
+      "child_last_name",
+      "child_first_name",
+      "child_patronymic",
+      "child_birth_date",
+      "child_sex",
+      "child_birth_certificate",
+      "child_rnokpp",
+      "actual_residence_place",
+      "abandoned_housing_address",
+      "guardian_caregiver_info",
+      "guardianship_authority_representative",
+      "disability_info",
+      "social_payments",
+      "education_place",
+      "death_or_missing_info"
+    ],
+    "n_fields": 37,
+    "fields": [
+      {
+        "en": "full_name",
+        "ua": "Прізвище, ім'я, по батькові",
+        "type": "string",
+        "fmt": "кирилиця; ПІБ повністю",
+        "fid": "legal"
+      },
+      {
+        "en": "citizenship",
+        "ua": "Громадянство",
+        "type": "string",
+        "fmt": "назва держави / код країни",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_date",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_place",
+        "ua": "Місце народження",
+        "type": "string",
+        "fmt": "населений пункт, область, держава",
+        "fid": "legal"
+      },
+      {
+        "en": "sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "legal"
+      },
+      {
+        "en": "rnokpp",
+        "ua": "Реєстраційний номер облікової картки платника податків (РНОКПП)",
+        "type": "string",
+        "fmt": "10 цифр (або відмітка про відмову за релігійними переконаннями)",
+        "fid": "legal"
+      },
+      {
+        "en": "passport_data",
+        "ua": "Реквізити документа, що посвідчує особу (серія за наявності та номер паспорта громадянина України)",
+        "type": "string",
+        "fmt": "серія (2 літери, за наявності) + номер; для ID-картки — 9 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "unzr",
+        "ua": "Унікальний номер запису в Єдиному державному демографічному реєстрі (УНЗР)",
+        "type": "string",
+        "fmt": "РРРРММДД-NNNNN",
+        "fid": "approximated"
+      },
+      {
+        "en": "id_doc_issue",
+        "ua": "Дата та місце видачі документа, що посвідчує особу, орган видачі",
+        "type": "string",
+        "fmt": "дата ДД.ММ.РРРР + орган",
+        "fid": "legal"
+      },
+      {
+        "en": "certificate_number",
+        "ua": "Номер довідки про взяття на облік ВПО (унікальний реєстраційний номер запису)",
+        "type": "string",
+        "fmt": "числовий унікальний номер, присвоюється автоматично базою",
+        "fid": "legal"
+      },
+      {
+        "en": "certificate_issue_date",
+        "ua": "Дата видачі довідки",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "issuing_authority",
+        "ua": "Найменування органу, що видав довідку (структурний підрозділ з питань соцзахисту / ЦНАП)",
+        "type": "string",
+        "fmt": "повна назва органу",
+        "fid": "legal"
+      },
+      {
+        "en": "abandoned_housing_address",
+        "ua": "Відомості про останнє зареєстроване місце проживання (адреса покинутого житла на ТОТ / в районі бойових дій)",
+        "type": "string",
+        "fmt": "область, район, населений пункт, вулиця, будинок, кв.",
+        "fid": "legal"
+      },
+      {
+        "en": "actual_residence_place",
+        "ua": "Фактичне місце проживання/перебування ВПО",
+        "type": "string",
+        "fmt": "область, район, населений пункт, вулиця, будинок, кв.",
+        "fid": "legal"
+      },
+      {
+        "en": "location_at_application",
+        "ua": "Місце перебування на дату звернення (фактичне місцезнаходження)",
+        "type": "string",
+        "fmt": "населений пункт",
+        "fid": "legal"
+      },
+      {
+        "en": "correspondence_address",
+        "ua": "Адреса для офіційного листування",
+        "type": "string",
+        "fmt": "поштова адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "phone_contact",
+        "ua": "Номер телефону, контактні дані",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX",
+        "fid": "legal"
+      },
+      {
+        "en": "displacement_circumstances",
+        "ua": "Обставини, що спричинили внутрішнє переміщення",
+        "type": "enum",
+        "fmt": "тимчасова окупація | бойові дії | надзвичайна ситуація тощо",
+        "fid": "legal"
+      },
+      {
+        "en": "displacement_date",
+        "ua": "Дата внутрішнього переміщення / дата вибуття",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "child_last_name / child_first_name / child_patronymic",
+        "ua": "Відомості про малолітніх та неповнолітніх дітей, які перемістилися разом з особою — прізвище, ім'я, по батькові дитини",
+        "type": "array",
+        "fmt": "масив записів дітей; ПІБ кирилицею",
+        "fid": "legal"
+      },
+      {
+        "en": "child_birth_date",
+        "ua": "Дата народження дитини",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "child_sex",
+        "ua": "Стать дитини",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "documented"
+      },
+      {
+        "en": "child_birth_certificate",
+        "ua": "Серія та номер свідоцтва про народження дитини",
+        "type": "string",
+        "fmt": "серія (І-АА) + номер",
+        "fid": "legal"
+      },
+      {
+        "en": "child_rnokpp",
+        "ua": "РНОКПП дитини (за наявності)",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "documented"
+      },
+      {
+        "en": "guardian_caregiver_info",
+        "ua": "Відомості про осіб, які здійснюють догляд за дитиною / законних представників",
+        "type": "string",
+        "fmt": "ПІБ, статус (батько/мати/опікун/піклувальник)",
+        "fid": "legal"
+      },
+      {
+        "en": "guardianship_authority_representative",
+        "ua": "Дані представника органу опіки та піклування (для дітей-сиріт, дітей, позбавлених батьківського піклування, без супроводу)",
+        "type": "string",
+        "fmt": "ПІБ, посада, орган",
+        "fid": "legal"
+      },
+      {
+        "en": "housing_needs",
+        "ua": "Відомості про житлові потреби та наявність житла на підконтрольній території",
+        "type": "string",
+        "fmt": "опис потреб / наявність житла (так/ні + адреса)",
+        "fid": "legal"
+      },
+      {
+        "en": "medical_needs",
+        "ua": "Відомості про медичні потреби",
+        "type": "string",
+        "fmt": "текстовий опис",
+        "fid": "legal"
+      },
+      {
+        "en": "education_place",
+        "ua": "Відомості про освітні потреби / місце навчання",
+        "type": "string",
+        "fmt": "заклад освіти, клас/курс",
+        "fid": "legal"
+      },
+      {
+        "en": "social_payments",
+        "ua": "Відомості про види та розмір соціальних виплат, виплачені кошти",
+        "type": "array",
+        "fmt": "вид виплати + сума + період",
+        "fid": "legal"
+      },
+      {
+        "en": "employment",
+        "ua": "Відомості про працевлаштування",
+        "type": "string",
+        "fmt": "статус зайнятості / місце роботи",
+        "fid": "legal"
+      },
+      {
+        "en": "disability_info",
+        "ua": "Відомості про інвалідність (причина, група, нозологічні ознаки, потреба в реабілітації)",
+        "type": "string",
+        "fmt": "група інвалідності + причина + нозологія",
+        "fid": "legal"
+      },
+      {
+        "en": "residence_check_date",
+        "ua": "Дата проведення перевірки фактичного місця проживання",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "personal_data_consent",
+        "ua": "Згода на обробку персональних даних",
+        "type": "bool",
+        "fmt": "true/false (надано/не надано)",
+        "fid": "legal"
+      },
+      {
+        "en": "photo",
+        "ua": "Фотографія особи (за необхідності для ідентифікації)",
+        "type": "string",
+        "fmt": "зображення (бінарний об'єкт)",
+        "fid": "legal"
+      },
+      {
+        "en": "death_or_missing_info",
+        "ua": "Відомості про смерть особи або визнання її безвісно відсутньою/оголошення померлою",
+        "type": "string",
+        "fmt": "дата + підстава + реквізити акта/рішення",
+        "fid": "legal"
+      },
+      {
+        "en": "certificate_status",
+        "ua": "Статус довідки / відмітки про зняття з обліку, скасування, вилучення довідки",
+        "type": "enum",
+        "fmt": "діє | скасовано | знято з обліку | вилучено",
+        "fid": "documented"
+      }
+    ]
+  },
+  "childrenofwar_gov_ua": {
+    "name": "Портал/реєстр «Діти війни» (childrenofwar.gov.ua)",
+    "access": 2,
+    "ids": [
+      "РНОКПП дитини",
+      "УНЗР (запис у ЄДДР)",
+      "Серія та номер свідоцтва про народження",
+      "Номер запису в ЄІАС \"Діти\" / обліково-статистичної картки",
+      "Внутрішній ID запису на порталі (slug, напр. be5b26bcfbf218ba4a5279dfb186a509)"
+    ],
+    "child_fields": [
+      "status",
+      "incident_type",
+      "incident_date",
+      "incident_place",
+      "region_oblast",
+      "deportation_destination",
+      "date_of_birth",
+      "age_at_incident",
+      "parents_legal_rep",
+      "found_returned_flag",
+      "sexual_violence_marker"
+    ],
+    "n_fields": 21,
+    "fields": [
+      {
+        "en": "Full name",
+        "ua": "Прізвище, ім'я, по батькові (ПІБ)",
+        "type": "string",
+        "fmt": "ВЕЛИКІ ЛІТЕРИ, кирилиця",
+        "fid": "documented"
+      },
+      {
+        "en": "Date of birth",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "Age at incident",
+        "ua": "Вік на момент події (зникнення/постраждання)",
+        "type": "number",
+        "fmt": "повних років, <18",
+        "fid": "documented"
+      },
+      {
+        "en": "Gender",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "legal"
+      },
+      {
+        "en": "Status category",
+        "ua": "Статус",
+        "type": "enum",
+        "fmt": "загибла | поранена | зникла безвісти | депортована/примусово переміщена | переміщена (евакуйована) | знайдена | повернена | постраждала від сексуального насильства",
+        "fid": "documented"
+      },
+      {
+        "en": "Type of harm",
+        "ua": "Обставини/тип постраждання",
+        "type": "enum",
+        "fmt": "поранення | контузія | каліцтво | фізичне насильство | сексуальне насильство | психологічне насильство | викрадення | депортація | примусове переміщення | залучення до збройних формувань | незаконне утримання (полон)",
+        "fid": "legal"
+      },
+      {
+        "en": "Sexual violence marker",
+        "ua": "Відмітка про сексуальне насильство",
+        "type": "string",
+        "fmt": "літера-кодування \"А\"",
+        "fid": "documented"
+      },
+      {
+        "en": "Incident date",
+        "ua": "Дата події (постраждання/зникнення/депортації)",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Place of incident",
+        "ua": "Місце зникнення/події (населений пункт)",
+        "type": "string",
+        "fmt": "ВЕЛИКІ ЛІТЕРИ, назва НП",
+        "fid": "documented"
+      },
+      {
+        "en": "Region/oblast",
+        "ua": "Область (регіон)",
+        "type": "enum",
+        "fmt": "довідник областей України",
+        "fid": "documented"
+      },
+      {
+        "en": "Deportation/displacement destination",
+        "ua": "Місце призначення депортації/переміщення",
+        "type": "string",
+        "fmt": "країна/НП (часто тимчасово окупована територія або РФ/РБ)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Taxpayer ID (RNOKPP)",
+        "ua": "Реєстраційний номер облікової картки платника податків (РНОКПП)",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "Unique record number (UNZR)",
+        "ua": "Унікальний номер запису в ЄДДР (УНЗР)",
+        "type": "string",
+        "fmt": "RRRRMMDD-NNNNN",
+        "fid": "approximated"
+      },
+      {
+        "en": "Birth certificate / document number",
+        "ua": "Серія та номер свідоцтва про народження / документа",
+        "type": "string",
+        "fmt": "серія (літери) + номер",
+        "fid": "legal"
+      },
+      {
+        "en": "Residence/registration address",
+        "ua": "Місце проживання / реєстрації",
+        "type": "string",
+        "fmt": "адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "Parents/legal representatives",
+        "ua": "Відомості про батьків/законних представників",
+        "type": "array",
+        "fmt": "масив об'єктів {ПІБ, статус, контакти}",
+        "fid": "legal"
+      },
+      {
+        "en": "ЄІАС \"Діти\" marker",
+        "ua": "Відмітка/категорія в ЄІАС \"Діти\"",
+        "type": "enum",
+        "fmt": "напр. \"депортована, примусово переміщена дитина або дитина, що перебуває під загрозою депортації та/або примусового переміщення\"",
+        "fid": "legal"
+      },
+      {
+        "en": "Found/returned flag",
+        "ua": "Ознака \"знайдена/повернена\"",
+        "type": "bool",
+        "fmt": "true/false + дата",
+        "fid": "documented"
+      },
+      {
+        "en": "Physical description",
+        "ua": "Прикмети (зріст, колір очей, колір волосся, особливі прикмети)",
+        "type": "array",
+        "fmt": "об'єкт {зріст, очі, волосся, особливі прикмети}",
+        "fid": "approximated"
+      },
+      {
+        "en": "Record source/timestamp",
+        "ua": "Дата та джерело внесення/оновлення запису",
+        "type": "date",
+        "fmt": "DD.MM.YYYY; джерело: ОГП | Нацполіція | ССД | Bring Kids Back UA",
+        "fid": "documented"
+      },
+      {
+        "en": "Internal record ID",
+        "ua": "Внутрішній ідентифікатор запису (slug/ID)",
+        "type": "string",
+        "fmt": "hex-хеш у URL",
+        "fid": "documented"
+      }
+    ]
+  },
+  "EIAS_DITY": {
+    "name": "Єдина інформаційно-аналітична система «Діти»",
+    "access": 2,
+    "ids": [
+      "РНОКПП дитини (за наявності)",
+      "УНЗР (за наявності, з біометричних документів)",
+      "серія/номер та дата свідоцтва про народження",
+      "номер актового запису про народження (ДРАЦС)",
+      "обліковий номер дитини в ЄІАС «Діти» (внутрішній ідентифікатор картки)",
+      "номер та дата наказу/рішення ССД про взяття на первинний облік / надання статусу"
+    ],
+    "child_fields": [
+      "status_child",
+      "status_grounds_document",
+      "placement_form",
+      "placement_institution_family",
+      "parents_data",
+      "siblings_relatives",
+      "health_info",
+      "heredity_info",
+      "property_data",
+      "housing_data",
+      "social_support_plan",
+      "development_education",
+      "date_primary_registration",
+      "order_number_date",
+      "place_of_origin",
+      "current_residence"
+    ],
+    "n_fields": 31,
+    "fields": [
+      {
+        "en": "Registry/record number",
+        "ua": "Обліковий номер дитини (номер картки в ЄІАС «Діти»)",
+        "type": "string",
+        "fmt": "внутрішній ідентифікатор системи",
+        "fid": "approximated"
+      },
+      {
+        "en": "Surname",
+        "ua": "Прізвище",
+        "type": "string",
+        "fmt": "укр.; за потреби транслітерація латиницею; за свідоцтвом про народження",
+        "fid": "legal"
+      },
+      {
+        "en": "Given name",
+        "ua": "Ім'я",
+        "type": "string",
+        "fmt": "укр.",
+        "fid": "legal"
+      },
+      {
+        "en": "Patronymic",
+        "ua": "По батькові",
+        "type": "string",
+        "fmt": "укр. (за наявності)",
+        "fid": "legal"
+      },
+      {
+        "en": "Date of birth",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "чоловіча / жіноча",
+        "fid": "documented"
+      },
+      {
+        "en": "Place of birth / origin",
+        "ua": "Місце народження / місце походження",
+        "type": "string",
+        "fmt": "населений пункт, район, область, країна",
+        "fid": "legal"
+      },
+      {
+        "en": "Birth certificate",
+        "ua": "Свідоцтво про народження (серія, номер, дата видачі, орган)",
+        "type": "string",
+        "fmt": "серія+№, дата, ким видано; № актового запису",
+        "fid": "legal"
+      },
+      {
+        "en": "Tax ID (RNOKPP)",
+        "ua": "РНОКПП дитини",
+        "type": "string",
+        "fmt": "10 цифр (за наявності)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Unique record number (UNZR)",
+        "ua": "УНЗР",
+        "type": "string",
+        "fmt": "РРРРММДД-ХХХХХ (за наявності біометричного документа)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Citizenship",
+        "ua": "Громадянство",
+        "type": "string",
+        "fmt": "країна",
+        "fid": "documented"
+      },
+      {
+        "en": "Place of residence",
+        "ua": "Місце проживання / перебування",
+        "type": "string",
+        "fmt": "адреса (область, район, ОТГ, населений пункт, вулиця)",
+        "fid": "legal"
+      },
+      {
+        "en": "Child status",
+        "ua": "Статус дитини",
+        "type": "enum",
+        "fmt": "дитина-сирота / дитина, позбавлена батьківського піклування / дитина, яка залишилася без батьківського піклування / дитина у складних життєвих обставинах (СЖО) / дитина, постраждала від воєнних дій",
+        "fid": "legal"
+      },
+      {
+        "en": "Status grounds & confirming document",
+        "ua": "Підстава надання статусу (обставина) та документ, що її підтверджує",
+        "type": "enum",
+        "fmt": "одна з 15 обставин (смерть батьків — свідоцтво про смерть; позбавлення батьк. прав — рішення суду; визнання безвісно відсутніми/недієздатними — рішення суду; відбування покарання — вирок суду; підкинута/невідомі батьки — акт; перебування у полоні/затримання державою-агресором — довідка нацбюро тощо)",
+        "fid": "legal"
+      },
+      {
+        "en": "Registration order date & number",
+        "ua": "Дата і номер наказу/рішення ССД про взяття на первинний облік / надання статусу",
+        "type": "string",
+        "fmt": "№ + дата наказу ССД (РДА/виконкому)",
+        "fid": "legal"
+      },
+      {
+        "en": "Primary registration date",
+        "ua": "Дата взяття на первинний облік",
+        "type": "date",
+        "fmt": "DD.MM.YYYY (дата прийняття рішення)",
+        "fid": "legal"
+      },
+      {
+        "en": "Placement form",
+        "ua": "Форма влаштування дитини",
+        "type": "enum",
+        "fmt": "опіка / піклування / прийомна сім'я / дитячий будинок сімейного типу (ДБСТ) / усиновлення / влаштування до закладу (інституційний догляд) / патронат над дитиною",
+        "fid": "legal"
+      },
+      {
+        "en": "Institutions/families of placement history",
+        "ua": "Відомості про заклади та сім'ї, де дитина перебувала на утриманні та вихованні",
+        "type": "array",
+        "fmt": "перелік: назва закладу/сім'ї, період, підстава",
+        "fid": "legal"
+      },
+      {
+        "en": "Parents data",
+        "ua": "Дані про батьків",
+        "type": "array",
+        "fmt": "мати/батько: ПІБ, дата народж., статус (живий/помер/позбавлений прав/невідомий), реквізити документів",
+        "fid": "legal"
+      },
+      {
+        "en": "Siblings & close relatives",
+        "ua": "Дані про братів, сестер і близьких родичів",
+        "type": "array",
+        "fmt": "ПІБ, рік народж., родинний зв'язок, місце проживання",
+        "fid": "legal"
+      },
+      {
+        "en": "Heredity",
+        "ua": "Спадковість (генетична/сімейна інформація)",
+        "type": "string",
+        "fmt": "вільний текст / структуровані відомості",
+        "fid": "legal"
+      },
+      {
+        "en": "Health information",
+        "ua": "Здоров'я дитини",
+        "type": "string",
+        "fmt": "група здоров'я, діагнози, інвалідність, медичні висновки",
+        "fid": "legal"
+      },
+      {
+        "en": "Property data",
+        "ua": "Дані про майно дитини",
+        "type": "array",
+        "fmt": "перелік майна, право власності, підстава",
+        "fid": "legal"
+      },
+      {
+        "en": "Housing data",
+        "ua": "Дані про житло (де проживала / належить / закріплене)",
+        "type": "string",
+        "fmt": "адреса, статус (власність/закріплене), реквізити рішення про закріплення",
+        "fid": "legal"
+      },
+      {
+        "en": "Social support plan & results",
+        "ua": "План та результати соціального супроводу дитини",
+        "type": "string",
+        "fmt": "структурований/вільний текст; етапи, відповідальні, результати",
+        "fid": "legal"
+      },
+      {
+        "en": "Child development info",
+        "ua": "Інформація про розвиток дитини",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Education results",
+        "ua": "Результати навчання",
+        "type": "string",
+        "fmt": "заклад освіти, клас/група, успішність",
+        "fid": "legal"
+      },
+      {
+        "en": "Available for adoption flag",
+        "ua": "Можливість усиновлення / перебування на обліку для усиновлення",
+        "type": "bool",
+        "fmt": "так/ні + дата взяття на облік дітей, які можуть бути усиновлені",
+        "fid": "legal"
+      },
+      {
+        "en": "Difficult life circumstances / war-affected status",
+        "ua": "Ознака складних життєвих обставин (СЖО) / постраждалості від воєнних дій",
+        "type": "enum",
+        "fmt": "СЖО / постраждала від воєнних дій та збройних конфліктів (статус за Постановою № 268/2019, № 547/2023)",
+        "fid": "documented"
+      },
+      {
+        "en": "Entering ССД / territorial unit",
+        "ua": "Користувач/ССД, що внесла запис, та територіальна належність",
+        "type": "string",
+        "fmt": "найменування ССД, код території (КАТОТТГ)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Deregistration date & reason",
+        "ua": "Дата зняття з обліку та підстава",
+        "type": "string",
+        "fmt": "дата + підстава (усиновлення, повернення батькам, досягнення повноліття, смерть тощо)",
+        "fid": "documented"
+      }
+    ]
+  },
+  "ERDR": {
+    "name": "Єдиний реєстр досудових розслідувань (ЄРДР)",
+    "access": 1,
+    "ids": [
+      "unique_proceeding_number (унікальний номер кримінального провадження, 17 цифр)",
+      "victim_rnokpp (РНОКПП потерпілого — за наявності)",
+      "suspect_rnokpp (РНОКПП підозрюваного — за наявності)",
+      "birth_certificate / unzr (свідоцтво про народження / УНЗР дитини-потерпілого — за наявності)"
+    ],
+    "child_fields": [
+      "victim_is_minor_flag",
+      "victim_age_category",
+      "victim_birth_date",
+      "victim_age",
+      "victim_sex",
+      "victim_special_status",
+      "legal_representative",
+      "qualification_article",
+      "short_circumstances",
+      "victim_full_name",
+      "place_of_event"
+    ],
+    "n_fields": 24,
+    "fields": [
+      {
+        "en": "Unique criminal proceeding number",
+        "ua": "Унікальний номер кримінального провадження",
+        "type": "string",
+        "fmt": "17 цифр: 1-2 код відомства (напр. 12=Нацполіція) + рік (4) + код регіону/органу + порядковий номер",
+        "fid": "documented"
+      },
+      {
+        "en": "Date of receipt of report/statement",
+        "ua": "Дата надходження заяви, повідомлення про кримінальне правопорушення",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "Date/time of entry into register",
+        "ua": "Дата та час внесення відомостей до Реєстру",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР ГГ:ХХ (автоматично присвоюється системою)",
+        "fid": "legal"
+      },
+      {
+        "en": "Full name of victim or complainant",
+        "ua": "Прізвище, ім'я, по батькові (найменування) потерпілого або заявника",
+        "type": "string",
+        "fmt": "ПІБ або найменування юр. особи",
+        "fid": "legal"
+      },
+      {
+        "en": "Other source of detection",
+        "ua": "Інше джерело, з якого виявлені обставини кримінального правопорушення",
+        "type": "string",
+        "fmt": "текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Short summary of circumstances (fabula)",
+        "ua": "Короткий виклад обставин, що можуть свідчити про вчинення кримінального правопорушення (фабула)",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Preliminary legal qualification (CCU article/part)",
+        "ua": "Попередня правова кваліфікація кримінального правопорушення із зазначенням статті (частини статті) закону України про кримінальну відповідальність",
+        "type": "string",
+        "fmt": "ст. NNN[-N] ч. N ККУ; може бути масив статей",
+        "fid": "legal"
+      },
+      {
+        "en": "Official who entered the data",
+        "ua": "Прізвище, ім'я, по батькові та посада службової особи, яка внесла відомості до Реєстру (реєстратор)",
+        "type": "string",
+        "fmt": "ПІБ + посада",
+        "fid": "legal"
+      },
+      {
+        "en": "Pre-trial investigation body",
+        "ua": "Орган досудового розслідування",
+        "type": "string",
+        "fmt": "найменування органу",
+        "fid": "documented"
+      },
+      {
+        "en": "Investigator / inquiry officer",
+        "ua": "Прізвище, ім'я, по батькові слідчого (дізнавача)",
+        "type": "string",
+        "fmt": "ПІБ",
+        "fid": "documented"
+      },
+      {
+        "en": "Supervising prosecutor",
+        "ua": "Прізвище, ім'я, по батькові прокурора, який здійснює процесуальне керівництво",
+        "type": "string",
+        "fmt": "ПІБ",
+        "fid": "documented"
+      },
+      {
+        "en": "Suspect full name and birth date",
+        "ua": "Прізвище, ім'я, по батькові та дата народження особи, якій повідомлено про підозру",
+        "type": "string",
+        "fmt": "ПІБ + ДД.ММ.РРРР",
+        "fid": "documented"
+      },
+      {
+        "en": "Taxpayer registration number (RNOKPP)",
+        "ua": "Реєстраційний номер облікової картки платника податків (РНОКПП) особи",
+        "type": "string",
+        "fmt": "10 цифр (за наявності; для дитини часто відсутній)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim is a minor (child flag)",
+        "ua": "Потерпілий — малолітня/неповнолітня особа (ознака «дитина»)",
+        "type": "bool",
+        "fmt": "true/false",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim age category",
+        "ua": "Вікова категорія потерпілого",
+        "type": "enum",
+        "fmt": "малолітній (до 14) | неповнолітній (14-17) | повнолітній",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim date of birth",
+        "ua": "Дата народження потерпілого",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim age",
+        "ua": "Вік потерпілого",
+        "type": "number",
+        "fmt": "повних років",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim sex",
+        "ua": "Стать потерпілого",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim special legal status",
+        "ua": "Особливий правовий статус потерпілого",
+        "type": "enum",
+        "fmt": "напр.: дитина | дитина-сирота | особа з інвалідністю | вагітна тощо",
+        "fid": "approximated"
+      },
+      {
+        "en": "Victim legal representative",
+        "ua": "Законний представник потерпілого",
+        "type": "string",
+        "fmt": "ПІБ + статус (батько/мати/опікун/орган опіки)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Place of the offence",
+        "ua": "Місце (адреса) вчинення кримінального правопорушення",
+        "type": "string",
+        "fmt": "адреса/опис місця",
+        "fid": "documented"
+      },
+      {
+        "en": "Date/time of the offence",
+        "ua": "Дата та час вчинення кримінального правопорушення",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР [ГГ:ХХ]",
+        "fid": "documented"
+      },
+      {
+        "en": "Status / results of pre-trial investigation",
+        "ua": "Результати (стан) досудового розслідування / статус провадження",
+        "type": "enum",
+        "fmt": "напр.: триває | зупинено | закрито | направлено до суду",
+        "fid": "documented"
+      },
+      {
+        "en": "Material damages / civil claim",
+        "ua": "Відомості про матеріальні збитки та цивільний позов",
+        "type": "number",
+        "fmt": "сума, грн",
+        "fid": "approximated"
+      }
+    ]
+  },
+  "EDRSR": {
+    "name": "Єдиний державний реєстр судових рішень (ЄДРСР)",
+    "access": 3,
+    "ids": [
+      "Реєстраційний номер судового рішення в ЄДРСР (унікальний номер документа)",
+      "Номер судової справи (формат XXX/XXXXX/XX: код суду / порядковий номер провадження / рік)",
+      "Номер судового провадження",
+      "РНОКПП фізичної особи (у відкритому тексті ЗНЕОСОБЛЕНО — замінюється літерно-цифровими позначеннями, ст. 7 Закону)",
+      "УНЗР — унікальний номер запису в Єдиному державному демографічному реєстрі (ЗНЕОСОБЛЕНО, ст. 7 Закону)",
+      "ЄДРПОУ юридичної особи / органу (для сторін-юросіб)"
+    ],
+    "child_fields": [
+      "Категорія справи (напр. \"Цивільні справи; Спори, що виникають із сімейних відносин; Про позбавлення батьківських прав / встановлення опіки\")",
+      "Форма судочинства (цивільна)",
+      "Учасники справи та їх статус (позивач/відповідач/третя особа/орган опіки і піклування/прокурор)",
+      "Текст судового рішення (резолютивна частина — рішення про позбавлення/обмеження батьківських прав, встановлення опіки)",
+      "Прізвище/ім'я дитини у тексті (ЗНЕОСОБЛЕНО — замінюється позначеннями ОСОБА_N)",
+      "Дата народження / вік дитини у тексті (ЗНЕОСОБЛЕНО у відкритому доступі)"
+    ],
+    "n_fields": 24,
+    "fields": [
+      {
+        "en": "Decision registration number in EDRSR",
+        "ua": "Реєстраційний номер судового рішення",
+        "type": "number",
+        "fmt": "ціле число, унікальний ідентифікатор документа (напр. у URL /Review/{id})",
+        "fid": "documented"
+      },
+      {
+        "en": "Case number",
+        "ua": "Номер справи",
+        "type": "string",
+        "fmt": "XXX/XXXXX/XX (код суду / порядковий номер провадження / рік)",
+        "fid": "legal"
+      },
+      {
+        "en": "Judicial proceeding number",
+        "ua": "Номер судового провадження",
+        "type": "string",
+        "fmt": "рядок або \"не визначено\"",
+        "fid": "documented"
+      },
+      {
+        "en": "Court name and codes",
+        "ua": "Найменування / коди суду",
+        "type": "string",
+        "fmt": "назва суду + судовий код за довідником ДСА",
+        "fid": "legal"
+      },
+      {
+        "en": "Judge full name",
+        "ua": "Прізвище, ім'я, по батькові судді (склад суду)",
+        "type": "string",
+        "fmt": "ПІБ; для колегії — перелік суддів",
+        "fid": "legal"
+      },
+      {
+        "en": "Form of judiciary",
+        "ua": "Форма судочинства",
+        "type": "enum",
+        "fmt": "цивільна | кримінальна | господарська | адміністративна | справи про адмінправопорушення",
+        "fid": "legal"
+      },
+      {
+        "en": "Type of court decision",
+        "ua": "Форма (вид) судового рішення",
+        "type": "enum",
+        "fmt": "рішення | вирок | постанова | ухвала | судовий наказ | окрема ухвала | окрема думка",
+        "fid": "legal"
+      },
+      {
+        "en": "Case category",
+        "ua": "Категорія справи",
+        "type": "string",
+        "fmt": "ієрархічний класифікатор категорій (до/після 01.01.2019)",
+        "fid": "documented"
+      },
+      {
+        "en": "Date of decision",
+        "ua": "Дата ухвалення (постановлення) судового рішення",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Filing date",
+        "ua": "Дата надходження (подання позову/скарги до суду)",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Date sent by court",
+        "ua": "Дата надіслання судом до Реєстру",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "Registration date",
+        "ua": "Дата реєстрації в Реєстрі",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "Publication date",
+        "ua": "Дата оприлюднення",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "Date of entry into legal force",
+        "ua": "Дата набрання законної сили",
+        "type": "date",
+        "fmt": "DD.MM.YYYY або порожньо",
+        "fid": "documented"
+      },
+      {
+        "en": "Parties / participants",
+        "ua": "Учасники справи (сторони) та їх найменування",
+        "type": "array",
+        "fmt": "перелік: прізвище/ім'я фізособи АБО найменування юрособи/органу; у відкритому тексті ПІБ фізосіб знеособлені (ОСОБА_1)",
+        "fid": "legal"
+      },
+      {
+        "en": "Party status",
+        "ua": "Статус учасника справи",
+        "type": "enum",
+        "fmt": "позивач | відповідач | третя особа | заявник | заінтересована особа | прокурор | орган опіки і піклування | фізична особа | юридична особа | орган державної влади",
+        "fid": "legal"
+      },
+      {
+        "en": "Full text of decision",
+        "ua": "Текст судового рішення",
+        "type": "string",
+        "fmt": "вільний текст (вступна, описова, мотивувальна, резолютивна частини); персональні дані знеособлені",
+        "fid": "legal"
+      },
+      {
+        "en": "Child name",
+        "ua": "Прізвище та ім'я дитини",
+        "type": "string",
+        "fmt": "у відкритому доступі ЗНЕОСОБЛЕНО — \"ОСОБА_N\"; у повному (службовому) доступі — фактичні ПІБ",
+        "fid": "approximated"
+      },
+      {
+        "en": "Child date of birth / age",
+        "ua": "Дата народження / вік дитини",
+        "type": "date",
+        "fmt": "у відкритому тексті дата вилучається/знеособлюється; може зазначатися лише \"малолітня/неповнолітня\"",
+        "fid": "approximated"
+      },
+      {
+        "en": "Taxpayer registration number",
+        "ua": "РНОКПП фізичної особи",
+        "type": "string",
+        "fmt": "10 цифр; у відкритому тексті НЕ розголошується (замінюється позначеннями)",
+        "fid": "legal"
+      },
+      {
+        "en": "Unique demographic registry record number",
+        "ua": "УНЗР (унікальний номер запису в ЄДДР)",
+        "type": "string",
+        "fmt": "РРРРММДД-NNNNN; у відкритому тексті НЕ розголошується",
+        "fid": "legal"
+      },
+      {
+        "en": "Residence/address/contacts",
+        "ua": "Місце проживання/перебування, адреса, засоби зв'язку",
+        "type": "string",
+        "fmt": "у відкритому тексті НЕ розголошуються (ст.7)",
+        "fid": "legal"
+      },
+      {
+        "en": "Identity document details",
+        "ua": "Реквізити документів, що посвідчують особу",
+        "type": "string",
+        "fmt": "у відкритому тексті НЕ розголошуються (ст.7)",
+        "fid": "legal"
+      },
+      {
+        "en": "Closed-session / restricted access flag",
+        "ua": "Ознака закритого судового засідання / обмеженого доступу",
+        "type": "bool",
+        "fmt": "true/false — чи розглядалася справа у закритому засіданні (ст.7 ч.4); впливає на обсяг оприлюднення",
+        "fid": "approximated"
+      }
+    ]
+  },
+  "edr-dn-nss": {
+    "name": "Єдиний державний реєстр випадків домашнього насильства та на",
+    "access": 2,
+    "ids": [
+      "Прізвище, ім'я, по батькові (ПІБ) постраждалої особи / кривдника / дитини",
+      "Серія та номер паспорта / іншого документа, що посвідчує особу (для дорослих)",
+      "Число, місяць, рік народження (дата народження) — основний ідентифікатор для дітей",
+      "Номер та дата термінового заборонного припису кривднику",
+      "Номер кримінального провадження в Єдиному реєстрі досудових розслідувань (ЄРДР)",
+      "Номер та дата судового рішення про обмежувальний припис",
+      "Внутрішній обліковий номер випадку насильства в Реєстрі"
+    ],
+    "child_fields": [
+      "Наявність дітей у постраждалої особи та/або кривдника (факт присутності/проживання дітей)",
+      "Дані про дитину як постраждалу особу (ПІБ, дата народження, стать)",
+      "Дані про дитину, яка стала свідком насильства",
+      "Дані законних представників / опікунів / піклувальників дитини",
+      "Ознака, що батьки (один із них) є кривдниками або ухиляються від захисту прав дитини",
+      "Повідомлення служби у справах дітей про випадок насильства за участю дитини (дата, час, дані посадової особи)",
+      "Тимчасове влаштування дитини (до сім'ї родичів, знайомих, патронатного вихователя, закладу)",
+      "Взяття дитини на облік як такої, що перебуває у складних життєвих обставинах",
+      "Результати оцінки рівня безпеки дитини / оцінки потреб дитини",
+      "Категорія дитини (дитина-сирота, дитина, позбавлена батьківського піклування, дитина з інвалідністю)",
+      "Спрямування дитини на отримання медичної / психологічної / соціальної допомоги"
+    ],
+    "n_fields": 56,
+    "fields": [
+      {
+        "en": "Case record ID",
+        "ua": "Унікальний обліковий номер випадку насильства",
+        "type": "string",
+        "fmt": "внутрішній ідентифікатор запису Реєстру",
+        "fid": "approximated"
+      },
+      {
+        "en": "Operator full name",
+        "ua": "ПІБ працівника суб'єкта, який вніс/скоригував дані",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові",
+        "fid": "legal"
+      },
+      {
+        "en": "Operator position",
+        "ua": "Посада працівника суб'єкта",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Reporting authority name and address",
+        "ua": "Найменування та адреса суб'єкта (установи)",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Operator phone",
+        "ua": "Контактний телефон працівника суб'єкта",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX",
+        "fid": "legal"
+      },
+      {
+        "en": "Reporter full name",
+        "ua": "ПІБ особи, яка повідомила про насильство",
+        "type": "string",
+        "fmt": "ПІБ (за згодою)",
+        "fid": "legal"
+      },
+      {
+        "en": "Reporter date of birth",
+        "ua": "Дата народження особи, яка повідомила",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Reporter address/phone",
+        "ua": "Місце проживання / контактний телефон повідомлювача",
+        "type": "string",
+        "fmt": "вільний текст (за згодою)",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim full name",
+        "ua": "ПІБ постраждалої особи",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim date of birth",
+        "ua": "Дата народження постраждалої особи",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim sex",
+        "ua": "Стать постраждалої особи",
+        "type": "enum",
+        "fmt": "жіноча | чоловіча",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim citizenship",
+        "ua": "Громадянство постраждалої особи",
+        "type": "string",
+        "fmt": "назва держави / код",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim ID document",
+        "ua": "Серія та номер паспорта/документа постраждалої особи",
+        "type": "string",
+        "fmt": "серія+номер / № ID-картки",
+        "fid": "documented"
+      },
+      {
+        "en": "Victim address",
+        "ua": "Місце проживання постраждалої особи",
+        "type": "string",
+        "fmt": "повна адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim place of study/work",
+        "ua": "Місце навчання та/або роботи постраждалої особи",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim phone",
+        "ua": "Контактний телефон постраждалої особи",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX (за згодою)",
+        "fid": "legal"
+      },
+      {
+        "en": "Victim vulnerability category",
+        "ua": "Категорія постраждалої особи (вразливість)",
+        "type": "enum",
+        "fmt": "дитина | дитина-сирота | дитина, позбавлена батьк. піклування | особа з інвалідністю | недієздатна | особа похилого віку",
+        "fid": "documented"
+      },
+      {
+        "en": "Victim–abuser relationship",
+        "ua": "Характер відносин між постраждалою особою та кривдником",
+        "type": "enum",
+        "fmt": "подружжя | колишнє подружжя | батько/мати–дитина | родичі | спільне проживання тощо",
+        "fid": "legal"
+      },
+      {
+        "en": "Affected child full name",
+        "ua": "ПІБ дитини, яка постраждала від насильства",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові",
+        "fid": "documented"
+      },
+      {
+        "en": "Child date of birth",
+        "ua": "Дата народження дитини",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "Child sex",
+        "ua": "Стать дитини",
+        "type": "enum",
+        "fmt": "жіноча | чоловіча",
+        "fid": "documented"
+      },
+      {
+        "en": "Child witnessed violence",
+        "ua": "Ознака: дитина стала свідком насильства",
+        "type": "bool",
+        "fmt": "так/ні",
+        "fid": "documented"
+      },
+      {
+        "en": "Presence of children flag",
+        "ua": "Наявність дітей у постраждалої особи та/або кривдника",
+        "type": "bool",
+        "fmt": "так/ні + кількість",
+        "fid": "legal"
+      },
+      {
+        "en": "Child legal guardian data",
+        "ua": "Дані законного представника / опікуна / піклувальника дитини",
+        "type": "string",
+        "fmt": "ПІБ, статус, контакти",
+        "fid": "documented"
+      },
+      {
+        "en": "Parents are abusers flag",
+        "ua": "Ознака: батьки є кривдниками / ухиляються від захисту прав дитини",
+        "type": "bool",
+        "fmt": "так/ні",
+        "fid": "documented"
+      },
+      {
+        "en": "Child temporary placement",
+        "ua": "Тимчасове влаштування дитини",
+        "type": "enum",
+        "fmt": "родичі | знайомі | патронатний вихователь | заклад | не влаштовано",
+        "fid": "documented"
+      },
+      {
+        "en": "Child registered as in difficult circumstances",
+        "ua": "Взяття дитини на облік як такої, що перебуває у складних життєвих обставинах",
+        "type": "bool",
+        "fmt": "так/ні + дата",
+        "fid": "documented"
+      },
+      {
+        "en": "Child services notification",
+        "ua": "Повідомлення служби у справах дітей про випадок",
+        "type": "string",
+        "fmt": "дата, час, ПІБ та посада посадової особи",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser full name",
+        "ua": "ПІБ кривдника",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser date of birth",
+        "ua": "Дата народження кривдника",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser sex",
+        "ua": "Стать кривдника",
+        "type": "enum",
+        "fmt": "жіноча | чоловіча",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser citizenship",
+        "ua": "Громадянство кривдника",
+        "type": "string",
+        "fmt": "назва держави",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser address",
+        "ua": "Місце проживання кривдника",
+        "type": "string",
+        "fmt": "повна адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser place of study/work",
+        "ua": "Місце навчання/роботи кривдника",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser preventive registration",
+        "ua": "Взяття/зняття кривдника з профілактичного обліку",
+        "type": "string",
+        "fmt": "дата взяття/зняття",
+        "fid": "documented"
+      },
+      {
+        "en": "Incident date/time",
+        "ua": "Дата та час вчинення насильства",
+        "type": "date",
+        "fmt": "DD.MM.YYYY HH:MM",
+        "fid": "legal"
+      },
+      {
+        "en": "Incident place",
+        "ua": "Місце вчинення насильства",
+        "type": "string",
+        "fmt": "адреса/опис",
+        "fid": "legal"
+      },
+      {
+        "en": "Form of violence",
+        "ua": "Форма насильства",
+        "type": "enum",
+        "fmt": "фізичне | психологічне | сексуальне | економічне | насильство за ознакою статі",
+        "fid": "legal"
+      },
+      {
+        "en": "Type of harm",
+        "ua": "Вид завданої шкоди/страждань",
+        "type": "string",
+        "fmt": "вільний текст / класифікатор",
+        "fid": "legal"
+      },
+      {
+        "en": "Primary/recurrent flag",
+        "ua": "Ознака первинного чи повторного насильства",
+        "type": "enum",
+        "fmt": "первинне | повторне",
+        "fid": "documented"
+      },
+      {
+        "en": "Incident description",
+        "ua": "Короткий опис випадку насильства",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "Police call/notification",
+        "ua": "Повідомлення / виклик до органу Національної поліції",
+        "type": "string",
+        "fmt": "дата, час, ПІБ та посада поліцейського",
+        "fid": "legal"
+      },
+      {
+        "en": "Police response measures",
+        "ua": "Заходи реагування уповноваженого підрозділу поліції",
+        "type": "string",
+        "fmt": "вільний текст / перелік заходів",
+        "fid": "legal"
+      },
+      {
+        "en": "Emergency restraining order",
+        "ua": "Терміновий заборонний припис кривднику (ТЗП)",
+        "type": "object",
+        "fmt": "дата, номер, зміст заходів (покинути житло / заборона наближення / заборона спілкування), строк (до 10 діб)",
+        "fid": "legal"
+      },
+      {
+        "en": "Court restraining order",
+        "ua": "Обмежувальний припис (судове рішення)",
+        "type": "object",
+        "fmt": "номер та дата рішення суду, строк (від 1 до 6 міс.), зміст обмежень",
+        "fid": "legal"
+      },
+      {
+        "en": "Abuser intervention program referral",
+        "ua": "Направлення кривдника на проходження програми для кривдників",
+        "type": "string",
+        "fmt": "дата, реквізити судового рішення/направлення",
+        "fid": "documented"
+      },
+      {
+        "en": "ERDR criminal proceeding reference",
+        "ua": "Відомості про внесення до Єдиного реєстру досудових розслідувань (ЄРДР)",
+        "type": "string",
+        "fmt": "номер кримінального провадження, дата",
+        "fid": "documented"
+      },
+      {
+        "en": "Administrative offence ruling",
+        "ua": "Постанова суду у справі про адміністративне правопорушення (ст.173-2 КУпАП)",
+        "type": "string",
+        "fmt": "номер, дата, вид стягнення",
+        "fid": "documented"
+      },
+      {
+        "en": "Criminal case verdict",
+        "ua": "Рішення суду у кримінальній справі (запобіжний/обмежувальний захід, покарання)",
+        "type": "string",
+        "fmt": "номер, дата, вид заходу/покарання, строк",
+        "fid": "documented"
+      },
+      {
+        "en": "Probation program",
+        "ua": "Пробаційна програма / нагляд служби пробації",
+        "type": "string",
+        "fmt": "дата, орган пробації",
+        "fid": "documented"
+      },
+      {
+        "en": "Victim needs",
+        "ua": "Потреби постраждалої особи",
+        "type": "array",
+        "fmt": "перелік (медична, психологічна, соціальна, правова допомога, притулок)",
+        "fid": "legal"
+      },
+      {
+        "en": "Safety assessment result",
+        "ua": "Результати оцінки рівня безпеки постраждалої особи/дитини",
+        "type": "string",
+        "fmt": "низький/середній/високий рівень ризику + опис",
+        "fid": "documented"
+      },
+      {
+        "en": "Engaged authorities",
+        "ua": "Перелік залучених органів/установ та їх повноваження",
+        "type": "array",
+        "fmt": "перелік суб'єктів реагування",
+        "fid": "legal"
+      },
+      {
+        "en": "Measures taken and results",
+        "ua": "Перелік здійснених заходів та їх результати (надані послуги)",
+        "type": "array",
+        "fmt": "перелік послуг (соціальні, медичні, психологічні, правова допомога)",
+        "fid": "legal"
+      },
+      {
+        "en": "Record timestamp",
+        "ua": "Дата та час внесення/коригування запису",
+        "type": "date",
+        "fmt": "DD.MM.YYYY HH:MM",
+        "fid": "documented"
+      },
+      {
+        "en": "Data processing consent flag",
+        "ua": "Згода постраждалої особи / законного представника на обробку даних",
+        "type": "bool",
+        "fmt": "так/ні + дата",
+        "fid": "documented"
+      }
+    ]
+  },
+  "z0055-23": {
+    "name": "Інформаційна підсистема «Електронний кабінет ювенального пол",
+    "access": 2,
+    "ids": [
+      "унікальний номер запису в Єдиному державному демографічному реєстрі (УНЗР)",
+      "реєстраційний номер облікової картки платника податків (РНОКПП)",
+      "серія/номер паспорта громадянина України або іншого документа, що посвідчує особу",
+      "номер і дата заведення обліково-профілактичної справи",
+      "ПІБ + дата народження (як складений ідентифікатор)"
+    ],
+    "child_fields": [
+      "категорія обліку",
+      "притягнення дитини до адміністративної, кримінальної відповідальності",
+      "вчинення дитиною домашнього насильства",
+      "вчинення дитиною булінгу (цькування) учасника освітнього процесу",
+      "причини та умови, що сприяли протиправній поведінці дитини",
+      "проведені заходи індивідуальної профілактики",
+      "документи, що є підставою для взяття на облік",
+      "дата та підстава зняття з обліку",
+      "самовільне залишення сім'ї/навчально-виховного закладу/спеціальної установи",
+      "звільнення зі спеціальної виховної установи / від кримінальної відповідальності із застосуванням примусових заходів виховного характеру"
+    ],
+    "n_fields": 25,
+    "fields": [
+      {
+        "en": "Preventive case file number",
+        "ua": "Номер обліково-профілактичної справи",
+        "type": "string",
+        "fmt": "внутрішня нумерація справи",
+        "fid": "documented"
+      },
+      {
+        "en": "Case file opening date",
+        "ua": "Дата заведення обліково-профілактичної справи",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "documented"
+      },
+      {
+        "en": "Registration category",
+        "ua": "Категорія обліку",
+        "type": "enum",
+        "fmt": "засуджена до покарання, не пов'язаного з позбавленням волі | звільнена від крим. відповідальності із застосуванням примусових заходів виховного характеру | звільнена зі спеціальної виховної установи | вчинила домашнє насильство | двічі+ притягнута до адмінвідповідальності за рік | двічі+ самовільно залишала сім'ю/заклад за рік | вчинила булінг (цькування)",
+        "fid": "legal"
+      },
+      {
+        "en": "Grounds documents for registration",
+        "ua": "Документи — підстава для взяття на облік",
+        "type": "array",
+        "fmt": "перелік реквізитів документів (вид, номер, дата)",
+        "fid": "documented"
+      },
+      {
+        "en": "Child full name",
+        "ua": "Прізвище, власне ім'я та по батькові дитини",
+        "type": "string",
+        "fmt": "ПІБ (по батькові за наявності)",
+        "fid": "legal"
+      },
+      {
+        "en": "Child date of birth",
+        "ua": "Дата народження дитини",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "documented"
+      },
+      {
+        "en": "Citizenship",
+        "ua": "Громадянство",
+        "type": "string",
+        "fmt": "назва держави / без громадянства",
+        "fid": "documented"
+      },
+      {
+        "en": "Place of birth",
+        "ua": "Місце народження",
+        "type": "string",
+        "fmt": "населений пункт, район, область, країна",
+        "fid": "documented"
+      },
+      {
+        "en": "Place of residence / registered residence",
+        "ua": "Місце проживання (перебування), декларування/реєстрація місця проживання",
+        "type": "string",
+        "fmt": "повна адреса",
+        "fid": "documented"
+      },
+      {
+        "en": "Place of study and/or work",
+        "ua": "Місце навчання та/або роботи",
+        "type": "string",
+        "fmt": "назва закладу/місця",
+        "fid": "documented"
+      },
+      {
+        "en": "Identity document",
+        "ua": "Документ, що посвідчує особу (паспорт громадянина України / інший)",
+        "type": "string",
+        "fmt": "тип, назва документа, серія, номер, дата видачі",
+        "fid": "documented"
+      },
+      {
+        "en": "Unique record number in the Unified State Demographic Register",
+        "ua": "Унікальний номер запису в ЄДДР (УНЗР)",
+        "type": "string",
+        "fmt": "NNNNNNNN-NNNNN (РРРРММДД-ХХХХХ)",
+        "fid": "documented"
+      },
+      {
+        "en": "Taxpayer registration number",
+        "ua": "Реєстраційний номер облікової картки платника податків (РНОКПП)",
+        "type": "string",
+        "fmt": "10 цифр (ДРФО)",
+        "fid": "documented"
+      },
+      {
+        "en": "Contact phone number",
+        "ua": "Номер контактного телефону",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX",
+        "fid": "documented"
+      },
+      {
+        "en": "Administrative liability record",
+        "ua": "Притягнення дитини до адміністративної відповідальності",
+        "type": "array",
+        "fmt": "перелік фактів (стаття КУпАП, дата, рішення)",
+        "fid": "documented"
+      },
+      {
+        "en": "Criminal liability record",
+        "ua": "Притягнення дитини до кримінальної відповідальності",
+        "type": "array",
+        "fmt": "перелік фактів (стаття КК, дата, рішення суду)",
+        "fid": "documented"
+      },
+      {
+        "en": "Individual prevention measures conducted",
+        "ua": "Проведені заходи індивідуальної профілактики",
+        "type": "array",
+        "fmt": "перелік заходів із датами",
+        "fid": "documented"
+      },
+      {
+        "en": "Causes and conditions of unlawful behaviour",
+        "ua": "Причини та умови, що сприяли протиправній поведінці дитини",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "documented"
+      },
+      {
+        "en": "Removal from registration (date and grounds)",
+        "ua": "Зняття дитини з профілактичного обліку (дата та підстава)",
+        "type": "string",
+        "fmt": "дата + підстава/документ",
+        "fid": "documented"
+      },
+      {
+        "en": "Data on parents/guardians (full identity block)",
+        "ua": "Відомості про батьків / осіб, які їх замінюють (ПІБ, дата народження, стать, громадянство, місце народження, місце проживання, документ, УНЗР, РНОКПП, телефон)",
+        "type": "array",
+        "fmt": "структурований блок реквізитів на кожну особу, аналогічний блоку дитини",
+        "fid": "documented"
+      },
+      {
+        "en": "Child as perpetrator of domestic violence",
+        "ua": "Факт вчинення дитиною домашнього насильства",
+        "type": "bool",
+        "fmt": "так/ні + опис форми насильства",
+        "fid": "legal"
+      },
+      {
+        "en": "Child as perpetrator of bullying",
+        "ua": "Факт вчинення дитиною булінгу (цькування)",
+        "type": "bool",
+        "fmt": "так/ні + кваліфікація за ст.173-4 КУпАП",
+        "fid": "legal"
+      },
+      {
+        "en": "Records on response to violence where child is victim",
+        "ua": "Дані обліку реагування на звернення/факти насильства за участю дитини (потерпіла дитина)",
+        "type": "array",
+        "fmt": "перелік звернень/заходів (дата, тип, орган)",
+        "fid": "approximated"
+      },
+      {
+        "en": "Linkage to 'Person' subsystem / unified registers",
+        "ua": "Прив'язка до картки в підсистемі «Особа» ІПНП / Єдиного обліку (ЄРДР, інші підсистеми)",
+        "type": "string",
+        "fmt": "внутрішній ідентифікатор зв'язку",
+        "fid": "approximated"
+      }
+    ]
+  },
+  "CBI": {
+    "name": "Централізований банк даних з проблем інвалідності (ЦБІ)",
+    "access": 2,
+    "ids": [
+      "РНОКПП (ідентифікаційний номер)",
+      "УНЗР — унікальний номер запису в Єдиному державному демографічному реєстрі",
+      "Серія/номер паспорта громадянина України",
+      "Серія/номер свідоцтва про народження (для дітей до 14 років)",
+      "Номер та дата акта огляду ЕС МСЕ / МСЕК або медичного висновку про дитину з інвалідністю",
+      "Номер і дата індивідуальної програми реабілітації (ІПР)"
+    ],
+    "child_fields": [
+      "dytyna_z_invalidnistyu_flag",
+      "data_narodzhennya",
+      "kategoriya_dytyny_z_invalidnistyu",
+      "grupa_invalidnosti",
+      "prychyna_invalidnosti",
+      "diagnoz_mkh10",
+      "data_vstanovlennya",
+      "data_nastupnogo_otsinyuvannya",
+      "zakonnyy_predstavnyk",
+      "ipr_zahody",
+      "tehnichni_zasoby_reabilitatsii",
+      "reabilitatsiyni_poslugy",
+      "sanatorno_kurortne_likuvannya",
+      "adresa_prozhyvannya",
+      "vidomosti_pro_smert"
+    ],
+    "n_fields": 36,
+    "fields": [
+      {
+        "en": "Last name",
+        "ua": "Прізвище",
+        "type": "string",
+        "fmt": "text (UA Cyrillic)",
+        "fid": "legal"
+      },
+      {
+        "en": "First name",
+        "ua": "Власне ім'я",
+        "type": "string",
+        "fmt": "text",
+        "fid": "legal"
+      },
+      {
+        "en": "Patronymic",
+        "ua": "По батькові (за наявності)",
+        "type": "string",
+        "fmt": "text, nullable",
+        "fid": "legal"
+      },
+      {
+        "en": "Date of birth",
+        "ua": "Число, місяць, рік народження",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "{чоловіча, жіноча}",
+        "fid": "legal"
+      },
+      {
+        "en": "Registered place of residence",
+        "ua": "Адреса зареєстрованого/задекларованого місця проживання",
+        "type": "string",
+        "fmt": "повна адреса (область, район, н.п., вулиця, буд., кв.)",
+        "fid": "legal"
+      },
+      {
+        "en": "Phone number",
+        "ua": "Номер телефону",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX",
+        "fid": "documented"
+      },
+      {
+        "en": "Email",
+        "ua": "Адреса електронної пошти",
+        "type": "string",
+        "fmt": "email",
+        "fid": "documented"
+      },
+      {
+        "en": "Taxpayer ID (RNOKPP)",
+        "ua": "Реєстраційний номер облікової картки платника податків (РНОКПП)",
+        "type": "string",
+        "fmt": "10 цифр; nullable за наявності відмови",
+        "fid": "legal"
+      },
+      {
+        "en": "Unique record number in the Unified State Demographic Register",
+        "ua": "Унікальний номер запису в ЄДДР (УНЗР)",
+        "type": "string",
+        "fmt": "RRRRMMDD-NNNNN",
+        "fid": "approximated"
+      },
+      {
+        "en": "Passport details",
+        "ua": "Реквізити паспорта громадянина України / тимчасового посвідчення",
+        "type": "string",
+        "fmt": "серія+номер або ID-картка №, орган видачі, дата видачі, строк дії",
+        "fid": "legal"
+      },
+      {
+        "en": "Birth certificate details",
+        "ua": "Реквізити свідоцтва про народження (для дітей до 14 років)",
+        "type": "string",
+        "fmt": "серія+номер, дата видачі, орган РАЦС",
+        "fid": "legal"
+      },
+      {
+        "en": "Citizenship",
+        "ua": "Громадянство",
+        "type": "string",
+        "fmt": "text",
+        "fid": "approximated"
+      },
+      {
+        "en": "Child with disability flag",
+        "ua": "Ознака «дитина з інвалідністю»",
+        "type": "bool",
+        "fmt": "true/false",
+        "fid": "legal"
+      },
+      {
+        "en": "Category of child with disability",
+        "ua": "Категорія дитини з інвалідністю",
+        "type": "enum",
+        "fmt": "{А, Б, В, Г}",
+        "fid": "documented"
+      },
+      {
+        "en": "Disability group",
+        "ua": "Група інвалідності (для осіб від 18 років)",
+        "type": "enum",
+        "fmt": "{I (А/Б), II, III}; неприйнятно для дитини",
+        "fid": "legal"
+      },
+      {
+        "en": "Cause of disability",
+        "ua": "Причина інвалідності",
+        "type": "enum",
+        "fmt": "довідник причин (інвалідність з дитинства, загальне захворювання, вроджена вада тощо)",
+        "fid": "legal"
+      },
+      {
+        "en": "Diagnosis code (ICD-10)",
+        "ua": "Характер захворювання / діагноз за МКХ-10",
+        "type": "string",
+        "fmt": "код МКХ-10",
+        "fid": "legal"
+      },
+      {
+        "en": "Date disability established",
+        "ua": "Дата встановлення інвалідності",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "legal"
+      },
+      {
+        "en": "Disability term / next assessment date",
+        "ua": "Строк інвалідності / дата наступного оцінювання (або безстроково)",
+        "type": "date",
+        "fmt": "DD.MM.YYYY або enum 'безстроково'",
+        "fid": "legal"
+      },
+      {
+        "en": "MSEK act / medical conclusion details",
+        "ua": "Реквізити акта огляду ЕС МСЕ / МСЕК або медичного висновку про дитину з інвалідністю",
+        "type": "string",
+        "fmt": "номер, дата, орган",
+        "fid": "legal"
+      },
+      {
+        "en": "Degree of lost professional capacity",
+        "ua": "Ступінь втрати професійної працездатності (%)",
+        "type": "number",
+        "fmt": "0-100 (для дітей зазвичай не застосовується)",
+        "fid": "legal"
+      },
+      {
+        "en": "Legal representative details",
+        "ua": "Відомості про дієздатність / законного представника (батьки, опікун)",
+        "type": "string",
+        "fmt": "ПІБ, РНОКПП, тип представництва, реквізити документа",
+        "fid": "legal"
+      },
+      {
+        "en": "Education level",
+        "ua": "Освітній рівень",
+        "type": "string",
+        "fmt": "text/enum",
+        "fid": "legal"
+      },
+      {
+        "en": "Occupation",
+        "ua": "Професійний рівень / професія",
+        "type": "string",
+        "fmt": "text",
+        "fid": "legal"
+      },
+      {
+        "en": "Individual rehabilitation programme measures",
+        "ua": "Заходи індивідуальної програми реабілітації (ІПР)",
+        "type": "array",
+        "fmt": "перелік розділів: медична, психолого-педагогічна, фізична, професійна, соціальна реабілітація",
+        "fid": "legal"
+      },
+      {
+        "en": "IRP details",
+        "ua": "Реквізити ІПР",
+        "type": "string",
+        "fmt": "номер, дата складання, заклад",
+        "fid": "legal"
+      },
+      {
+        "en": "Need for assistive devices",
+        "ua": "Потреба в технічних та інших засобах реабілітації",
+        "type": "array",
+        "fmt": "перелік ТЗР з кодами (крісло колісне, протез, слуховий апарат тощо)",
+        "fid": "legal"
+      },
+      {
+        "en": "Provision of assistive devices records",
+        "ua": "Відомості про забезпечення засобами реабілітації",
+        "type": "array",
+        "fmt": "дата видачі, постачальник, модель, вартість, гарантійний строк",
+        "fid": "legal"
+      },
+      {
+        "en": "Repair services",
+        "ua": "Послуги з ремонту засобів реабілітації",
+        "type": "array",
+        "fmt": "дата, виконавець, вид ремонту",
+        "fid": "documented"
+      },
+      {
+        "en": "Rehabilitation services",
+        "ua": "Реабілітаційні послуги",
+        "type": "array",
+        "fmt": "вид, заклад, період",
+        "fid": "legal"
+      },
+      {
+        "en": "Sanatorium-resort treatment",
+        "ua": "Санаторно-курортне лікування",
+        "type": "array",
+        "fmt": "путівка №, санаторій, період",
+        "fid": "legal"
+      },
+      {
+        "en": "Benefit-entitlement document details",
+        "ua": "Реквізити документів, що підтверджують право на пільги",
+        "type": "array",
+        "fmt": "тип документа, номер, дата",
+        "fid": "legal"
+      },
+      {
+        "en": "Death record",
+        "ua": "Відомості про смерть особи",
+        "type": "object",
+        "fmt": "дата смерті з ДРАЦС",
+        "fid": "legal"
+      },
+      {
+        "en": "Registration date in CBI",
+        "ua": "Дата постановки на облік у ЦБІ",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "approximated"
+      },
+      {
+        "en": "Servicing social protection authority",
+        "ua": "Орган соціального захисту, що веде облік",
+        "type": "string",
+        "fmt": "найменування/код управління соцзахисту",
+        "fid": "documented"
+      }
+    ]
+  },
+  "DRRP": {
+    "name": "Державний реєстр речових прав на нерухоме майно (ДРРП)",
+    "access": 2,
+    "ids": [
+      "РНОКПП суб'єкта права",
+      "УНЗР (унікальний номер запису в ЄДДР)",
+      "Реєстраційний номер об'єкта нерухомого майна",
+      "Номер запису про право власності/інше речове право",
+      "Кадастровий номер земельної ділянки",
+      "Індексний номер витягу/рішення держреєстратора"
+    ],
+    "child_fields": [
+      "subject_pib",
+      "subject_birth_date",
+      "subject_rnokpp",
+      "ownership_share",
+      "common_ownership_type",
+      "object_type",
+      "object_address",
+      "object_total_area",
+      "right_type",
+      "registration_basis",
+      "encumbrance_type",
+      "child_residence_use_flag"
+    ],
+    "n_fields": 25,
+    "fields": [
+      {
+        "en": "Real property object registration number",
+        "ua": "Реєстраційний номер об'єкта нерухомого майна",
+        "type": "string",
+        "fmt": "числовий ідентифікатор (автоматично)",
+        "fid": "legal"
+      },
+      {
+        "en": "Land cadastral number",
+        "ua": "Кадастровий номер земельної ділянки",
+        "type": "string",
+        "fmt": "NNNNNNNNNN:NN:NNN:NNNN",
+        "fid": "legal"
+      },
+      {
+        "en": "Object type",
+        "ua": "Тип (вид) об'єкта нерухомого майна",
+        "type": "enum",
+        "fmt": "квартира / житловий будинок / гаражний бокс / земельна ділянка / нежитлове приміщення",
+        "fid": "legal"
+      },
+      {
+        "en": "Object address",
+        "ua": "Адреса об'єкта нерухомого майна",
+        "type": "string",
+        "fmt": "повна поштова адреса",
+        "fid": "legal"
+      },
+      {
+        "en": "Total area",
+        "ua": "Загальна площа",
+        "type": "number",
+        "fmt": "кв. м",
+        "fid": "legal"
+      },
+      {
+        "en": "Living area",
+        "ua": "Житлова площа",
+        "type": "number",
+        "fmt": "кв. м",
+        "fid": "legal"
+      },
+      {
+        "en": "Subject full name (PIB)",
+        "ua": "Прізвище, власне ім'я та по батькові суб'єкта права (фізичної особи)",
+        "type": "string",
+        "fmt": "ПІБ українською",
+        "fid": "legal"
+      },
+      {
+        "en": "Subject date of birth",
+        "ua": "Дата народження суб'єкта права",
+        "type": "date",
+        "fmt": "DD.MM.YYYY",
+        "fid": "approximated"
+      },
+      {
+        "en": "Taxpayer registration number (RNOKPP)",
+        "ua": "РНОКПП суб'єкта права",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "Unique record number in Unified State Demographic Register",
+        "ua": "Унікальний номер запису в ЄДДР (УНЗР)",
+        "type": "string",
+        "fmt": "NNNNNNNN-NNNNN",
+        "fid": "legal"
+      },
+      {
+        "en": "Identity document details",
+        "ua": "Реквізити документа, що посвідчує особу (за відсутності РНОКПП)",
+        "type": "string",
+        "fmt": "серія/номер; для дитини — свідоцтво про народження",
+        "fid": "legal"
+      },
+      {
+        "en": "Right type",
+        "ua": "Вид речового права",
+        "type": "enum",
+        "fmt": "право власності / право користування / іпотека / сервітут",
+        "fid": "legal"
+      },
+      {
+        "en": "Common ownership type",
+        "ua": "Вид спільної власності",
+        "type": "enum",
+        "fmt": "спільна часткова / спільна сумісна",
+        "fid": "legal"
+      },
+      {
+        "en": "Ownership share size",
+        "ua": "Розмір частки у праві спільної власності",
+        "type": "string",
+        "fmt": "дріб (напр. 1/3, 1/2)",
+        "fid": "legal"
+      },
+      {
+        "en": "Registration basis (document)",
+        "ua": "Підстава державної реєстрації права",
+        "type": "string",
+        "fmt": "назва, серія, номер, дата документа",
+        "fid": "legal"
+      },
+      {
+        "en": "Right record number",
+        "ua": "Номер запису про право / інше речове право",
+        "type": "string",
+        "fmt": "числовий (автоматично)",
+        "fid": "legal"
+      },
+      {
+        "en": "Registration date and time",
+        "ua": "Дата і час державної реєстрації права",
+        "type": "date",
+        "fmt": "DD.MM.YYYY HH:MM:SS",
+        "fid": "legal"
+      },
+      {
+        "en": "State registrar / notary",
+        "ua": "Державний реєстратор / нотаріус (ПІБ, орган)",
+        "type": "string",
+        "fmt": "ПІБ, посада, орган",
+        "fid": "legal"
+      },
+      {
+        "en": "Encumbrance type",
+        "ua": "Вид обтяження",
+        "type": "enum",
+        "fmt": "заборона відчуження / арешт / іпотека / податкова застава",
+        "fid": "legal"
+      },
+      {
+        "en": "Encumbrance subject and content",
+        "ua": "Предмет та зміст обтяження",
+        "type": "string",
+        "fmt": "опис об'єкта та умов",
+        "fid": "legal"
+      },
+      {
+        "en": "Encumbrancer details",
+        "ua": "Відомості про обтяжувача / іпотекодержателя",
+        "type": "string",
+        "fmt": "ПІБ/найменування, код",
+        "fid": "legal"
+      },
+      {
+        "en": "Object price per contract",
+        "ua": "Ціна (вартість) об'єкта за договором",
+        "type": "number",
+        "fmt": "грн",
+        "fid": "legal"
+      },
+      {
+        "en": "Object identifier in Unified State Electronic System in Construction",
+        "ua": "Ідентифікатор об'єкта в ЄДЕСБ",
+        "type": "string",
+        "fmt": "буквено-цифровий",
+        "fid": "legal"
+      },
+      {
+        "en": "Extract index number",
+        "ua": "Індексний номер витягу / інформаційної довідки",
+        "type": "string",
+        "fmt": "числовий",
+        "fid": "documented"
+      },
+      {
+        "en": "Child residence registration / right of use flag",
+        "ua": "Ознака права користування / реєстрації місця проживання дитини в об'єкті",
+        "type": "bool",
+        "fmt": "так/ні — НЕ є власним полем ДРРП",
+        "fid": "approximated"
+      }
+    ]
+  },
+  "PFU_RZO": {
+    "name": "Реєстр застрахованих осіб Державного реєстру загальнообов'яз",
+    "access": 2,
+    "ids": [
+      "РНОКПП (реєстраційний номер облікової картки платника податків) — основний ключ",
+      "Унікальний номер електронної облікової картки РЗО",
+      "Номер посвідчення застрахованої особи",
+      "УНЗР (унікальний номер запису в ЄДДР)",
+      "Серія та номер свідоцтва про загальнообов'язкове державне соціальне страхування (історично)"
+    ],
+    "child_fields": [
+      "RNOKPP_dytyny",
+      "kod_kategorii_zastrahovanoi_osoby_batkiv",
+      "oznaka_pratsevlashtuvannia_batkiv",
+      "danni_pro_strahuvalnyka_EDRPOU",
+      "strahovyi_stazh_periody",
+      "period_trudovyh_vidnosyn",
+      "zarobitna_plata_dohid",
+      "vidmitka_pro_smert",
+      "kalendarni_dni_u_vidnosynah"
+    ],
+    "n_fields": 28,
+    "fields": [
+      {
+        "en": "Unique electronic account card number",
+        "ua": "Унікальний номер електронної облікової картки",
+        "type": "string",
+        "fmt": "внутрішній числовий/символьний ідентифікатор ПФУ",
+        "fid": "documented"
+      },
+      {
+        "en": "Taxpayer registration number",
+        "ua": "Реєстраційний номер облікової картки платника податків (РНОКПП / податковий номер)",
+        "type": "string",
+        "fmt": "10 цифр",
+        "fid": "legal"
+      },
+      {
+        "en": "Unified State Demographic Register record number",
+        "ua": "УНЗР — унікальний номер запису в Єдиному державному демографічному реєстрі",
+        "type": "string",
+        "fmt": "РРРРММДД-ХХХХХ",
+        "fid": "documented"
+      },
+      {
+        "en": "Identity document series/number/title",
+        "ua": "Серія, номер та назва документа, що посвідчує особу",
+        "type": "string",
+        "fmt": "серія+номер / ID-картка / № паспорта",
+        "fid": "documented"
+      },
+      {
+        "en": "Insured person certificate number",
+        "ua": "Номер посвідчення застрахованої особи / серія і номер свідоцтва про загальнообов'язкове державне соціальне страхування",
+        "type": "string",
+        "fmt": "серія(2 літери)+6 цифр (історично)",
+        "fid": "legal"
+      },
+      {
+        "en": "Full name (archival)",
+        "ua": "Прізвище, ім'я, по батькові (на момент створення картки / архівне)",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "documented"
+      },
+      {
+        "en": "Full name (current)",
+        "ua": "Прізвище, ім'я, по батькові (на поточний момент)",
+        "type": "string",
+        "fmt": "кирилиця",
+        "fid": "documented"
+      },
+      {
+        "en": "Date of birth",
+        "ua": "Дата народження",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "legal"
+      },
+      {
+        "en": "Sex",
+        "ua": "Стать",
+        "type": "enum",
+        "fmt": "Ч / Ж",
+        "fid": "documented"
+      },
+      {
+        "en": "Citizenship",
+        "ua": "Громадянство",
+        "type": "string",
+        "fmt": "код/назва країни",
+        "fid": "documented"
+      },
+      {
+        "en": "Place of birth",
+        "ua": "Місце народження",
+        "type": "string",
+        "fmt": "текст",
+        "fid": "approximated"
+      },
+      {
+        "en": "Residential address",
+        "ua": "Адреса місця проживання (реєстрації)",
+        "type": "string",
+        "fmt": "текст/структуровано",
+        "fid": "approximated"
+      },
+      {
+        "en": "Phone number (with consent)",
+        "ua": "Номер телефону (за згодою)",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX",
+        "fid": "documented"
+      },
+      {
+        "en": "Death mark / date of death",
+        "ua": "Відмітка про смерть (дата смерті)",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "documented"
+      },
+      {
+        "en": "Insured person category code",
+        "ua": "Код категорії застрахованої особи",
+        "type": "enum",
+        "fmt": "числовий код з довідника (Додаток до Таблиці 6 Об'єднаної звітності)",
+        "fid": "legal"
+      },
+      {
+        "en": "Employment status indicator",
+        "ua": "Ознака працевлаштування / зайнятості",
+        "type": "enum",
+        "fmt": "похідна ознака (працевлаштований/непрацевлаштований) — обчислюється з активних періодів трудових відносин та коду категорії",
+        "fid": "approximated"
+      },
+      {
+        "en": "Reporting year",
+        "ua": "Рік (звітний період)",
+        "type": "number",
+        "fmt": "РРРР",
+        "fid": "documented"
+      },
+      {
+        "en": "Insurer (employer) identifier",
+        "ua": "Дані про страхувальника (роботодавця): код ЄДРПОУ / РНОКПП страхувальника, найменування",
+        "type": "string",
+        "fmt": "ЄДРПОУ 8 цифр / РНОКПП 10 цифр + назва",
+        "fid": "legal"
+      },
+      {
+        "en": "Period of employment/civil-law relations",
+        "ua": "Період перебування у трудових/цивільно-правових відносинах",
+        "type": "array",
+        "fmt": "дата початку — дата кінця (помісячно)",
+        "fid": "documented"
+      },
+      {
+        "en": "Calendar days in employment per month",
+        "ua": "Кількість календарних днів перебування у трудових відносинах за місяць",
+        "type": "number",
+        "fmt": "ціле число 0-31",
+        "fid": "documented"
+      },
+      {
+        "en": "Insurance record periods",
+        "ua": "Періоди страхового стажу (на основі сплати ЄСВ/страхових внесків)",
+        "type": "array",
+        "fmt": "інтервали з місяцями стажу",
+        "fid": "legal"
+      },
+      {
+        "en": "Wage/income subject to contributions",
+        "ua": "Заробітна плата / дохід / грошове забезпечення, на яке нараховано ЄСВ",
+        "type": "number",
+        "fmt": "грн, 2 десяткові",
+        "fid": "legal"
+      },
+      {
+        "en": "Contribution amount",
+        "ua": "Сума нарахованого/сплаченого єдиного внеску (ЄСВ) та страхових внесків",
+        "type": "number",
+        "fmt": "грн, 2 десяткові",
+        "fid": "legal"
+      },
+      {
+        "en": "Days/hours worked",
+        "ua": "Кількість відпрацьованих днів / годин",
+        "type": "number",
+        "fmt": "ціле/десяткове",
+        "fid": "documented"
+      },
+      {
+        "en": "Occupation / position",
+        "ua": "Професійна назва роботи / посада",
+        "type": "string",
+        "fmt": "текст (за класифікатором професій ДК 003)",
+        "fid": "documented"
+      },
+      {
+        "en": "Special working conditions",
+        "ua": "Дані про особливі умови праці (пільгове пенсійне забезпечення)",
+        "type": "string",
+        "fmt": "код пільги / спецстаж",
+        "fid": "legal"
+      },
+      {
+        "en": "Voluntary contributions",
+        "ua": "Суми добровільних внесків",
+        "type": "number",
+        "fmt": "грн",
+        "fid": "documented"
+      },
+      {
+        "en": "Insurance payment type/date/amount; insured event",
+        "ua": "Вид, дата та сума страхової виплати / пенсії; вид страхового випадку",
+        "type": "array",
+        "fmt": "структуровано: вид+дата+сума",
+        "fid": "documented"
+      }
+    ]
+  },
+  "EISSS": {
+    "name": "Єдина інформаційна система соціальної сфери (ЄІССС) — підсис",
+    "access": 2,
+    "ids": [
+      "РНОКПП дитини (реєстраційний номер облікової картки платника податків) — за наявності",
+      "РНОКПП заявника (одного з батьків / опікуна)",
+      "УНЗР — унікальний номер запису в Єдиному державному демографічному реєстрі (за наявності)",
+      "Серія (за наявності) та номер свідоцтва про народження дитини",
+      "Номер основної особової справи отримувача допомоги в ЄІССС",
+      "Номер актового запису про народження (через інтеграцію з ДРАЦС)"
+    ],
+    "child_fields": [
+      "surname_name_patronymic_child",
+      "birth_date_child",
+      "birth_certificate_series_number",
+      "family_relationship",
+      "child_legal_status",
+      "single_mother_flag",
+      "child_with_disability_flag",
+      "orphan_deprived_parental_care_flag",
+      "rnokpp_child",
+      "registered_declared_residence",
+      "alimony_received",
+      "guardianship_custody"
+    ],
+    "n_fields": 23,
+    "fields": [
+      {
+        "en": "child_full_name",
+        "ua": "Прізвище, власне ім'я, по батькові дитини (члена сім'ї)",
+        "type": "string",
+        "fmt": "ПІБ кирилицею; по батькові — за наявності",
+        "fid": "legal"
+      },
+      {
+        "en": "family_relationship",
+        "ua": "Сімейний стан / сімейний (родинний) зв'язок",
+        "type": "enum",
+        "fmt": "наприклад: дитина/син/дочка, опікуваний, пасинок/падчерка, утриманець",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_certificate_series_number",
+        "ua": "Серія (за наявності) та номер свідоцтва про народження дитини",
+        "type": "string",
+        "fmt": "серія (літери, за наявності) + номер; для дітей без паспорта",
+        "fid": "legal"
+      },
+      {
+        "en": "rnokpp_child",
+        "ua": "РНОКПП дитини (реєстраційний номер облікової картки платника податків)",
+        "type": "string",
+        "fmt": "10 цифр; або серія/номер паспорта з відміткою про відмову",
+        "fid": "legal"
+      },
+      {
+        "en": "birth_date_child",
+        "ua": "Дата народження дитини",
+        "type": "date",
+        "fmt": "число, місяць, рік (ДД.ММ.РРРР)",
+        "fid": "documented"
+      },
+      {
+        "en": "unzr",
+        "ua": "Унікальний номер запису в ЄДДР (УНЗР)",
+        "type": "string",
+        "fmt": "РРРРММДД-XXXXX (за наявності)",
+        "fid": "documented"
+      },
+      {
+        "en": "sex",
+        "ua": "Стать дитини",
+        "type": "enum",
+        "fmt": "чоловіча / жіноча",
+        "fid": "approximated"
+      },
+      {
+        "en": "birth_place",
+        "ua": "Місце народження дитини",
+        "type": "string",
+        "fmt": "населений пункт, район, область, країна",
+        "fid": "approximated"
+      },
+      {
+        "en": "registered_declared_residence",
+        "ua": "Зареєстроване / задеклароване місце проживання (перебування)",
+        "type": "string",
+        "fmt": "повна адреса; ознака зареєстроване/задеклароване",
+        "fid": "legal"
+      },
+      {
+        "en": "child_legal_status",
+        "ua": "Правовий статус дитини",
+        "type": "enum",
+        "fmt": "дитина у сім'ї / усиновлена / під опікою чи піклуванням / дитина-сирота / дитина, позбавлена батьківського піклування / у сім'ї патронатного вихователя / у прийомній сім'ї / ДБСТ",
+        "fid": "legal"
+      },
+      {
+        "en": "child_with_disability_flag",
+        "ua": "Ознака дитини з інвалідністю",
+        "type": "bool",
+        "fmt": "так/ні; за наявності — група/категорія",
+        "fid": "legal"
+      },
+      {
+        "en": "single_mother_flag",
+        "ua": "Ознака «дитина одинокої матері»",
+        "type": "bool",
+        "fmt": "так/ні; + блок «Інформація, яка повідомляється одинокою матір'ю»",
+        "fid": "legal"
+      },
+      {
+        "en": "guardianship_custody",
+        "ua": "Відомості про опіку/піклування над дитиною",
+        "type": "string",
+        "fmt": "факт встановлення опіки/піклування, реквізити рішення",
+        "fid": "legal"
+      },
+      {
+        "en": "alimony_received",
+        "ua": "Суми отриманих аліментів (на дитину)",
+        "type": "number",
+        "fmt": "сума у гривнях за період",
+        "fid": "legal"
+      },
+      {
+        "en": "income_data",
+        "ua": "Відомості про доходи дитини/члена сім'ї",
+        "type": "array",
+        "fmt": "види та суми доходів за період (Розділ II Декларації)",
+        "fid": "legal"
+      },
+      {
+        "en": "large_family_flag",
+        "ua": "Належність до багатодітної сім'ї",
+        "type": "bool",
+        "fmt": "так/ні (троє і більше дітей)",
+        "fid": "legal"
+      },
+      {
+        "en": "property_status",
+        "ua": "Майновий стан (житло/транспорт/депозити), що враховуються по сім'ї дитини",
+        "type": "array",
+        "fmt": "житлові приміщення, ТЗ (<15 р.), депозити >100 тис. грн, великі витрати",
+        "fid": "legal"
+      },
+      {
+        "en": "application_type",
+        "ua": "Тип звернення",
+        "type": "enum",
+        "fmt": "первинне / повторне",
+        "fid": "documented"
+      },
+      {
+        "en": "case_file_number",
+        "ua": "Номер основної особової справи",
+        "type": "string",
+        "fmt": "номер справи отримувача допомоги в ЄІССС",
+        "fid": "documented"
+      },
+      {
+        "en": "application_registration_date",
+        "ua": "Дата реєстрації заяви",
+        "type": "date",
+        "fmt": "ДД.ММ.РРРР",
+        "fid": "documented"
+      },
+      {
+        "en": "benefit_type",
+        "ua": "Вид призначеної допомоги/компенсації",
+        "type": "enum",
+        "fmt": "один з 14 видів (допомога при народженні, на дітей одиноким матерям, на дітей під опікою, малозабезпеченим сім'ям тощо)",
+        "fid": "legal"
+      },
+      {
+        "en": "payout_account_iban",
+        "ua": "Реквізити банківського рахунку для виплати (IBAN)",
+        "type": "string",
+        "fmt": "IBAN (UA + 27 знаків) або найменування організації-виплатника",
+        "fid": "legal"
+      },
+      {
+        "en": "pd_consent",
+        "ua": "Згода на обробку/передачу персональних даних",
+        "type": "bool",
+        "fmt": "так/ні; + згода щодо осіб, зазначених у заяві",
+        "fid": "legal"
+      }
+    ]
+  },
+  "hotline_116111_1545_child_appeals": {
+    "name": "Гарячі лінії 116 111 (Національна дитяча гаряча лінія, ГО «Л",
+    "access": 2,
+    "ids": [
+      "РНОКПП дитини (часто відсутній — анонімні дзвінки на 116 111)",
+      "РНОКПП заявника (для 1545 — за наявності)",
+      "Індивідуальний номер звернення (реєстраційний номер картки 1545)",
+      "Номер контактного телефону абонента/заявника",
+      "ПІБ дитини + дата народження (як квазі-ідентифікатор за відсутності коду)"
+    ],
+    "child_fields": [
+      "pib_dytyny",
+      "data_narodzhennia_vik",
+      "stать_dytyny",
+      "misce_perebuvannia_dytyny",
+      "vidomosti_pro_batkiv",
+      "tip_zvernennia_kategoriia",
+      "tema_zvernennia",
+      "vyd_nasylstva",
+      "oznaky_zhorstokogo_povodzhennia",
+      "khto_zvernuvsia_tip_abonenta",
+      "stislyi_zmist",
+      "vidmitka_pro_ryzyk_bezpeky",
+      "perenapravlennia_reaguvannia"
+    ],
+    "n_fields": 25,
+    "fields": [
+      {
+        "en": "appeal_id",
+        "ua": "Індивідуальний (реєстраційний) номер звернення",
+        "type": "string",
+        "fmt": "рядок/маска реєстру УКЦ, напр. 1545-2026-XXXXXXX",
+        "fid": "legal"
+      },
+      {
+        "en": "received_at",
+        "ua": "Дата та час надходження звернення",
+        "type": "date",
+        "fmt": "ISO 8601 datetime / дд.мм.рррр гг:хв",
+        "fid": "legal"
+      },
+      {
+        "en": "channel_source",
+        "ua": "Канал/джерело надходження",
+        "type": "enum",
+        "fmt": "телефон | онлайн-чат | Telegram | Instagram | Facebook | email | вебформа",
+        "fid": "documented"
+      },
+      {
+        "en": "caller_type",
+        "ua": "Тип абонента / хто звернувся",
+        "type": "enum",
+        "fmt": "дитина | один з батьків | інший родич | сусід/третя особа | педагог | соцпрацівник | інше",
+        "fid": "approximated"
+      },
+      {
+        "en": "reporter_full_name",
+        "ua": "ПІБ заявника / того, хто повідомив",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові (може бути неповним або відсутнім — анонімно)",
+        "fid": "legal"
+      },
+      {
+        "en": "contact_phone",
+        "ua": "Контактний телефон заявника/абонента",
+        "type": "string",
+        "fmt": "+380XXXXXXXXX",
+        "fid": "legal"
+      },
+      {
+        "en": "contact_email",
+        "ua": "Електронна адреса / інші засоби зв'язку",
+        "type": "string",
+        "fmt": "email або опис засобу зв'язку",
+        "fid": "legal"
+      },
+      {
+        "en": "reporter_address",
+        "ua": "Місце проживання / адреса заявника",
+        "type": "string",
+        "fmt": "вільний текст: область, район, нас. пункт, вул., буд., кв.",
+        "fid": "legal"
+      },
+      {
+        "en": "child_full_name",
+        "ua": "ПІБ дитини",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові (часто лише ім'я або відсутнє)",
+        "fid": "legal"
+      },
+      {
+        "en": "child_birthdate_age",
+        "ua": "Дата народження / вік дитини",
+        "type": "date",
+        "fmt": "дд.мм.рррр або кількість повних років",
+        "fid": "legal"
+      },
+      {
+        "en": "child_sex",
+        "ua": "Стать дитини",
+        "type": "enum",
+        "fmt": "чоловіча | жіноча",
+        "fid": "documented"
+      },
+      {
+        "en": "child_rnokpp",
+        "ua": "РНОКПП дитини",
+        "type": "string",
+        "fmt": "10 цифр (часто відсутній)",
+        "fid": "approximated"
+      },
+      {
+        "en": "child_location",
+        "ua": "Місце проживання / перебування дитини",
+        "type": "string",
+        "fmt": "адреса або опис місцезнаходження",
+        "fid": "legal"
+      },
+      {
+        "en": "parents_info",
+        "ua": "Відомості про батьків / законних представників",
+        "type": "string",
+        "fmt": "ПІБ батьків/опікунів, контакти, статус",
+        "fid": "legal"
+      },
+      {
+        "en": "appeal_category",
+        "ua": "Категорія/тип звернення",
+        "type": "enum",
+        "fmt": "консультація | скарга | повідомлення про насильство | запит допомоги | інформування",
+        "fid": "approximated"
+      },
+      {
+        "en": "topic",
+        "ua": "Тема звернення",
+        "type": "enum",
+        "fmt": "домашнє насильство | булінг | безпека в інтернеті | психологічна криза/суїцид | торгівля людьми | права дитини | сімейні стосунки | інше",
+        "fid": "approximated"
+      },
+      {
+        "en": "violence_type",
+        "ua": "Вид насильства / жорстокого поводження",
+        "type": "enum",
+        "fmt": "фізичне | психологічне | сексуальне | економічне | нехтування потребами",
+        "fid": "legal"
+      },
+      {
+        "en": "circumstances",
+        "ua": "Ознаки/обставини складних життєвих обставин або ризику",
+        "type": "string",
+        "fmt": "вільний текст опису обставин",
+        "fid": "legal"
+      },
+      {
+        "en": "safety_risk_flag",
+        "ua": "Відмітка про ризик/рівень безпеки дитини",
+        "type": "bool",
+        "fmt": "наявність загрози життю/здоров'ю (так/ні) + рівень",
+        "fid": "legal"
+      },
+      {
+        "en": "summary",
+        "ua": "Стислий зміст звернення",
+        "type": "string",
+        "fmt": "вільний текст",
+        "fid": "legal"
+      },
+      {
+        "en": "operator_name",
+        "ua": "ПІБ працівника/консультанта, який прийняв звернення",
+        "type": "string",
+        "fmt": "Прізвище Ім'я По батькові оператора/психолога",
+        "fid": "legal"
+      },
+      {
+        "en": "action_taken",
+        "ua": "Результат / реагування / перенаправлення",
+        "type": "enum",
+        "fmt": "надано консультацію | передано в ССД | передано в Нацполіцію (102) | передано в соцслужбу | взято на контроль | без подальших дій",
+        "fid": "documented"
+      },
+      {
+        "en": "response_method",
+        "ua": "Спосіб надання відповіді заявнику",
+        "type": "enum",
+        "fmt": "телефон | email | усно під час дзвінка | письмово",
+        "fid": "legal"
+      },
+      {
+        "en": "status",
+        "ua": "Статус опрацювання звернення",
+        "type": "enum",
+        "fmt": "зареєстровано | в роботі | направлено за компетенцією | вирішено | закрито",
+        "fid": "documented"
+      },
+      {
+        "en": "is_anonymous",
+        "ua": "Ознака анонімності звернення",
+        "type": "bool",
+        "fmt": "так/ні",
+        "fid": "documented"
+      }
+    ]
+  }
+}

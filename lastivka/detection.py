@@ -61,80 +61,109 @@ def _acuity(onset: int | None, T: int) -> str:
     return "chronic"
 
 
+def _erdr_article(text):
+    t = str(text or "")
+    for a in ("149", "152", "156", "126-1"):
+        if a in t:
+            return a
+    return None
+
+
+def _childwar_status(text):
+    t = str(text or "")
+    if "депорт" in t:
+        return "deported"
+    if "втрат" in t:
+        return "lost_parents"
+    if "перемі" in t:
+        return "displaced"
+    return None
+
+
 def _signals(ent, cfg) -> dict:
     sy = cfg["population"]["start_year"]
     T = cfg["population"]["months"]
     R = ent["rows_by_reg"]
     s = {"T": T}
 
-    # ── ВПО
+    # ── ВПО (точні поля)
     vpo = R.get("VPO", [])
     s["has_idp"] = bool(vpo)
     s["idp_month"] = _month_index(vpo[0].get("displacement_date"), sy) if vpo else None
-    s["reatt_school"] = _b(vpo[0].get("reattached_school")) if vpo else True
-    s["reatt_doctor"] = _b(vpo[0].get("reattached_doctor")) if vpo else True
+    s["reatt_school"] = bool(vpo[0].get("education_place")) if vpo else True
+    s["reatt_doctor"] = (vpo[0].get("medical_needs") == "забезпечено") if vpo else True
 
     # ── ЄДЕБО
     edebo = R.get("EDEBO", [])
     s["school_exit"] = bool(edebo) and edebo[0].get("study_status") in ("transferred", "expelled")
-    s["exit_month"] = _month_index(edebo[0].get("exit_date"), sy) if edebo else None
+    s["exit_month"] = _month_index(edebo[0].get("status_effective_date"), sy) if edebo else None
     s["enrolled_ever"] = bool(edebo)
+    s["edebo_inclusive"] = bool(edebo) and bool(edebo[0].get("special_category"))
 
-    # ── ІСУО (відвідуваність/оцінки) — change-point + dropout
-    isuo = sorted(R.get("ISUO", []), key=lambda r: r.get("period", ""))
-    absc = [_i(r.get("absences_unexcused")) for r in isuo]
-    gpa = [_f(r.get("gpa")) for r in isuo]
-    cp_idx, cp_mag, cp_dir = change_point(absc)
-    g_idx, g_mag, g_dir = change_point(gpa)
-    s["absence_spike"] = cp_mag >= 3 and cp_dir > 0
+    # ── АІКОМ (відвідуваність/оцінки) — change-point + dropout
+    aikom = sorted(R.get("AIKOM", []), key=lambda r: r.get("attendance_period", ""))
+    absc = [_i(r.get("missed_lessons_count")) for r in aikom]
+    gpa = [_f(r.get("score_12")) for r in aikom]
+    _, cp_mag, cp_dir = change_point(absc)
+    _, g_mag, g_dir = change_point(gpa)
+    s["absence_spike"] = cp_mag >= 4 and cp_dir > 0
     s["gpa_drop"] = g_mag >= 2 and g_dir < 0
-    s["anti_bullying"] = any(_b(r.get("anti_bullying_commission")) for r in isuo)
-    # dropout: останній період ІСУО задовго до кінця
+    s["anti_bullying"] = any(_b(r.get("anti_bullying_commission")) for r in aikom)
+    s["out_of_education"] = any(_b(r.get("out_of_education_flag")) for r in aikom)
     s["isuo_last_month"] = None
-    if isuo:
-        last = isuo[-1].get("period")
+    if aikom:
+        last = aikom[-1].get("attendance_period")
         try:
             y, m = map(int, last.split("-"))
             s["isuo_last_month"] = (y - sy) * 12 + (m - 1)
         except (ValueError, AttributeError):
             pass
 
-    # ── eHealth
+    # ── eHealth (resource_type: person/declaration/encounter/condition/immunization)
     eh = R.get("EHEALTH", [])
-    decl = [r for r in eh if r.get("record_type") == "DECLARATION"]
+    decl = [r for r in eh if r.get("resource_type") == "declaration"]
     s["decl_terminated"] = bool(decl) and decl[0].get("status") == "terminated"
     s["decl_end_month"] = _month_index(decl[0].get("end_date"), sy) if decl else None
-    s["has_chronic"] = any(r.get("category") == "chronic" for r in eh)
-    s["missed_checkup"] = any(r.get("category") in ("checkup", "chronic") and not _b(r.get("done"))
-                              for r in eh if r.get("record_type") == "ENCOUNTER")
-    traumas = [r for r in eh if r.get("category") == "trauma"]
+    s["has_chronic"] = any(r.get("condition_code") == "chronic" for r in eh)
+    s["missed_checkup"] = any(r.get("resource_type") == "immunization" and r.get("status") == "not_done"
+                              for r in eh)
+    traumas = [r for r in eh if r.get("condition_category") == "trauma"]
     s["trauma_present"] = bool(traumas)
     s["trauma_repeat"] = any(_b(r.get("is_repeat")) for r in traumas) or len(traumas) >= 2
-    s["psych_present"] = any(r.get("category") == "psych" for r in eh)
+    s["psych_present"] = any(r.get("condition_category") == "psych" for r in eh)
 
-    # ── інші реєстри
+    # ── «Діти війни»
     cw = R.get("CHILDWAR", [])
-    s["childwar_status"] = cw[0].get("status") if cw else None
-    ssd = R.get("SSD", [])
-    s["ssd_present"] = bool(ssd)
-    s["ssd_status"] = ssd[0].get("status") if ssd else None
-    s["ssd_low_income"] = bool(ssd) and ssd[0].get("family_type") == "low_income"
-    s["ssd_open_month"] = _month_index(ssd[0].get("open_date"), sy) if ssd else None
-    dracs = R.get("DRACS", [])
-    s["parent_death"] = any(r.get("act_type") == "DEATH" for r in dracs)
-    erdr = R.get("ERDR", [])
-    s["erdr_article"] = erdr[0].get("article") if erdr else None
-    s["erdr_month"] = _month_index(erdr[0].get("open_date"), sy) if erdr else None
-    s["police_calls"] = len(R.get("VIOLENCE", []))
+    s["childwar_status"] = _childwar_status(cw[0].get("status_category")) if cw else None
 
-    # вік на кінець симуляції
+    # ── ССД / «Діти»
+    dity = R.get("DITY", [])
+    s["ssd_present"] = bool(dity)
+    s["ssd_status"] = (dity[0].get("child_status") if dity else None)
+    s["ssd_unaccompanied"] = bool(dity) and "без супроводу" in str(dity[0].get("child_status", ""))
+    s["ssd_low_income"] = bool(dity) and dity[0].get("difficult_life_circumstances") == "так"
+    s["ssd_open_month"] = _month_index(dity[0].get("primary_registration_date"), sy) if dity else None
+
+    # ── ДРАЦС (смерть батька/матері)
+    dracs = R.get("DRACS", [])
+    s["parent_death"] = any(r.get("act_type") == "смерть" for r in dracs)
+
+    # ── ЄРДР
+    erdr = R.get("ERDR", [])
+    s["erdr_article"] = _erdr_article(erdr[0].get("preliminary_legal_qualification")) if erdr else None
+    s["erdr_month"] = _month_index(erdr[0].get("register_entry_datetime"), sy) if erdr else None
+
+    # ── ДН-реєстр + суд + інвалідність
+    s["police_calls"] = len(R.get("DV", []))
+    s["court_deprivation"] = any("батьк" in str(r.get("case_category", "")) for r in R.get("EDRSR", []))
+    s["has_disability"] = bool(R.get("CBI"))
+
     bd = ent.get("birth_date")
     s["age_end"] = None
     if bd and bd != "None":
         try:
             b = date.fromisoformat(str(bd)[:10])
-            end_year = sy + (T - 1) // 12
-            s["age_end"] = end_year - b.year
+            s["age_end"] = (sy + (T - 1) // 12) - b.year
         except ValueError:
             pass
     return s
@@ -155,52 +184,67 @@ def detect_entity(ent, cfg) -> list[dict]:
                       "onset_month": onset, "acuity": _acuity(onset, T)})
 
     school_age = s["age_end"] is None or 6 <= s["age_end"] <= 17
+    # dropout = тиша в АІКОМ задовго до кінця (дитина перестала відвідувати)
+    isuo_dropout = s["isuo_last_month"] is not None and s["isuo_last_month"] < T - 3
+    w3_sig = s["school_exit"] or isuo_dropout
+    w8_sig = (s["decl_terminated"] or s["missed_checkup"]) and s["has_chronic"]
+    w2_sig = s["psych_present"]
 
-    # W1 Вимушене переміщення (ВПО + будь-який обрив сервісу або статус «Діти війни»)
-    if s["has_idp"] and (s["school_exit"] or s["decl_terminated"] or s["childwar_status"]):
+    # W1 Вимушене переміщення (ВПО + реальний обрив сервісу: освіта або медицина)
+    if s["has_idp"] and (w3_sig or w8_sig):
         ev = ["VPO"] + (["EDEBO"] if s["school_exit"] else []) + \
-             (["EHEALTH"] if s["decl_terminated"] else []) + (["CHILDWAR"] if s["childwar_status"] else [])
+             (["EHEALTH"] if w8_sig else []) + (["CHILDWAR"] if s["childwar_status"] else [])
         add("W1_displacement", ev, _earliest(s["idp_month"], s["exit_month"]))
 
-    # W3 Поза освітою (вихід зі школи АБО обрив відвідуваності без активного зарахування)
-    isuo_dropout = s["isuo_last_month"] is not None and s["isuo_last_month"] < T - 3
-    if school_age and (s["enrolled_ever"] or s["isuo_last_month"] is not None) and (s["school_exit"] or isuo_dropout):
-        ev = (["EDEBO"] if s["school_exit"] else []) + (["ISUO"] if s["isuo_last_month"] is not None else [])
+    # W3 Поза освітою (вихід зі школи АБО тривала тиша відвідуваності)
+    if school_age and (s["enrolled_ever"] or s["isuo_last_month"] is not None) and w3_sig:
+        ev = (["EDEBO"] if s["school_exit"] else []) + (["AIKOM"] if s["isuo_last_month"] is not None else [])
         add("W3_out_of_education", ev or ["EDEBO"], _earliest(s["exit_month"]))
 
-    # W8 Обмеження доступу до медицини (у контексті переміщення)
-    if (s["decl_terminated"] or s["missed_checkup"]) and s["has_chronic"] and s["has_idp"]:
+    # W8 Обмеження доступу до медицини (хронік + обрив декларації + контекст переміщення/фронту)
+    if w8_sig and s["decl_terminated"] and s["has_idp"]:
         ev = ["EHEALTH"] + (["VPO"] if not s["reatt_doctor"] else [])
         add("W8_medical_access", ev, s["decl_end_month"])
 
-    # W6 Сирітство / втрата опіки
-    if s["parent_death"] and s["ssd_present"]:
-        add("W6_orphanhood", ["DRACS", "SSD"], s["ssd_open_month"])
+    # W6 Сирітство / втрата опіки (смерть батьків АБО рішення суду) + облік ССД
+    if (s["parent_death"] or s["court_deprivation"]) and s["ssd_present"]:
+        ev = (["DRACS"] if s["parent_death"] else []) + (["EDRSR"] if s["court_deprivation"] else []) + ["DITY"]
+        add("W6_orphanhood", ev, s["ssd_open_month"])
 
     # W5 Депортація [immediate]
-    if s["childwar_status"] == "deported" or (s["ssd_status"] == "unaccompanied" and s["childwar_status"]):
-        ev = ["CHILDWAR"] + (["SSD"] if s["ssd_present"] else [])
+    if s["childwar_status"] == "deported" or (s["ssd_unaccompanied"] and s["childwar_status"]):
+        ev = ["CHILDWAR"] + (["DITY"] if s["ssd_present"] else [])
         add("W5_deportation", ev, s["ssd_open_month"])
 
     # W7 Торгівля людьми [immediate] — за провадженням ЄРДР ст.149
     if s["erdr_article"] == "149":
-        ev = ["ERDR"] + (["SSD"] if s["ssd_present"] else [])
+        ev = ["ERDR"] + (["DITY"] if s["ssd_present"] else [])
         add("W7_trafficking", ev, _earliest(s["erdr_month"], s["ssd_open_month"]))
 
     # F3 Нехтування потребами
     if s["missed_checkup"] and (s["absence_spike"] or s["isuo_last_month"] is not None) and s["ssd_low_income"]:
-        add("F3_neglect", ["EHEALTH", "ISUO", "SSD"], s["ssd_open_month"])
+        add("F3_neglect", ["EHEALTH", "AIKOM", "DITY"], s["ssd_open_month"])
 
     # P1 Фізичне насильство вдома (повторні травми + виклики поліції / провадження 126-1)
     if s["trauma_repeat"] and (s["police_calls"] > 0 or s["erdr_article"] == "126-1"):
-        ev = ["EHEALTH"] + (["VIOLENCE"] if s["police_calls"] else []) + \
-             (["ERDR"] if s["erdr_article"] == "126-1" else []) + (["SSD"] if s["ssd_present"] else [])
+        ev = ["EHEALTH"] + (["DV"] if s["police_calls"] else []) + \
+             (["ERDR"] if s["erdr_article"] == "126-1" else []) + (["DITY"] if s["ssd_present"] else [])
         add("P1_physical_home", ev, s["erdr_month"])
 
     # E1 Булінг
     if s["absence_spike"] and s["gpa_drop"] and (s["psych_present"] or s["anti_bullying"]):
-        ev = ["ISUO"] + (["EHEALTH"] if s["psych_present"] else [])
+        ev = ["AIKOM"] + (["EHEALTH"] if s["psych_present"] else [])
         add("E1_bullying", ev, None)
+
+    # F4 Дитяча праця (систематичні невиправдані пропуски без ознак булінгу/нехтування/відсіву)
+    if (s["absence_spike"] and not w3_sig and not s["missed_checkup"]
+            and not s["psych_present"] and not s["anti_bullying"]):
+        add("F4_child_labor", ["AIKOM"], None)
+
+    # E4 Обмеження доступу до інклюзивної освіти (інвалідність + немає інклюзивного супроводу)
+    if s["has_disability"] and school_age and not s["edebo_inclusive"]:
+        ev = ["CBI"] + (["EDEBO"] if s["enrolled_ever"] else [])
+        add("E4_inclusion", ev, None)
 
     # F6 Сексуальне насильство [immediate] — за провадженням ЄРДР ст.152
     if s["erdr_article"] == "152":
