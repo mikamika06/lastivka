@@ -6,8 +6,10 @@ import { SidebarContent } from "./Sidebar";
 import { Logo } from "@/components/ui/Logo";
 import { Controls } from "@/components/providers/Controls";
 import { IconMenu, IconClose } from "@/components/ui/icons";
+import { useTx } from "@/components/providers/I18nProvider";
 
 export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
+  const t = useTx();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
           <Controls />
           <button
             onClick={() => setOpen(true)}
-            aria-label="Відкрити меню"
+            aria-label={t({ uk: "Відкрити меню", en: "Open menu" })}
             aria-expanded={open}
             aria-controls="mobile-nav"
             className="grid h-10 w-10 place-items-center rounded-xl border border-line text-ink-2"
@@ -45,17 +47,17 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
 
       {/* mobile drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Навігація">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t({ uk: "Навігація", en: "Navigation" })}>
           <button
             type="button"
-            aria-label="Закрити меню"
+            aria-label={t({ uk: "Закрити меню", en: "Close menu" })}
             onClick={() => setOpen(false)}
             className="absolute inset-0 h-full w-full cursor-default bg-black/40 backdrop-blur-sm"
           />
           <div id="mobile-nav" className="absolute left-0 top-0 h-full w-[290px] animate-[fade-in_0.2s_ease] border-r border-line bg-surface shadow-pop">
             <button
               onClick={() => setOpen(false)}
-              aria-label="Закрити меню"
+              aria-label={t({ uk: "Закрити меню", en: "Close menu" })}
               className="absolute right-3 top-4 z-10 grid h-9 w-9 place-items-center rounded-lg text-muted hover:bg-paper-2"
             >
               <IconClose className="h-5 w-5" />

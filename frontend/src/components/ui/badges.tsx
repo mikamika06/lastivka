@@ -1,5 +1,8 @@
+"use client";
+
 import type { Tier, Acuity } from "@/lib/types";
-import { TIER_META, ACUITY_UA } from "@/lib/registries";
+import { TIER_META, TIER_HORIZON, ACUITY_MSG } from "@/lib/registries";
+import { useTx } from "@/components/providers/I18nProvider";
 
 const TIER_CLASS: Record<Tier, string> = {
   T0: "bg-t0-soft text-t0-ink ring-t0-line",
@@ -13,6 +16,7 @@ const TIER_DOT: Record<Tier, string> = {
 };
 
 export function TierBadge({ tier, withHorizon = true }: Readonly<{ tier: Tier; withHorizon?: boolean }>) {
+  const t = useTx();
   const m = TIER_META[tier];
   return (
     <span
@@ -20,28 +24,33 @@ export function TierBadge({ tier, withHorizon = true }: Readonly<{ tier: Tier; w
     >
       <span className={`h-1.5 w-1.5 rounded-full ${TIER_DOT[tier]}`} />
       {m.label}
-      {withHorizon && <span className="font-medium opacity-70">· {m.horizon}</span>}
+      {withHorizon && <span className="font-medium opacity-70">· {t(TIER_HORIZON[tier])}</span>}
     </span>
   );
 }
 
 export function ImmediateBadge() {
+  const t = useTx();
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-t0 px-2.5 py-1 text-xs font-bold text-white">
       <span className="h-1.5 w-1.5 rounded-full bg-white" />{" "}
-      НЕГАЙНО
+      {t({ uk: "НЕГАЙНО", en: "IMMEDIATE" })}
     </span>
   );
 }
 
 export function AccessLockBadge({ registries }: Readonly<{ registries: string[] }>) {
+  const t = useTx();
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full bg-lock-soft px-2 py-0.5 text-[11px] font-medium text-lock-ink"
-      title="Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту. Повний доступ — тільки за рішенням суду (лікарська таємниця)."
+      title={t({
+        uk: "Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту. Повний доступ — тільки за рішенням суду (лікарська таємниця).",
+        en: "Most sensitive data: only a yes/no signal is visible, with no access to the content. Full access requires a court order (medical confidentiality).",
+      })}
     >
       <LockIcon className="h-3 w-3" />
-      Рівень-1 {registries.length > 0 && `(${registries.join(", ")})`}
+      {t({ uk: "Рівень-1", en: "Level-1" })} {registries.length > 0 && `(${registries.join(", ")})`}
     </span>
   );
 }
@@ -53,10 +62,11 @@ function acuityColor(acuity: Acuity): string {
 }
 
 export function AcuityTag({ acuity }: Readonly<{ acuity: Acuity }>) {
+  const t = useTx();
   const color = acuityColor(acuity);
   return (
     <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${color}`}>
-      {ACUITY_UA[acuity]}
+      {t(ACUITY_MSG[acuity])}
     </span>
   );
 }

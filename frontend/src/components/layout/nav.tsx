@@ -1,11 +1,12 @@
 import type { ComponentType, SVGProps } from "react";
+import type { Msg } from "@/lib/i18n";
 import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock } from "@/components/ui/icons";
 
 export interface NavItem {
   href: string;
   pillar: string; // порядковий індекс розділу
-  title: string;
-  desc: string;
+  title: Msg;
+  desc: Msg;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
@@ -13,29 +14,29 @@ export const NAV: NavItem[] = [
   {
     href: "/dashboard",
     pillar: "01",
-    title: "Управлінська панель",
-    desc: "Загальна картина для керівника",
+    title: { uk: "Управлінська панель", en: "Management dashboard" },
+    desc: { uk: "Загальна картина для керівника", en: "Big picture for managers" },
     icon: IconDashboard,
   },
   {
     href: "/queue",
     pillar: "02",
-    title: "Черга реагування",
-    desc: "Список дітей за терміновістю",
+    title: { uk: "Черга реагування", en: "Response queue" },
+    desc: { uk: "Список дітей за терміновістю", en: "Children by urgency" },
     icon: IconQueue,
   },
   {
     href: "/profile",
     pillar: "03",
-    title: "Профіль дитини",
-    desc: "Зібрано з різних реєстрів",
+    title: { uk: "Профіль дитини", en: "Child profile" },
+    desc: { uk: "Зібрано з різних реєстрів", en: "Assembled from registries" },
     icon: IconProfile,
   },
   {
     href: "/privacy",
     pillar: "04",
-    title: "Захист даних і якість",
-    desc: "Чому системі можна довіряти",
+    title: { uk: "Захист даних і якість", en: "Data protection & quality" },
+    desc: { uk: "Чому системі можна довіряти", en: "Why you can trust it" },
     icon: IconShield,
   },
 ];
@@ -45,15 +46,15 @@ export const CASELOAD_NAV: NavItem[] = [
   {
     href: "/caseload",
     pillar: "05",
-    title: "Навантаження служб",
-    desc: "Скільки дітей на одного фахівця",
+    title: { uk: "Навантаження служб", en: "Service caseload" },
+    desc: { uk: "Скільки дітей на одного фахівця", en: "Children per specialist" },
     icon: IconScale,
   },
   {
     href: "/my-queue",
     pillar: "06",
-    title: "Кабінет фахівця",
-    desc: "Особиста черга та рішення",
+    title: { uk: "Кабінет фахівця", en: "Specialist workspace" },
+    desc: { uk: "Особиста черга та рішення", en: "Personal queue & decisions" },
     icon: IconClock,
   },
 ];
