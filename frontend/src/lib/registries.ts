@@ -27,6 +27,10 @@ export const REGISTRIES: RegistryMeta[] = [
   { code: "CBI", ua: "Банк даних з інвалідності", short: "Інвалідність", owner: "Мінсоцполітики", subsystem: "CBI_prod", access: 2 },
   { code: "EISSS", ua: "ЄІССС — соціальні допомоги", short: "ЄІССС", owner: "Мінсоцполітики", subsystem: "EISSS_prod", access: 2 },
   { code: "EDRSR", ua: "ЄДРСР — судові рішення", short: "ЄДРСР", owner: "ДСА", subsystem: "EDRSR_prod", access: 3 },
+  { code: "SKAID", ua: "ІКС «СКАЙД» — ювенальна превенція", short: "СКАЙД", owner: "Нацполіція", subsystem: "20_NP_SKAID_prod", access: 2 },
+  { code: "PFU", ua: "Реєстр застрахованих осіб (ПФУ)", short: "ПФУ", owner: "ПФУ", subsystem: "PFU_RZO_prod", access: 2 },
+  { code: "DRRP", ua: "ДРРП — речові права (житло)", short: "ДРРП", owner: "Мінʼюст", subsystem: "3_MJU_DRRP_prod", access: 2 },
+  { code: "HOTLINE", ua: "Гарячі лінії 116 111 / 1545", short: "Гар. лінія", owner: "Ла Страда / УКЦ", subsystem: "HOTLINE_prod", access: 2 },
 ];
 
 export const REG_BY_CODE: Record<RegistryCode, RegistryMeta> = Object.fromEntries(
@@ -56,6 +60,8 @@ export const VIOLATION_UA: Record<string, string> = {
   F6_sexual_abuse: "Сексуальне насильство",
   F4_child_labor: "Дитяча праця",
   E4_inclusion: "Доступ до інклюзії",
+  W9_identity: "Право на ідентичність",
+  F1_psych_violence: "Психологічне насильство (сім'я)",
 };
 
 export function violName(v: string): string {

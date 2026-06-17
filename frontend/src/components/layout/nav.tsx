@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from "react";
-import { IconDashboard, IconQueue, IconProfile, IconShield } from "@/components/ui/icons";
+import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock } from "@/components/ui/icons";
 
 export interface NavItem {
   href: string;
@@ -37,5 +37,23 @@ export const NAV: NavItem[] = [
     title: "Приватність і якість",
     desc: "Довіра до моделі",
     icon: IconShield,
+  },
+];
+
+/** Фаза 3 — кейсворкінг: розподіл навантаження та персональна черга. */
+export const CASELOAD_NAV: NavItem[] = [
+  {
+    href: "/caseload",
+    pillar: "05",
+    title: "Навантаження",
+    desc: "Розподіл по службах",
+    icon: IconScale,
+  },
+  {
+    href: "/my-queue",
+    pillar: "06",
+    title: "Моя черга",
+    desc: "Кейси наглядача",
+    icon: IconClock,
   },
 ];
