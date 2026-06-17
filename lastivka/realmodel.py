@@ -168,6 +168,21 @@ def build_states(child: Child, sim_start: date, T: int, rng: random.Random) -> N
         _set_from(states, L["F1_psych_violence"], family="stressed", safety="abuse_risk")
 
 
+def _clamp_school_by_age(child: Child, sim_start: date) -> None:
+    """Узгодити шкільний стан із віком: <6 р. — дошкільня (не «зник зі школи»), >17 — випускник.
+    Прибирає хибні ЄДЕБО/ІСУО-записи для дітей не шкільного віку."""
+    for t, s in enumerate(child.states):
+        age = child.age_at(sim_start, t)
+        if age < 6:
+            s.school = "preschool"
+        elif age > 17:
+            s.school = "graduated"
+    # якщо порушення стосувалося освіти, але дитина не шкільного віку — зняти мітку
+    if not any(s.school in ("enrolled", "at_risk", "dropped") for s in child.states):
+        for vid in ("W3_out_of_education", "F4_child_labor", "E1_bullying", "E4_inclusion", "X4_edu_rupture"):
+            child.labels.pop(vid, None)
+
+
 def sample_crossborder(child: Child, epi: dict, sim_start: date, T: int, rng: random.Random) -> None:
     """Хто з дітей став біженцем у Естонії (тимчасовий захист) + естонська ідентичність,
     EE-присутність у сервісах і КРОС-КОРДОННІ ризики. Спільного ключа з УНЗР немає."""
@@ -177,6 +192,9 @@ def sample_crossborder(child: Child, epi: dict, sim_start: date, T: int, rng: ra
     for f in ("ee_registered", "ee_in_school", "ee_in_health", "ee_gets_benefit", "ee_uasc"):
         setattr(child, f, False)
     if not cb:
+        return
+    # депортовані (РФ/ТОТ) НЕ є біженцями в Естонії — статуси взаємовиключні
+    if "W5_deportation" in child.labels:
         return
     war = child.geo_tier in ("frontline", "deoccupied", "occupied")
     p = cb.get("abroad_rate", 0.05) * (cb.get("war_mult", 2.0) if war else 1.0) * (1.4 if child.is_idp else 1.0)
@@ -234,5 +252,6 @@ def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:
         assign_violations(child, epi, sim_start, T, rng)
         build_states(child, sim_start, T, rng)
         sample_crossborder(child, epi, sim_start, T, rng)
+        _clamp_school_by_age(child, sim_start)  # дошкільнят не «виключають зі школи»
         children.append(child)
     return children

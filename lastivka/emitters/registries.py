@@ -513,8 +513,8 @@ def emit_eisss(child, cfg, rng):
 
 # ════════════ R13 ЄДРСР (судові рішення) ════════════
 def emit_edrsr(child, cfg, rng):
-    # рішення про позбавлення/обмеження батьківських прав (для сирітства/опіки)
-    if not ("W6_orphanhood" in child.labels or child.family_type in ("no_parental_care", "guardianship")):
+    # рішення про позбавлення батьківських прав — лише для сирітства/втрати піклування
+    if "W6_orphanhood" not in child.labels:
         return []
     if rng.random() < 0.4:  # не всі справи у відкритому реєстрі
         return []
