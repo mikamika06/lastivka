@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 import type { Msg } from "@/lib/i18n";
-import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock } from "@/components/ui/icons";
+import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock, IconGlobe } from "@/components/ui/icons";
 
 export interface NavItem {
   href: string;
@@ -56,5 +56,16 @@ export const CASELOAD_NAV: NavItem[] = [
     title: { uk: "Кабінет фахівця", en: "Specialist workspace" },
     desc: { uk: "Особиста черга та рішення", en: "Personal queue & decisions" },
     icon: IconClock,
+  },
+];
+
+/** Крос-кордон Україна ↔ Естонія: privacy-preserving звʼязок реєстрів і нові ризики. */
+export const CROSSBORDER_NAV: NavItem[] = [
+  {
+    href: "/cross-border",
+    pillar: "07",
+    title: { uk: "Крос-кордон UA↔EE", en: "Cross-border UA↔EE" },
+    desc: { uk: "Естонія: звʼязок і ризики", en: "Estonia: linkage & risks" },
+    icon: IconGlobe,
   },
 ];
