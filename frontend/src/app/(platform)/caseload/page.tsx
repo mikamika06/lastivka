@@ -57,7 +57,7 @@ export default async function CaseloadPage() {
 
       {/* KPI */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <KpiCard label={t({ uk: "Дітей усього", en: "Children total" })} value={s.total_cases} tone="neutral" />
+        <KpiCard label={t({ uk: "Дітей у черзі", en: "Children in queue" })} value={s.total_cases} tone="neutral" />
         <KpiCard
           label={t({ uk: "Призначено", en: "Assigned" })}
           value={s.assigned}
@@ -170,8 +170,8 @@ export default async function CaseloadPage() {
 }
 
 function utilColor(value: number): string {
-  if (value >= 1) return "var(--color-t0)";
-  if (value >= 0.85) return "var(--color-t1)";
+  if (value > 1) return "var(--color-t0)"; // перевантаження (перелив)
+  if (value >= 0.85) return "var(--color-t1)"; // близько до межі
   return "var(--color-brand)";
 }
 
