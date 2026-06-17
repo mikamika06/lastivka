@@ -120,10 +120,15 @@ export default async function CaseloadPage() {
   );
 }
 
+function utilColor(value: number): string {
+  if (value >= 1) return "var(--color-t0)";
+  if (value >= 0.85) return "var(--color-t1)";
+  return "var(--color-brand)";
+}
+
 function UtilBar({ value }: Readonly<{ value: number }>) {
   const pct = Math.round(value * 100);
-  const over = value >= 1;
-  const color = over ? "var(--color-t0)" : value >= 0.85 ? "var(--color-t1)" : "var(--color-brand)";
+  const color = utilColor(value);
   return (
     <div className="flex items-center gap-2">
       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-paper-2">
