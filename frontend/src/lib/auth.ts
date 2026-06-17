@@ -4,7 +4,8 @@
  * безпечні і для сервера, і для клієнта (без next/headers).
  *
  * Сесія зберігається у cookie (див. auth.server.ts), захист маршрутів —
- * у middleware.ts. Скоуп даних (громада/область) застосовується у lib/api.ts.
+ * у proxy.ts (Next 16 — наступник middleware.ts). Скоуп даних
+ * (громада/область) застосовується у lib/api.ts.
  */
 import type { Msg } from "./i18n";
 
