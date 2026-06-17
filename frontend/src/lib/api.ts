@@ -14,6 +14,7 @@ import type {
   WorkerQueue,
   FeedbackStats,
   FeedbackInput,
+  CrossBorderStats,
 } from "./types";
 import { mockData, mockOblastOf, mockWorkers, mockWorkerQueue, MOCK_FEEDBACK_STATS } from "./mock";
 
@@ -127,6 +128,24 @@ export async function getWorkerQueue(workerId: string): Promise<WorkerQueue> {
 export async function getFeedbackStats(): Promise<FeedbackStats> {
   const remote = await tryFetch<FeedbackStats>("/feedback/stats");
   return remote ?? MOCK_FEEDBACK_STATS;
+}
+
+const MOCK_CROSSBORDER: CrossBorderStats = {
+  ee_entities: 563,
+  linked: 533,
+  ee_unmatched: 30,
+  link_rate: 0.947,
+};
+
+export async function getCrossBorder(): Promise<CrossBorderStats> {
+  const remote = await tryFetch<CrossBorderStats>("/crossborder");
+  return remote ?? MOCK_CROSSBORDER;
+}
+
+/** Крос-кордонні кейси (country = EE або UA+EE) з черги. */
+export async function getCrossBorderCases(): Promise<QueueItem[]> {
+  const items = await getQueue();
+  return items.filter((i) => i.country === "UA+EE" || i.country === "EE");
 }
 
 export async function postFeedback(input: FeedbackInput): Promise<boolean> {
