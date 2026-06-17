@@ -136,6 +136,12 @@ def feedback_stats():
     return _feedback.stats()
 
 
+@app.get("/crossborder")
+def crossborder():
+    """Крос-кордонна статистика UA↔EE: скільки естонських дітей зв'язано (PPRL), скільки незнайдених."""
+    return pipeline.read_metrics().get("crossborder", {})
+
+
 @app.get("/entity/{entity_id}")
 def entity(entity_id: int):
     e = entities().get(entity_id)

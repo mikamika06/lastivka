@@ -221,8 +221,8 @@ def detect_entity(ent, cfg) -> list[dict]:
         ev = (["DRACS"] if s["parent_death"] else []) + (["EDRSR"] if s["court_deprivation"] else []) + ["DITY"]
         add("W6_orphanhood", ev, s["ssd_open_month"])
 
-    # W5 Депортація [immediate]
-    if s["childwar_status"] == "deported" or (s["ssd_unaccompanied"] and s["childwar_status"]):
+    # W5 Депортація [immediate] — лише за статусом «депортована» (без супроводу ≠ депортована)
+    if s["childwar_status"] == "deported":
         ev = ["CHILDWAR"] + (["DITY"] if s["ssd_present"] else [])
         add("W5_deportation", ev, s["ssd_open_month"])
 
