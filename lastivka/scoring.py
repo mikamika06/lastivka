@@ -49,6 +49,16 @@ def _vulnerability(det, entity, cfg, w) -> tuple[float, list[str]]:
     return min(mult, vw["cap"]), factors
 
 
+def _oblast(entity: dict) -> str:
+    for code, fld in (("EDDR", "registered_residence"), ("DRACS", "birth_place"),
+                      ("DITY", "place_of_residence")):
+        for r in entity.get("rows_by_reg", {}).get(code, []):
+            addr = str(r.get(fld) or "")
+            if " обл" in addr:
+                return addr.split(" обл")[0].split(",")[-1].strip()
+    return "—"
+
+
 def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
     sev_w = w["severity"]
     contribs = []
@@ -79,7 +89,7 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
     return {
         "entity_id": entity["entity_id"], "unzr": entity.get("unzr"),
         "pib": entity.get("pib"), "birth_date": entity.get("birth_date"),
-        "age": _age(entity.get("birth_date"), cfg),
+        "oblast": _oblast(entity), "age": _age(entity.get("birth_date"), cfg),
         "score": score, "tier": tier, "immediate": immediate,
         "vulnerability": round(vuln, 2), "vuln_factors": vfactors,
         "contributions": contribs,
