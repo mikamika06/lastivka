@@ -116,6 +116,12 @@ violations:
   E4_inclusion:              # обмеження доступу до інклюзивної освіти
     base: 0.30               # умовно, ЛИШЕ якщо є інвалідність (застосовується в коді)
     mult: {frontline: 1.5, rural: 1.5, idp: 1.4}
+  W9_identity:               # порушення права на ідентичність (документи/житло)
+    base: 0.004
+    mult: {occupied: 4.0, deoccupied: 3.0, no_parental_care: 3.0, idp: 1.5}
+  F1_psych_violence:         # психологічне насильство в сім'ї
+    base: 0.012
+    mult: {dv_household: 3.0, addiction: 2.0, single_parent: 1.3, deep: 1.4}
 
 # Допоміжні «прапорці», що виводяться з контексту для множників вище
 derived_flags_note: >

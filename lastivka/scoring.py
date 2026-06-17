@@ -98,7 +98,31 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
     }
 
 
-def score_all(detections: list[dict], entities_by_id: dict, cfg: dict, w: dict) -> list[dict]:
+# ── pluggable scorer: формула зараз; калібрована інтерпретована модель — коли будуть реальні мітки ──
+def features(row: dict) -> list[float]:
+    """Фічі для майбутньої каліброваної моделі (інтерпретовані)."""
+    contribs = row.get("contributions", [])
+    vals = [c["value"] for c in contribs] or [0.0]
+    return [max(vals), sum(vals), float(len(contribs)),
+            float(row.get("vulnerability", 1.0)), 1.0 if row.get("immediate") else 0.0]
+
+
+def load_calibration(path="out/calibration.joblib"):
+    """Завантажує калібровану модель, якщо натренована (інакше None -> працює формула)."""
+    import os
+    if not os.path.exists(path):
+        return None
+    try:
+        import joblib
+        return joblib.load(path)
+    except Exception:
+        return None
+
+
+def score_all(detections: list[dict], entities_by_id: dict, cfg: dict, w: dict,
+              calibration=None) -> list[dict]:
+    if calibration is None:
+        calibration = load_calibration()
     queue = []
     for d in detections:
         ent = entities_by_id.get(d["entity_id"], {"entity_id": d["entity_id"],
@@ -106,9 +130,15 @@ def score_all(detections: list[dict], entities_by_id: dict, cfg: dict, w: dict) 
                                                   "birth_date": d["birth_date"],
                                                   "registries": []})
         row = score_entity(d["detections"], ent, cfg, w)
-        if row["tier"]:
-            queue.append(row)
-    # рівень T0 -> T1 -> T2, всередині — за score; immediate першими
+        if not row["tier"]:
+            continue
+        # шов: калібрована ймовірність їде поруч (формула досі визначає tier/rank)
+        if calibration is not None:
+            try:
+                row["model_score"] = round(float(calibration.predict_proba([features(row)])[0][1]), 3)
+            except Exception:
+                row["model_score"] = None
+        queue.append(row)
     order = {"T0": 0, "T1": 1, "T2": 2}
     queue.sort(key=lambda r: (order[r["tier"]], not r["immediate"], -r["score"]))
     return queue

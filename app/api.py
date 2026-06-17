@@ -63,6 +63,7 @@ def queue(tier: str | None = None, immediate: bool = False, limit: int = 500):
             "rank": int(r["rank"]), "entity_id": int(r["entity_id"]),
             "unzr": r["unzr"] if r["unzr"] not in (None, "", "None") else None,
             "pib": r["pib"], "birth_date": r["birth_date"], "age": r["age"],
+            "oblast": r.get("oblast"), "worker_id": r.get("worker_id"),
             "tier": r["tier"], "score": r["score"], "immediate": bool(r["immediate"]),
             "vulnerability": r["vulnerability"],
             "vuln_factors": json.loads(r["vuln_factors"]),
@@ -71,6 +72,61 @@ def queue(tier: str | None = None, immediate: bool = False, limit: int = 500):
             "contributions": json.loads(r["contributions"]),
         })
     return {"count": len(out), "items": out}
+
+
+@app.get("/caseload")
+def caseload_overview():
+    """Розподіл по кейсворкерах: статистика областей, зведення, дедлайни, штат."""
+    return pipeline.read_metrics().get("caseload", {})
+
+
+@app.get("/caseload/worker/{worker_id}")
+def caseload_worker(worker_id: str):
+    """Персональна черга конкретного наглядача (його топ за терміновістю)."""
+    df = pipeline.read_queue()
+    rows = df[df.worker_id == worker_id]
+    out = []
+    for _, r in rows.iterrows():
+        out.append({"rank": int(r["rank"]), "entity_id": int(r["entity_id"]),
+                    "pib": r["pib"], "age": r["age"], "oblast": r.get("oblast"),
+                    "tier": r["tier"], "score": r["score"], "immediate": bool(r["immediate"]),
+                    "violations": json.loads(r["violations"])})
+    return {"worker_id": worker_id, "count": len(out), "cases": out}
+
+
+# ── Feedback: захоплення рішень кейсворкера (джерело майбутніх міток для моделі) ──
+from pydantic import BaseModel  # noqa: E402
+from lastivka import feedback as _feedback  # noqa: E402
+
+
+class FeedbackIn(BaseModel):
+    entity_id: int
+    decision: str            # confirmed | rejected | escalated
+    outcome: str = "unknown"  # substantiated | unsubstantiated | unknown
+    caseworker: str | None = None
+    note: str | None = None
+
+
+@app.post("/feedback")
+def post_feedback(fb: FeedbackIn):
+    df = pipeline.read_queue()
+    row = df[df.entity_id == fb.entity_id]
+    extra = {}
+    if not row.empty:
+        r = row.iloc[0]
+        extra = dict(unzr=r["unzr"], pib=r["pib"], tier=r["tier"], score=float(r["score"]),
+                     violations=json.loads(r["violations"]))
+    try:
+        _feedback.log_feedback(fb.entity_id, fb.decision, outcome=fb.outcome,
+                               caseworker=fb.caseworker, note=fb.note, **extra)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.get("/feedback/stats")
+def feedback_stats():
+    return _feedback.stats()
 
 
 @app.get("/entity/{entity_id}")
