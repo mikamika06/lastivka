@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Ластівка — дизайн-система у стилі Дія / Мінцифра
+   Чорно-біла основа · плоский дизайн · e-Ukraine · повітря.
+   Чорний — головний колір; синій #2F7BF5 — єдиний функціональний
+   акцент; статусні кольори несуть СЕНС (терміновість T0/T1/T2).
+   ============================================================ */
+
+@theme {
+  /* ── шрифти (e-Ukraine / e-Ukraine Head) ── */
+  --font-sans: var(--font-e-ukraine), -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-display: var(--font-e-ukraine-head), var(--font-e-ukraine), sans-serif;
+
+  /* ── нейтралі (база) ── */
+  --color-paper: #f5f8fb;
+  --color-paper-2: #ecf2f7;
+  --color-surface: #ffffff;
+  --color-ink: #0b0b0c;
+  --color-ink-2: rgba(0, 0, 0, 0.72);
+  --color-muted: rgba(0, 0, 0, 0.60);
+  --color-faint: rgba(0, 0, 0, 0.54);
+  --color-line: #dde4ed;
+  --color-line-2: #eaeff5;
+
+  /* ── функціональний акцент (синій, точково) ── */
+  --color-brand: #2f7bf5;
+  --color-brand-2: #5e97f7;
+  --color-brand-ink: #1b5fd0;
+  --color-brand-soft: #eaf1fe;
+  --color-brand-line: #cfe0fb;
+
+  /* ── терміновість (статусні кольори Дія) ── */
+  --color-t0: #ca2f28;
+  --color-t0-soft: #fbeae9;
+  --color-t0-ink: #971c18;
+  --color-t0-line: #f0cdcb;
+
+  --color-t1: #de6b12;
+  --color-t1-soft: #fbefe2;
+  --color-t1-ink: #8f470d;
+  --color-t1-line: #f3d6bd;
+
+  --color-t2: #bd920a;
+  --color-t2-soft: #faf3da;
+  --color-t2-ink: #795c07;
+  --color-t2-line: #ead9a3;
+
+  /* ── семантика ── */
+  --color-ok: #19be6f;
+  --color-ok-soft: #e3f7ee;
+  --color-ok-ink: #0a7544;
+  --color-lock: #5b6573;
+  --color-lock-soft: #eef1f5;
+  --color-lock-ink: #3a4250;
+
+  /* ── радіуси (Дія: 8 контролі / 12 картки / 16 великі) ── */
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
+
+  /* ── тіні (плоско: майже без depth) ── */
+  --shadow-xs: 0 1px 1px rgba(11, 18, 30, 0.03);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-pop: 0 10px 30px -10px rgba(16, 24, 40, 0.22);
+
+  /* ── анімації ── */
+  --animate-fade-up: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.35s ease both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================================
+   База
+   ============================================================ */
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink-2);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: var(--color-ink);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* тонкий скролбар */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #cdd6e0;
+  border-radius: 999px;
+  border: 2px solid var(--color-paper);
+}
+::-webkit-scrollbar-thumb:hover { background: #b6c1cd; }
+
+/* ============================================================
+   Повторювані патерни
+   ============================================================ */
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-flat {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-2xl);
+  }
+
+  .h-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+
+  /* великі цифри-індекси розділів */
+  .section-index {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 0.85;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
