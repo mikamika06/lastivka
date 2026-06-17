@@ -13,6 +13,11 @@ import type {
   RegistryCode,
   Tier,
   Acuity,
+  CaseloadOverview,
+  OblastStat,
+  WorkerQueue,
+  WorkerCase,
+  FeedbackStats,
 } from "./types";
 import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
 
@@ -20,9 +25,9 @@ import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
 function rng(seed: number) {
   let a = seed >>> 0;
   return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), 1 | t);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
@@ -46,9 +51,9 @@ interface VProfile {
   evidence: RegistryCode[];
 }
 const VPROFILE: Record<string, VProfile> = {
-  W7_trafficking: { sev: 1.0, evidence: ["ERDR", "DITY"] },
-  F6_sexual_abuse: { sev: 1.0, evidence: ["ERDR"] },
-  W5_deportation: { sev: 1.0, evidence: ["CHILDWAR", "DITY"] },
+  W7_trafficking: { sev: 1, evidence: ["ERDR", "DITY"] },
+  F6_sexual_abuse: { sev: 1, evidence: ["ERDR"] },
+  W5_deportation: { sev: 1, evidence: ["CHILDWAR", "DITY"] },
   P1_physical_home: { sev: 0.9, evidence: ["EHEALTH", "DV", "ERDR", "DITY"] },
   W6_orphanhood: { sev: 0.85, evidence: ["DRACS", "EDRSR", "DITY"] },
   W8_medical_access: { sev: 0.75, evidence: ["EHEALTH", "VPO"] },
@@ -59,13 +64,16 @@ const VPROFILE: Record<string, VProfile> = {
   W1_displacement: { sev: 0.55, evidence: ["VPO", "EDEBO", "EHEALTH", "CHILDWAR"] },
   E4_inclusion: { sev: 0.5, evidence: ["CBI", "EDEBO"] },
   E1_bullying: { sev: 0.5, evidence: ["AIKOM", "EHEALTH"] },
+  W9_identity: { sev: 0.7, evidence: ["DRRP", "EDDR"] },
+  F1_psych_violence: { sev: 0.6, evidence: ["HOTLINE", "DV", "EHEALTH", "DITY"] },
 };
 const ALL_VIOL = Object.keys(VPROFILE);
 
 const SELECT_WEIGHT: Record<string, number> = {
   W1_displacement: 32, P1_physical_home: 22, E1_bullying: 20, F3_neglect: 18,
-  W3_out_of_education: 16, W2_psych_trauma: 14, W8_medical_access: 10, F4_child_labor: 10,
-  E4_inclusion: 8, W6_orphanhood: 7, W5_deportation: 6, W7_trafficking: 4, F6_sexual_abuse: 4,
+  W3_out_of_education: 16, W2_psych_trauma: 14, F1_psych_violence: 12, W8_medical_access: 10,
+  F4_child_labor: 10, E4_inclusion: 8, W6_orphanhood: 7, W5_deportation: 6, W9_identity: 5,
+  W7_trafficking: 4, F6_sexual_abuse: 4,
 };
 const NONIMMEDIATE = ALL_VIOL.filter((v) => !IMMEDIATE_VIOLATIONS.has(v));
 const IMMEDIATE_LIST = ALL_VIOL.filter((v) => IMMEDIATE_VIOLATIONS.has(v));
@@ -77,11 +85,11 @@ function wpick(r: () => number, pool: string[]): string {
     x -= SELECT_WEIGHT[v] ?? 1;
     if (x <= 0) return v;
   }
-  return pool[pool.length - 1];
+  return pool.at(-1) as string;
 }
 
-const EV_MULT: Record<number, number> = { 1: 0.6, 2: 1.0, 3: 1.3, 4: 1.5 };
-const ACU_MULT: Record<Acuity, number> = { acute: 1.5, active: 1.0, chronic: 0.7, improving: 0.5 };
+const EV_MULT: Record<number, number> = { 1: 0.6, 2: 1, 3: 1.3, 4: 1.5 };
+const ACU_MULT: Record<Acuity, number> = { acute: 1.5, active: 1, chronic: 0.7, improving: 0.5 };
 
 function evMult(n: number) {
   return EV_MULT[Math.min(n, 4) as 1 | 2 | 3 | 4] ?? 1.5;
@@ -121,7 +129,7 @@ function vulnerability(
   if (viols.includes("W5_deportation") || viols.includes("W7_trafficking")) { m *= 1.4; f.push("без опікуна"); }
   if (registries.includes("VPO") || viols.includes("W1_displacement")) { m *= 1.2; f.push("ВПО"); }
   if (registries.includes("ERDR")) { m *= 1.25; f.push("фактор ризику (ЄРДР)"); }
-  return { mult: Math.min(+m.toFixed(2), 2.0), factors: f };
+  return { mult: Math.min(+m.toFixed(2), 2), factors: f };
 }
 
 type Gender = "m" | "f";
@@ -145,15 +153,72 @@ function pickOblast(r: () => number): string {
 
 const ACUITIES: Acuity[] = ["acute", "active", "chronic"];
 
+/**
+ * Кількість порушень для звичайного кейсу.
+ * Зберігає послідовність викликів PRNG: другий r() викликається лише
+ * якщо перший дав ≥ 0.6 (як у вихідному короткому замиканні тернара).
+ */
+function pickViolationCount(r: () => number): number {
+  if (r() < 0.6) return 1;
+  if (r() < 0.9) return 2;
+  return 3;
+}
+
 interface FullCase extends QueueItem {
   oblast: string;
   timeline: TimelineEvent[];
   attendance: AttendanceSeries | null;
 }
 
+/** Дедлайни реагування за рівнем черги (caseload.TIER_DEADLINE). */
+const TIER_DEADLINE = {
+  T0: { label: "1 доба", detail: "оцінка рівня безпеки дитини (ПКМУ №585 п.9); насильство — повідомлення ≤3 год (ПКМУ №1513)" },
+  T1: { label: "5–7 робочих днів", detail: "оцінка потреб і взяття на облік (СЖО без гострої загрози)" },
+  T2: { label: "до 14 днів / планово", detail: "взяття на облік за інших обставин; спостереження" },
+} as const;
+
 /** Подія таймлайну з автоматичною позначкою Рівня-1 за рівнем доступу реєстру. */
 function tev(date: string, registry: RegistryCode, label: string): TimelineEvent {
   return { date, registry, label, level1: regAccess(registry) === 1 };
+}
+
+/** Вибір набору порушень для згенерованого кейсу (зберігає порядок викликів PRNG). */
+function chooseViolations(r: () => number): string[] {
+  const chosen: string[] = [];
+  if (r() < 0.08) {
+    chosen.push(wpick(r, IMMEDIATE_LIST));
+    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE));
+    return chosen;
+  }
+  const nViol = pickViolationCount(r);
+  const pool = [...NONIMMEDIATE];
+  for (let k = 0; k < nViol && pool.length; k++) {
+    const v = wpick(r, pool);
+    chosen.push(v);
+    pool.splice(pool.indexOf(v), 1);
+  }
+  return chosen;
+}
+
+/** Побудова відсортованого списку внесків за обраними порушеннями. */
+function buildContributions(chosen: string[], r: () => number): Contribution[] {
+  const contribs: Contribution[] = chosen.map((v) => {
+    const prof = VPROFILE[v];
+    const nEv = 1 + Math.floor(r() * Math.min(prof.evidence.length, 3));
+    const evidence = prof.evidence.slice(0, Math.max(1, nEv));
+    const acuity = ACUITIES[Math.floor(r() * ACUITIES.length)];
+    return mkContribution(v, evidence, acuity);
+  });
+  contribs.sort((a, b) => b.value - a.value);
+  return contribs;
+}
+
+/** Реєстри-докази для кейсу (база з внесків + службові EDDR/DRACS). */
+function buildRegistries(contribs: Contribution[], r: () => number): RegistryCode[] {
+  const registries = Array.from(new Set(contribs.flatMap((c) => c.evidence))) as RegistryCode[];
+  if (!registries.includes("EDDR")) registries.push("EDDR");
+  if (r() < 0.6 && !registries.includes("DRACS")) registries.push("DRACS");
+  return registries;
 }
 
 /* ── генератор одного кейсу ── */
@@ -165,32 +230,9 @@ function genCase(i: number): FullCase {
   const birth_date = `${birthYear}-${String(1 + Math.floor(r() * 12)).padStart(2, "0")}-${String(1 + Math.floor(r() * 27)).padStart(2, "0")}`;
   const oblast = pickOblast(r);
 
-  const chosen: string[] = [];
-  if (r() < 0.08) {
-    chosen.push(wpick(r, IMMEDIATE_LIST));
-    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE));
-  } else {
-    const nViol = r() < 0.6 ? 1 : r() < 0.9 ? 2 : 3;
-    const pool = [...NONIMMEDIATE];
-    for (let k = 0; k < nViol && pool.length; k++) {
-      const v = wpick(r, pool);
-      chosen.push(v);
-      pool.splice(pool.indexOf(v), 1);
-    }
-  }
-
-  const contribs: Contribution[] = chosen.map((v) => {
-    const prof = VPROFILE[v];
-    const nEv = 1 + Math.floor(r() * Math.min(prof.evidence.length, 3));
-    const evidence = prof.evidence.slice(0, Math.max(1, nEv));
-    const acuity = ACUITIES[Math.floor(r() * ACUITIES.length)];
-    return mkContribution(v, evidence, acuity);
-  });
-  contribs.sort((a, b) => b.value - a.value);
-
-  const registries = Array.from(new Set(contribs.flatMap((c) => c.evidence))) as RegistryCode[];
-  if (!registries.includes("EDDR")) registries.push("EDDR");
-  if (r() < 0.6 && !registries.includes("DRACS")) registries.push("DRACS");
+  const chosen = chooseViolations(r);
+  const contribs = buildContributions(chosen, r);
+  const registries = buildRegistries(contribs, r);
 
   const immediate = chosen.some((v) => IMMEDIATE_VIOLATIONS.has(v));
   const { mult: vuln, factors } = vulnerability(age, registries, chosen);
@@ -211,9 +253,10 @@ function genCase(i: number): FullCase {
     vulnerability: vuln,
     vuln_factors: factors,
     violations: contribs.map((c) => c.violation),
-    registries: registries.sort(),
+    registries: registries.toSorted((x, y) => x.localeCompare(y, "uk")),
     contributions: contribs,
     oblast,
+    worker_id: null,
     timeline: deriveTimeline(registries, r),
     attendance: registries.includes("AIKOM") ? deriveAttendance(r, contribs.some((c) => c.acuity === "acute")) : null,
   };
@@ -239,6 +282,9 @@ function deriveTimeline(registries: RegistryCode[], r: () => number): TimelineEv
   if (has("DITY")) ev.push(tev(d(12, 22), "DITY", "Взято на облік ССД (складні життєві обставини)"));
   if (has("CHILDWAR")) ev.push(tev(d(6, 18), "CHILDWAR", "Статус у реєстрі «Діти війни»"));
   if (has("EDRSR")) ev.push(tev(d(12, 22), "EDRSR", "Судове рішення щодо батьківських прав"));
+  if (has("DRRP")) ev.push(tev(d(6, 20), "DRRP", "Відчуження житла дитини без дозволу опіки"));
+  if (has("HOTLINE")) ev.push(tev(d(8, 22), "HOTLINE", "Звернення на гарячу лінію 116 111"));
+  if (has("SKAID")) ev.push(tev(d(10, 22), "SKAID", "Облік у ювенальній превенції"));
   if (has("ERDR")) ev.push(tev(d(14, 23), "ERDR", "Внесено до ЄРДР досудове розслідування"));
   return ev.sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -250,7 +296,7 @@ function deriveAttendance(r: () => number, acute: boolean): AttendanceSeries {
   for (let m = 0; m < 12; m++) {
     const after = m >= cp;
     const absences = after ? 5 + Math.floor(r() * 8) : Math.floor(r() * 3);
-    const gpa = after ? +(3.2 + r() * 2.4).toFixed(1) : +(7.6 + r() * 4.0).toFixed(1);
+    const gpa = after ? +(3.2 + r() * 2.4).toFixed(1) : +(7.6 + r() * 4).toFixed(1);
     const y = 2023 + Math.floor((m + 8) / 12);
     const mm = ((m + 8) % 12) + 1;
     points.push({ period: `${y}-${String(mm).padStart(2, "0")}`, absences, gpa });
@@ -277,8 +323,8 @@ function makeHero(
     rank: 0, entity_id: args.id, unzr: args.unzr, pib: args.pib,
     birth_date: args.birth, age: args.age, tier: tierOf(score, immediate) ?? "T2",
     score, immediate, vulnerability: mult, vuln_factors: factors,
-    violations: viols, registries: [...args.registries].sort(), contributions: contribs,
-    oblast: args.oblast, timeline: args.timeline, attendance: args.attendance ?? null,
+    violations: viols, registries: args.registries.toSorted((x, y) => x.localeCompare(y, "uk")), contributions: contribs,
+    oblast: args.oblast, worker_id: null, timeline: args.timeline, attendance: args.attendance ?? null,
   };
 }
 
@@ -303,7 +349,7 @@ function hero(): FullCase[] {
       attendance: {
         points: [
           { period: "2022-09", absences: 1, gpa: 11.2 }, { period: "2022-10", absences: 0, gpa: 11.5 },
-          { period: "2022-11", absences: 2, gpa: 10.8 }, { period: "2022-12", absences: 1, gpa: 11.0 },
+          { period: "2022-11", absences: 2, gpa: 10.8 }, { period: "2022-12", absences: 1, gpa: 11 },
           { period: "2023-01", absences: 2, gpa: 10.4 }, { period: "2023-02", absences: 7, gpa: 8.6 },
           { period: "2023-03", absences: 11, gpa: 6.8 }, { period: "2023-04", absences: 14, gpa: 5.4 },
           { period: "2023-05", absences: 18, gpa: 4.2 }, { period: "2023-06", absences: 20, gpa: 3.6 },
@@ -487,20 +533,122 @@ function hero(): FullCase[] {
 /* ============================================================
    Збірка повного набору
    ============================================================ */
+
+/** Кількість записів у реєстрі (демо-евристика). */
+function recordCount(reg: RegistryCode, entityId: number): number {
+  if (reg === "AIKOM") return 10;
+  if (reg === "EHEALTH") return 2 + (entityId % 3);
+  return 1;
+}
+
+/** Явна проєкція FullCase → QueueItem (без полів oblast/timeline/attendance). */
+function toQueueItem(c: FullCase): QueueItem {
+  return {
+    rank: c.rank,
+    entity_id: c.entity_id,
+    unzr: c.unzr,
+    pib: c.pib,
+    birth_date: c.birth_date,
+    age: c.age,
+    tier: c.tier,
+    score: c.score,
+    immediate: c.immediate,
+    vulnerability: c.vulnerability,
+    vuln_factors: c.vuln_factors,
+    violations: c.violations,
+    registries: c.registries,
+    contributions: c.contributions,
+    oblast: c.oblast,
+    worker_id: c.worker_id,
+  };
+}
+
+const TIER_ORDER: Record<Tier, number> = { T0: 0, T1: 1, T2: 2 };
+const CAPACITY_PER_WORKER = 12;
+const TOTAL_CASEWORKERS = 30;
+
+/**
+ * Розподіл черги по кейсворкерах (дзеркало caseload.compute):
+ * територіальна маршрутизація + ємність за нормативом + перелив.
+ * Мутує worker_id у переданих кейсах і повертає зведення.
+ */
+function computeCaseload(all: FullCase[]): CaseloadOverview {
+  const wTotal = OBLAST_W.reduce((a, b) => a + b, 0);
+  const weightOf = (o: string) => {
+    const idx = OBLASTS.indexOf(o);
+    return idx >= 0 ? OBLAST_W[idx] / wTotal : 0.02;
+  };
+
+  const byObl = new Map<string, FullCase[]>();
+  for (const c of all) {
+    const o = c.oblast || "—";
+    const arr = byObl.get(o) ?? [];
+    if (arr.length === 0) byObl.set(o, arr);
+    arr.push(c);
+  }
+
+  const roster: Record<string, number> = {};
+  for (const o of byObl.keys()) roster[o] = Math.max(1, Math.round(TOTAL_CASEWORKERS * weightOf(o)));
+
+  const oblastStats: OblastStat[] = [];
+  let assigned = 0;
+  let overflowTotal = 0;
+  for (const [obl, cases] of byObl) {
+    cases.sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || b.score - a.score);
+    const nWorkers = roster[obl];
+    const capTotal = nWorkers * CAPACITY_PER_WORKER;
+    cases.forEach((c, i) => {
+      c.worker_id = i < capTotal ? `${obl}-${(i % nWorkers) + 1}` : null;
+    });
+    const covered = Math.min(cases.length, capTotal);
+    const overflow = Math.max(0, cases.length - capTotal);
+    const over = cases.slice(capTotal);
+    assigned += covered;
+    overflowTotal += overflow;
+    oblastStats.push({
+      oblast: obl,
+      workers: nWorkers,
+      capacity: capTotal,
+      cases: cases.length,
+      covered,
+      overflow,
+      t0: cases.filter((c) => c.tier === "T0").length,
+      t1: cases.filter((c) => c.tier === "T1").length,
+      t2: cases.filter((c) => c.tier === "T2").length,
+      utilization: capTotal ? +Math.min(covered / capTotal, 1).toFixed(2) : 0,
+      urgent_uncovered: over.filter((c) => c.tier === "T0" || c.tier === "T1").length,
+      extra_workers_needed: overflow ? Math.ceil(overflow / CAPACITY_PER_WORKER) : 0,
+    });
+  }
+  oblastStats.sort((a, b) => b.urgent_uncovered - a.urgent_uncovered || b.overflow - a.overflow);
+
+  return {
+    roster,
+    capacity_per_worker: CAPACITY_PER_WORKER,
+    total_caseworkers: TOTAL_CASEWORKERS,
+    oblast_stats: oblastStats,
+    deadlines: TIER_DEADLINE,
+    summary: {
+      total_cases: all.length,
+      assigned,
+      overflow: overflowTotal,
+      urgent_uncovered: oblastStats.reduce((s, o) => s + o.urgent_uncovered, 0),
+      extra_workers_needed: oblastStats.reduce((s, o) => s + o.extra_workers_needed, 0),
+    },
+  };
+}
+
 function build() {
   const featured = hero();
   const generated: FullCase[] = [];
   for (let i = 0; i < 235; i++) generated.push(genCase(i));
 
   const all = [...featured, ...generated];
-  const order: Record<Tier, number> = { T0: 0, T1: 1, T2: 2 };
-  all.sort((a, b) => order[a.tier] - order[b.tier] || Number(b.immediate) - Number(a.immediate) || b.score - a.score);
+  all.sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || Number(b.immediate) - Number(a.immediate) || b.score - a.score);
   all.forEach((c, idx) => (c.rank = idx + 1));
 
-  const items: QueueItem[] = all.map(({ oblast, timeline, attendance, ...q }) => {
-    void oblast; void timeline; void attendance;
-    return q;
-  });
+  const caseload = computeCaseload(all); // призначає worker_id кожному кейсу
+  const items: QueueItem[] = all.map(toQueueItem);
 
   const entities: Record<number, Entity & { oblast: string }> = {};
   const timelines: Record<number, TimelineEvent[]> = {};
@@ -508,7 +656,7 @@ function build() {
   for (const c of all) {
     const records: Partial<Record<RegistryCode, number>> = {};
     for (const reg of c.registries) {
-      records[reg] = reg === "AIKOM" ? 10 : reg === "EHEALTH" ? 2 + (c.entity_id % 3) : 1;
+      records[reg] = recordCount(reg, c.entity_id);
     }
     entities[c.entity_id] = {
       entity_id: c.entity_id, unzr: c.unzr, pib: c.pib, birth_date: c.birth_date,
@@ -518,7 +666,7 @@ function build() {
     attendance[c.entity_id] = c.attendance;
   }
 
-  return { all, items, entities, timelines, attendance };
+  return { all, items, entities, timelines, attendance, caseload };
 }
 
 const DATA = build();
@@ -531,8 +679,8 @@ export const MOCK_METRICS: Metrics = {
   detection: {
     overall: { precision: 0.97, recall: 0.88, f1: 0.92 },
     per_violation: {
-      W7_trafficking: { tp: 34, fp: 0, fn: 2, precision: 1.0, recall: 0.94 },
-      F6_sexual_abuse: { tp: 31, fp: 0, fn: 3, precision: 1.0, recall: 0.91 },
+      W7_trafficking: { tp: 34, fp: 0, fn: 2, precision: 1, recall: 0.94 },
+      F6_sexual_abuse: { tp: 31, fp: 0, fn: 3, precision: 1, recall: 0.91 },
       W5_deportation: { tp: 46, fp: 1, fn: 4, precision: 0.98, recall: 0.92 },
       P1_physical_home: { tp: 152, fp: 4, fn: 17, precision: 0.97, recall: 0.9 },
       W6_orphanhood: { tp: 58, fp: 1, fn: 6, precision: 0.98, recall: 0.91 },
@@ -544,9 +692,11 @@ export const MOCK_METRICS: Metrics = {
       W2_psych_trauma: { tp: 96, fp: 8, fn: 22, precision: 0.92, recall: 0.81 },
       W1_displacement: { tp: 287, fp: 11, fn: 28, precision: 0.96, recall: 0.91 },
       E1_bullying: { tp: 142, fp: 12, fn: 26, precision: 0.92, recall: 0.85 },
+      F1_psych_violence: { tp: 88, fp: 9, fn: 21, precision: 0.91, recall: 0.81 },
+      W9_identity: { tp: 27, fp: 2, fn: 7, precision: 0.93, recall: 0.79 },
     },
   },
-  privacy: { n_pairs: 5218, precision: 1.0, recall: 0.95 },
+  privacy: { n_pairs: 5218, precision: 1, recall: 0.95 },
 };
 
 export const mockData = {
@@ -556,8 +706,53 @@ export const mockData = {
   timelines: DATA.timelines,
   attendance: DATA.attendance,
   metrics: MOCK_METRICS,
+  caseload: DATA.caseload,
 };
 
 export function mockOblastOf(entityId: number): string {
   return DATA.entities[entityId]?.oblast ?? "—";
 }
+
+/* ── Фаза 3: персональні черги наглядачів + штат + feedback ── */
+function toWorkerCase(c: FullCase): WorkerCase {
+  return {
+    rank: c.rank, entity_id: c.entity_id, pib: c.pib, age: c.age, oblast: c.oblast,
+    tier: c.tier, score: c.score, immediate: c.immediate, violations: c.violations,
+  };
+}
+
+const WORKER_INDEX: Record<string, FullCase[]> = (() => {
+  const idx: Record<string, FullCase[]> = {};
+  for (const c of DATA.all) {
+    if (!c.worker_id) continue;
+    (idx[c.worker_id] ??= []).push(c);
+  }
+  for (const id of Object.keys(idx)) {
+    idx[id].sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || b.score - a.score);
+  }
+  return idx;
+})();
+
+/** Перелік наглядачів (для селектора «Моя черга»), відсортований за напругою. */
+export function mockWorkers(): { worker_id: string; oblast: string; count: number; t0: number }[] {
+  return Object.entries(WORKER_INDEX)
+    .map(([worker_id, cases]) => ({
+      worker_id,
+      oblast: cases[0]?.oblast ?? "—",
+      count: cases.length,
+      t0: cases.filter((c) => c.tier === "T0").length,
+    }))
+    .sort((a, b) => b.t0 - a.t0 || b.count - a.count);
+}
+
+export function mockWorkerQueue(workerId: string): WorkerQueue {
+  const cases = (WORKER_INDEX[workerId] ?? []).map(toWorkerCase);
+  return { worker_id: workerId, count: cases.length, cases };
+}
+
+export const MOCK_FEEDBACK_STATS: FeedbackStats = {
+  total: 0,
+  labeled: 0,
+  ready_to_train: false,
+  note: "Ще немає зворотного звʼязку — джерело майбутніх міток порожнє.",
+};

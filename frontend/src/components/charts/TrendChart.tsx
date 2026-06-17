@@ -5,7 +5,7 @@ import { formatPeriod } from "@/lib/format";
  * Відвідуваність (пропуски, бари) + успішність (GPA, лінія) з підсвіченою
  * точкою зламу (change-point) — момент, коли почалось погіршення.
  */
-export function TrendChart({ data }: { data: AttendanceSeries }) {
+export function TrendChart({ data }: Readonly<{ data: AttendanceSeries }>) {
   const pts = data.points;
   const n = pts.length;
   if (n === 0) return null;
@@ -29,7 +29,7 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
 
   const gpaLine = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(1)} ${yG(p.gpa).toFixed(1)}`).join(" ");
   const cp = data.changePointIndex;
-  const cpX = cp !== null ? padL + cp * step : null;
+  const cpX = cp === null ? null : padL + cp * step;
 
   const gridY = [0, 0.25, 0.5, 0.75, 1].map((f) => padT + plotH * f);
   const labelEvery = Math.ceil(n / 8);
@@ -49,8 +49,8 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Відвідуваність та успішність із точкою зламу">
         {/* сітка */}
-        {gridY.map((gy, i) => (
-          <line key={i} x1={padL} x2={W - padR} y1={gy} y2={gy} stroke="var(--color-line-2)" strokeWidth="1" />
+        {gridY.map((gy) => (
+          <line key={gy} x1={padL} x2={W - padR} y1={gy} y2={gy} stroke="var(--color-line-2)" strokeWidth="1" />
         ))}
 
         {/* зона після зламу */}
@@ -64,7 +64,7 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
           const after = cp !== null && i >= cp;
           return (
             <rect
-              key={i}
+              key={p.period}
               x={x(i) - barW / 2}
               y={yA(p.absences)}
               width={barW}
@@ -80,7 +80,7 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
         {/* лінія GPA */}
         <path d={gpaLine} fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
         {pts.map((p, i) => (
-          <circle key={i} cx={x(i)} cy={yG(p.gpa)} r="3" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="2">
+          <circle key={p.period} cx={x(i)} cy={yG(p.gpa)} r="3" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="2">
             <title>{`${formatPeriod(p.period)}: GPA ${p.gpa}`}</title>
           </circle>
         ))}
@@ -101,7 +101,7 @@ export function TrendChart({ data }: { data: AttendanceSeries }) {
         {/* підписи осі X */}
         {pts.map((p, i) =>
           i % labelEvery === 0 ? (
-            <text key={i} x={x(i)} y={H - 14} textAnchor="middle" className="fill-faint text-[10px]">
+            <text key={p.period} x={x(i)} y={H - 14} textAnchor="middle" className="fill-faint text-[10px]">
               {formatPeriod(p.period)}
             </text>
           ) : null,

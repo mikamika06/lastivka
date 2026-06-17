@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getMetrics } from "@/lib/api";
 import { formatPct } from "@/lib/format";
-import { NAV } from "@/components/layout/nav";
+import { NAV, CASELOAD_NAV } from "@/components/layout/nav";
 import { LandingHeader } from "@/components/landing/Header";
 import { LandingFooter } from "@/components/landing/Footer";
 import { HeroPreview } from "@/components/landing/HeroPreview";
@@ -41,13 +41,13 @@ export default async function LandingPage() {
 }
 
 /* ───────────────────────── HERO ───────────────────────── */
-function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) {
+function Hero({ metrics }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetrics>> }>) {
   return (
     <section className="relative overflow-hidden border-b border-line bg-surface">
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
         <div className="animate-fade-up">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-surface px-3 py-1.5 text-xs font-medium text-brand-ink">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-2" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-2" />{" "}
             Українсько-естонське партнерство · 16–18.06.2026
           </span>
 
@@ -93,7 +93,7 @@ function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) 
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label }: Readonly<{ value: string; label: string }>) {
   return (
     <div>
       <dd className="font-display text-3xl font-bold tnum text-ink">{value}</dd>
@@ -240,14 +240,16 @@ const SCREEN_ICONS = {
   "/queue": IconQueue,
   "/profile": IconProfile,
   "/privacy": IconShield,
+  "/caseload": IconScale,
+  "/my-queue": IconClock,
 } as const;
 
 function Screens() {
   return (
     <Section id="screens" tone="alt">
-      <SectionLabel index="04" eyebrow="Система" title="Чотири екрани продукту" />
+      <SectionLabel index="04" eyebrow="Система" title="Шість екранів продукту" />
       <div className="mt-10 grid gap-5 sm:grid-cols-2">
-        {NAV.map((n) => {
+        {[...NAV, ...CASELOAD_NAV].map((n) => {
           const Icon = SCREEN_ICONS[n.href as keyof typeof SCREEN_ICONS] ?? IconDashboard;
           return (
             <Link
@@ -367,11 +369,11 @@ function Section({
   children,
   id,
   tone = "base",
-}: {
+}: Readonly<{
   children: React.ReactNode;
   id?: string;
   tone?: "base" | "alt";
-}) {
+}>) {
   return (
     <section id={id} className={`scroll-mt-20 px-4 py-16 sm:px-6 lg:py-20 ${tone === "alt" ? "bg-surface" : ""}`}>
       <div className="mx-auto max-w-6xl">{children}</div>
@@ -383,11 +385,11 @@ function SectionLabel({
   index,
   eyebrow,
   title,
-}: {
+}: Readonly<{
   index?: string;
   eyebrow: string;
   title: string;
-}) {
+}>) {
   return (
     <div className="flex items-start gap-4">
       {index && (

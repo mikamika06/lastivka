@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function SwallowMark({ className = "h-7 w-7" }: { className?: string }) {
+export function SwallowMark({ className = "h-7 w-7" }: Readonly<{ className?: string }>) {
   return (
     <svg viewBox="0 0 64 64" className={className} fill="none" aria-hidden="true">
       <path
@@ -18,11 +18,11 @@ export function Logo({
   href = "/",
   subtitle = true,
   invert = false,
-}: {
+}: Readonly<{
   href?: string;
   subtitle?: boolean;
   invert?: boolean;
-}) {
+}>) {
   return (
     <Link href={href} className="group inline-flex items-center gap-2.5" aria-label="Ластівка — на головну">
       <span

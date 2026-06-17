@@ -142,7 +142,7 @@ export default async function PrivacyPage() {
   );
 }
 
-function MetricBar({ value, color }: { value: number; color: string }) {
+function MetricBar({ value, color }: Readonly<{ value: number; color: string }>) {
   return (
     <div className="flex items-center gap-2">
       <div className="h-1.5 w-24 overflow-hidden rounded-full bg-paper-2">
