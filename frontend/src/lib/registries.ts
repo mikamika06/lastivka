@@ -34,6 +34,11 @@ export const REGISTRIES: RegistryMeta[] = [
   { code: "PFU", ua: "Реєстр застрахованих осіб (ПФУ)", uaEn: "Pension fund insured persons", short: "ПФУ", shortEn: "PFU", owner: "ПФУ", subsystem: "PFU_RZO_prod", access: 2 },
   { code: "DRRP", ua: "ДРРП — речові права (житло)", uaEn: "DRRP — property rights (housing)", short: "ДРРП", shortEn: "Property", owner: "Мінʼюст", subsystem: "3_MJU_DRRP_prod", access: 2 },
   { code: "HOTLINE", ua: "Гарячі лінії 116 111 / 1545", uaEn: "Hotlines 116 111 / 1545", short: "Гар. лінія", shortEn: "Hotline", owner: "Ла Страда / УКЦ", subsystem: "HOTLINE_prod", access: 2 },
+  // ── Естонські реєстри (фаза 4, крос-кордон) ──
+  { code: "RAHV", ua: "Rahvastikuregister — народонаселення (EE)", uaEn: "Rahvastikuregister — population (EE)", short: "Народон. EE", shortEn: "Population EE", owner: "Siseministeerium", subsystem: "EE_RR_prod", access: 2 },
+  { code: "EHIS_EE", ua: "EHIS — освіта (EE)", uaEn: "EHIS — education (EE)", short: "Школа EE", shortEn: "School EE", owner: "Haridusministeerium", subsystem: "EE_EHIS_prod", access: 2 },
+  { code: "TERVIS", ua: "Tervise infosüsteem — здоровʼя (EE)", uaEn: "Tervise infosüsteem — health (EE)", short: "Здоровʼя EE", shortEn: "Health EE", owner: "TEHIK", subsystem: "EE_TERVIS_prod", access: 1 },
+  { code: "SKAIS", ua: "SKAIS — соцзахист / опіка (EE)", uaEn: "SKAIS — social care (EE)", short: "Опіка EE", shortEn: "Care EE", owner: "Sotsiaalkindlustusamet", subsystem: "EE_SKAIS_prod", access: 2 },
 ];
 
 export const REG_BY_CODE: Record<RegistryCode, RegistryMeta> = Object.fromEntries(
@@ -73,6 +78,11 @@ export const VIOLATION_LABELS: Record<string, Msg> = {
   E4_inclusion: { uk: "Доступ до інклюзії", en: "Inclusive-education access" },
   W9_identity: { uk: "Право на ідентичність", en: "Right to identity" },
   F1_psych_violence: { uk: "Психологічне насильство (сім'я)", en: "Psychological abuse (family)" },
+  // ── крос-кордонні ризики (фаза 4) ──
+  X1_gap: { uk: "Щілина між системами", en: "Gap between systems" },
+  X2_uasc: { uk: "Без супроводу (UASC)", en: "Unaccompanied (UASC)" },
+  X3_med_rupture: { uk: "Розрив медицини", en: "Healthcare rupture" },
+  X4_edu_rupture: { uk: "Розрив освіти", en: "Education rupture" },
 };
 
 export function violMsg(v: string): Msg {

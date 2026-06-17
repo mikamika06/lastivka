@@ -1,4 +1,4 @@
-import { getDashboardStats, getMetrics } from "@/lib/api";
+import { getDashboardStats, getMetrics, getCrossBorder } from "@/lib/api";
 import { violName, TIER_META, TIER_COLOR, CHART_PALETTE } from "@/lib/registries";
 import { formatPct, formatNumber, pluralLoc } from "@/lib/format";
 import { getT, getLocale } from "@/lib/i18n.server";
@@ -6,13 +6,17 @@ import { Card, CardTitle, SectionHeading } from "@/components/ui/Card";
 import { KpiCard, MiniStat } from "@/components/ui/Stat";
 import { HBar } from "@/components/charts/HBar";
 import { Donut } from "@/components/charts/Donut";
-import { IconArrowRight, IconShield } from "@/components/ui/icons";
+import { IconArrowRight, IconShield, IconGlobe } from "@/components/ui/icons";
 import Link from "next/link";
 
 export const metadata = { title: "Управлінська панель — Ластівка" };
 
 export default async function DashboardPage() {
-  const [stats, metrics] = await Promise.all([getDashboardStats(), getMetrics()]);
+  const [stats, metrics, crossborder] = await Promise.all([
+    getDashboardStats(),
+    getMetrics(),
+    getCrossBorder(),
+  ]);
   const t = await getT();
   const locale = await getLocale();
   const o = metrics.detection.overall;
@@ -154,6 +158,49 @@ export default async function DashboardPage() {
           </Link>
         </Card>
       </div>
+
+      {/* крос-кордон UA↔EE (фаза 4) */}
+      {crossborder.ee_entities > 0 && (
+        <Card className="overflow-hidden border-brand/30">
+          <div className="flex items-center gap-2 border-b border-line bg-brand-soft/40 px-5 py-3">
+            <span aria-hidden className="text-base">🇺🇦↔🇪🇪</span>
+            <h3 className="font-display text-sm font-bold text-ink">
+              {t({ uk: "Крос-кордон: діти між Україною та Естонією", en: "Cross-border: children between Ukraine and Estonia" })}
+            </h3>
+          </div>
+          <div className="grid gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-4">
+            <MiniStat
+              label={t({ uk: "Видно естонським реєстрам", en: "Seen by Estonian registries" })}
+              value={formatNumber(crossborder.ee_entities, locale)}
+              tone="brand"
+            />
+            <MiniStat
+              label={t({ uk: "Звʼязано з профілем в Україні", en: "Linked to a Ukrainian profile" })}
+              value={formatNumber(crossborder.linked, locale)}
+              tone="ok"
+            />
+            <MiniStat
+              label={t({ uk: "У щілині — пари не знайдено", en: "In the gap — no match found" })}
+              value={formatNumber(crossborder.ee_unmatched, locale)}
+              tone="t1"
+            />
+            <MiniStat
+              label={t({ uk: "Частка звʼязування", en: "Link rate" })}
+              value={formatPct(crossborder.link_rate)}
+              tone="brand"
+            />
+          </div>
+          <p className="flex items-start gap-2 border-t border-line px-5 py-3 text-xs leading-relaxed text-muted">
+            <IconGlobe className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+            <span>
+              {t({
+                uk: "Дитина, що переїхала до Естонії, не зникає з поля зору: приватне зіставлення (PPRL) звʼязує її профілі без обміну іменами — між країнами передається лише сигнал збігу. 30 дітей поки «у щілині»: вони є в Естонії, але пари в Україні не знайдено.",
+                en: "A child who moved to Estonia does not drop off the radar: privacy-preserving matching (PPRL) links their profiles without exchanging names — only the match signal crosses borders. 30 children are still “in the gap”: present in Estonia, but no Ukrainian match found.",
+              })}
+            </span>
+          </p>
+        </Card>
+      )}
 
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
         <span className="font-medium text-ink-2">

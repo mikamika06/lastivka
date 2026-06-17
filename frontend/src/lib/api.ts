@@ -14,6 +14,7 @@ import type {
   WorkerQueue,
   FeedbackStats,
   FeedbackInput,
+  CrossBorderStats,
 } from "./types";
 import { mockData, mockOblastOf, mockWorkers, mockWorkerQueue, MOCK_FEEDBACK_STATS } from "./mock";
 
@@ -127,6 +128,18 @@ export async function getWorkerQueue(workerId: string): Promise<WorkerQueue> {
 export async function getFeedbackStats(): Promise<FeedbackStats> {
   const remote = await tryFetch<FeedbackStats>("/feedback/stats");
   return remote ?? MOCK_FEEDBACK_STATS;
+}
+
+/* ── Фаза 4: крос-кордон UA↔EE ── */
+export async function getCrossBorder(): Promise<CrossBorderStats> {
+  const remote = await tryFetch<CrossBorderStats>("/crossborder");
+  return remote ?? mockData.crossborder;
+}
+
+/** Крос-кордонні кейси (country містить EE) із черги. */
+export async function getCrossBorderCases(): Promise<QueueItem[]> {
+  const items = await getQueue();
+  return items.filter((i) => i.country === "UA+EE" || i.country === "EE");
 }
 
 export async function postFeedback(input: FeedbackInput): Promise<boolean> {

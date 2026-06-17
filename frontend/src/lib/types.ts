@@ -22,7 +22,22 @@ export type RegistryCode =
   | "SKAID"
   | "PFU"
   | "DRRP"
-  | "HOTLINE";
+  | "HOTLINE"
+  // естонські реєстри (фаза 4, крос-кордон)
+  | "RAHV"
+  | "EHIS_EE"
+  | "TERVIS"
+  | "SKAIS";
+
+export type Country = "UA" | "EE" | "UA+EE";
+
+/** Крос-кордонна статистика UA↔EE (GET /crossborder). */
+export interface CrossBorderStats {
+  ee_entities: number;
+  linked: number;
+  ee_unmatched: number;
+  link_rate: number;
+}
 
 /** Внесок одного порушення в urgency-score (scoring.score_entity). */
 export interface Contribution {
@@ -51,6 +66,9 @@ export interface QueueItem {
   contributions: Contribution[];
   oblast: string | null; // територія (фаза 3)
   worker_id: string | null; // призначений кейсворкер (фаза 3)
+  country?: Country; // UA | EE | UA+EE (крос-кордон, фаза 4)
+  isikukood?: string | null; // естонський код (для крос-кордонних кейсів)
+  link_score?: number; // оцінка PPRL-звʼязку UA↔EE (0..1)
 }
 
 /** Крос-реєстровий профіль дитини (matching.match / GET /entity/{id}). */

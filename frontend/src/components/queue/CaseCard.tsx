@@ -43,6 +43,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
             <span className="truncate font-semibold text-ink">{item.pib}</span>
             <span className="text-xs text-faint">· {ageLabel(item.age, locale)}</span>
             {item.immediate && <ImmediateBadge />}
+            {isCrossBorder(item) && <CrossBorderChip />}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {item.violations.slice(0, 3).map((v) => (
@@ -161,6 +162,21 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                   value={item.unzr ?? t({ uk: "— (зіставлення за ПІБ+дата)", en: "— (matched by name + date)" })}
                   mono
                 />
+                {isCrossBorder(item) && (
+                  <>
+                    <Row
+                      label={t({ uk: "Естонський код", en: "Estonian code" })}
+                      value={item.isikukood ?? "—"}
+                      mono
+                    />
+                    {item.link_score != null && (
+                      <Row
+                        label={t({ uk: "Звʼязок UA↔EE", en: "Link UA↔EE" })}
+                        value={`${Math.round(item.link_score * 100)}%`}
+                      />
+                    )}
+                  </>
+                )}
               </div>
               {item.vuln_factors.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -205,6 +221,25 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
         </div>
       )}
     </article>
+  );
+}
+
+/** Кейс має слід в Естонії (крос-кордон, фаза 4). */
+export function isCrossBorder(item: Pick<QueueItem, "country">): boolean {
+  return item.country === "UA+EE" || item.country === "EE";
+}
+
+/** Маркер крос-кордонного кейсу: дитину видно і в Україні, і в Естонії. */
+function CrossBorderChip() {
+  const t = useTx();
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand-ink"
+      title={t({ uk: "Слід в Естонії — звʼязано приватним зіставленням (PPRL)", en: "Estonian trace — linked via privacy-preserving matching (PPRL)" })}
+    >
+      <span aria-hidden>🇪🇪</span>
+      {t({ uk: "слід в Естонії", en: "Estonian trace" })}
+    </span>
   );
 }
 

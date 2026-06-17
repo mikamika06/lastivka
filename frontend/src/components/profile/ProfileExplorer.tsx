@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { QueueItem, Entity, TimelineEvent, AttendanceSeries } from "@/lib/types";
+import type { QueueItem, Entity, TimelineEvent, AttendanceSeries, RegistryCode } from "@/lib/types";
 import { getEntity, getTimeline, getAttendance, oblastOf } from "@/lib/api";
 import { violName } from "@/lib/registries";
 import { formatDate, ageLabel, formatScore } from "@/lib/format";
@@ -10,9 +10,10 @@ import type { Msg } from "@/lib/i18n";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { RegistryChip } from "@/components/ui/Stat";
 import { TierBadge, ImmediateBadge } from "@/components/ui/badges";
+import { isCrossBorder } from "@/components/queue/CaseCard";
 import { Timeline } from "./Timeline";
 import { TrendChart } from "@/components/charts/TrendChart";
-import { IconChevronDown, IconLayers, IconClock, IconPulse } from "@/components/ui/icons";
+import { IconChevronDown, IconLayers, IconClock, IconPulse, IconCheck, IconClose, IconGlobe } from "@/components/ui/icons";
 
 interface ProfileData {
   id: number;
@@ -126,6 +127,11 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
         </div>
       </Card>
 
+      {/* Слід в Естонії — крос-кордон (фаза 4) */}
+      {isCrossBorder(item) && (
+        <EstonianTrace item={item} registries={entity?.registries ?? item.registries} t={t} />
+      )}
+
       {/* таймлайн + графік */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
@@ -143,6 +149,135 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
         </Card>
       </div>
     </div>
+  );
+}
+
+/* ── EE-реєстри для перевірки присутності дитини в Естонії ── */
+const EE_REGISTRIES: { code: RegistryCode; label: Msg }[] = [
+  { code: "RAHV", label: { uk: "Населення (Rahvastikuregister)", en: "Population (Rahvastikuregister)" } },
+  { code: "EHIS_EE", label: { uk: "Школа (EHIS)", en: "School (EHIS)" } },
+  { code: "TERVIS", label: { uk: "Медицина (Tervis)", en: "Healthcare (Tervis)" } },
+  { code: "SKAIS", label: { uk: "Соцопіка (SKAIS)", en: "Social care (SKAIS)" } },
+];
+
+/**
+ * Блок «Слід в Естонії»: дитину видно у двох країнах одночасно. Показує
+ * присутність у естонських реєстрах (де є ✓, де щілина ✗), оцінку приватного
+ * звʼязування UA↔EE (PPRL) та різні ідентифікатори (УНЗР ≠ isikukood).
+ */
+function EstonianTrace({
+  item,
+  registries,
+  t,
+}: Readonly<{ item: QueueItem; registries: RegistryCode[]; t: (m: Msg) => string }>) {
+  const present = (code: RegistryCode) => registries.includes(code);
+  const link = item.link_score ?? 0;
+  const gaps = EE_REGISTRIES.filter((r) => !present(r.code));
+
+  return (
+    <Card className="overflow-hidden border-brand/30">
+      <div className="flex items-center gap-2 border-b border-line bg-brand-soft/40 px-5 py-3 sm:px-6">
+        <span aria-hidden className="text-lg">🇪🇪</span>
+        <h3 className="font-display text-sm font-bold text-ink">
+          {t({ uk: "Слід в Естонії", en: "Estonian trace" })}
+        </h3>
+        <span className="ml-auto rounded-md bg-surface px-2 py-0.5 text-[11px] font-medium text-muted">
+          {t({ uk: "крос-кордон UA↔EE", en: "cross-border UA↔EE" })}
+        </span>
+      </div>
+
+      <div className="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[1fr_300px]">
+        {/* присутність у реєстрах + щілина */}
+        <div>
+          <p className="mb-3 text-sm text-muted">
+            {t({
+              uk: "Ту саму дитину видно і в українських, і в естонських системах. Зелене — де про неї є запис; сіре — щілина, де її ніхто не бачить.",
+              en: "The same child is visible in both Ukrainian and Estonian systems. Green — where a record exists; grey — the gap, where no one sees her.",
+            })}
+          </p>
+          <ul className="space-y-2">
+            {EE_REGISTRIES.map((r) => {
+              const ok = present(r.code);
+              return (
+                <li
+                  key={r.code}
+                  className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
+                    ok ? "border-ok/30 bg-ok-soft/40" : "border-line bg-paper/40"
+                  }`}
+                >
+                  <span
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+                      ok ? "bg-ok text-white" : "bg-paper-2 text-faint"
+                    }`}
+                  >
+                    {ok ? <IconCheck className="h-3.5 w-3.5" /> : <IconClose className="h-3.5 w-3.5" />}
+                  </span>
+                  <span className={`text-sm font-medium ${ok ? "text-ink" : "text-muted"}`}>{t(r.label)}</span>
+                  <span className={`ml-auto text-[11px] font-semibold ${ok ? "text-ok-ink" : "text-faint"}`}>
+                    {ok ? t({ uk: "є запис", en: "on record" }) : t({ uk: "щілина", en: "gap" })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {gaps.length > 0 && (
+            <p className="mt-3 rounded-lg bg-t1-soft/50 px-3 py-2 text-[12px] leading-relaxed text-ink-2">
+              <span className="font-semibold">{t({ uk: "Щілина: ", en: "Gap: " })}</span>
+              {t({
+                uk: "дитина зареєстрована в Естонії, але відсутня в ",
+                en: "the child is registered in Estonia, but missing from ",
+              })}
+              {gaps.map((g, i) => (
+                <span key={g.code}>
+                  {i > 0 ? ", " : ""}
+                  <span className="font-medium">{t(g.label)}</span>
+                </span>
+              ))}
+              {t({ uk: " — саме сюди й «провалюється» захист.", en: " — this is exactly where protection falls through." })}
+            </p>
+          )}
+        </div>
+
+        {/* звʼязок UA↔EE + ідентифікатори */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <div className="flex items-center gap-2">
+              <IconGlobe className="h-4 w-4 text-brand" />
+              <span className="text-xs font-medium text-muted">{t({ uk: "Звʼязок UA↔EE (PPRL)", en: "Link UA↔EE (PPRL)" })}</span>
+            </div>
+            <div className="mt-2 font-display text-3xl font-bold tnum text-ink">{Math.round(link * 100)}%</div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper-2">
+              <div className="h-full rounded-full bg-brand" style={{ width: `${Math.round(link * 100)}%` }} />
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-faint">
+              {t({
+                uk: "Упевненість, що це та сама дитина. Звірка приватна: між країнами передається лише сигнал збігу, не імена.",
+                en: "Confidence that this is the same child. Matching is private: only the match signal crosses borders, not names.",
+              })}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-line bg-surface p-4 text-xs">
+            <div className="flex items-center justify-between gap-3 py-1">
+              <span className="text-muted">{t({ uk: "УНЗР (Україна)", en: "UNZR (Ukraine)" })}</span>
+              <span className="tnum text-[11px] font-medium text-ink-2">
+                {item.unzr ?? t({ uk: "—", en: "—" })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-line py-1 pt-2">
+              <span className="text-muted">{t({ uk: "isikukood (Естонія)", en: "isikukood (Estonia)" })}</span>
+              <span className="tnum text-[11px] font-medium text-ink-2">{item.isikukood ?? "—"}</span>
+            </div>
+            <p className="mt-2 border-t border-line pt-2 text-[11px] leading-relaxed text-faint">
+              {t({
+                uk: "Два різні коди, спільного ключа немає — країни не можуть просто «звести» бази. Тому звʼязок будують приватним зіставленням.",
+                en: "Two different codes, no shared key — countries cannot simply merge databases. That is why the link is built by privacy-preserving matching.",
+              })}
+            </p>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 

@@ -18,6 +18,8 @@ import type {
   WorkerQueue,
   WorkerCase,
   FeedbackStats,
+  Country,
+  CrossBorderStats,
 } from "./types";
 import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
 
@@ -66,6 +68,11 @@ const VPROFILE: Record<string, VProfile> = {
   E1_bullying: { sev: 0.5, evidence: ["AIKOM", "EHEALTH"] },
   W9_identity: { sev: 0.7, evidence: ["DRRP", "EDDR"] },
   F1_psych_violence: { sev: 0.6, evidence: ["HOTLINE", "DV", "EHEALTH", "DITY"] },
+  // крос-кордонні (фаза 4) — лише для геро-кейсів UA+EE, не для генератора
+  X2_uasc: { sev: 0.9, evidence: ["RAHV", "SKAIS"] },
+  X1_gap: { sev: 0.78, evidence: ["RAHV", "EDEBO"] },
+  X3_med_rupture: { sev: 0.7, evidence: ["EHEALTH", "RAHV"] },
+  X4_edu_rupture: { sev: 0.62, evidence: ["EDEBO", "RAHV"] },
 };
 const ALL_VIOL = Object.keys(VPROFILE);
 
@@ -75,7 +82,8 @@ const SELECT_WEIGHT: Record<string, number> = {
   F4_child_labor: 10, E4_inclusion: 8, W6_orphanhood: 7, W5_deportation: 6, W9_identity: 5,
   W7_trafficking: 4, F6_sexual_abuse: 4,
 };
-const NONIMMEDIATE = ALL_VIOL.filter((v) => !IMMEDIATE_VIOLATIONS.has(v));
+// крос-кордонні (X*) не генеруються випадково — лише у геро-кейсах UA+EE
+const NONIMMEDIATE = ALL_VIOL.filter((v) => !IMMEDIATE_VIOLATIONS.has(v) && !v.startsWith("X"));
 const IMMEDIATE_LIST = ALL_VIOL.filter((v) => IMMEDIATE_VIOLATIONS.has(v));
 
 function wpick(r: () => number, pool: string[]): string {
@@ -270,6 +278,7 @@ function genCase(i: number): FullCase | null {
     contributions: contribs,
     oblast,
     worker_id: null,
+    country: "UA",
     timeline: deriveTimeline(registries, r, birth_date),
     attendance:
       schoolAge && registries.includes("AIKOM")
@@ -335,6 +344,7 @@ function makeHero(
     id: number; pib: string; birth: string; age: number; oblast: string;
     contribs: Contribution[]; registries: RegistryCode[]; immediate?: boolean;
     unzr: string | null; timeline: TimelineEvent[]; attendance?: AttendanceSeries | null;
+    country?: Country; isikukood?: string | null; link_score?: number;
   },
 ): FullCase {
   const contribs = [...args.contribs].sort((a, b) => b.value - a.value);
@@ -348,26 +358,29 @@ function makeHero(
     score, immediate, vulnerability: mult, vuln_factors: factors,
     violations: viols, registries: args.registries.toSorted((x, y) => x.localeCompare(y, "uk")), contributions: contribs,
     oblast: args.oblast, worker_id: null, timeline: args.timeline, attendance: args.attendance ?? null,
+    country: args.country ?? "UA", isikukood: args.isikukood ?? null, link_score: args.link_score,
   };
 }
 
 function hero(): FullCase[] {
   return [
-    // 1 ── Сигнатурний кейс: дитина випала у щілину між системами
+    // 1 ── Сигнатурний кейс: дитина випала у щілину МІЖ КРАЇНАМИ (UA→EE)
     makeHero({
       id: 5001, pib: "Ткаченко Софія Андріївна", birth: "2016-03-12", age: 8, oblast: "Харківська",
       unzr: "20160312-48217",
+      country: "UA+EE", isikukood: "61603122174", link_score: 0.94,
       contribs: [
-        mkContribution("W1_displacement", ["VPO", "EDEBO", "EHEALTH"], "acute"),
-        mkContribution("W3_out_of_education", ["EDEBO", "AIKOM"], "acute"),
-        mkContribution("W8_medical_access", ["EHEALTH", "VPO"], "active"),
+        mkContribution("X1_gap", ["RAHV", "EDEBO"], "acute"),
+        mkContribution("X4_edu_rupture", ["EDEBO", "RAHV"], "acute"),
       ],
-      registries: ["EDDR", "DRACS", "VPO", "EDEBO", "AIKOM", "EHEALTH"],
+      // RAHV (населення EE) бачить дитину, EHIS_EE (школа) і TERVIS (медицина) — ні: оце і є щілина
+      registries: ["EDDR", "DRACS", "VPO", "EDEBO", "AIKOM", "EHEALTH", "RAHV"],
       timeline: [
         tev("2023-02-18", "VPO", "Облік ВПО: переміщення Харківська → Львівська обл."),
         tev("2023-05-20", "EDEBO", "Вихід зі школи (переведено), нову не зафіксовано"),
-        tev("2023-06-15", "AIKOM", "Останній запис відвідуваності — далі тиша"),
-        tev("2023-09-04", "EHEALTH", "Декларацію із сімейним лікарем закрито, нову не відкрито"),
+        tev("2023-06-15", "AIKOM", "Останній запис відвідуваності в Україні — далі тиша"),
+        tev("2023-06-28", "RAHV", "Перетин кордону: реєстрація в населенні Естонії (Rahvastikuregister)"),
+        tev("2023-09-04", "EHEALTH", "Декларацію із сімейним лікарем у НСЗУ закрито"),
       ],
       attendance: {
         points: [
@@ -500,18 +513,20 @@ function hero(): FullCase[] {
       attendance: deriveAttendance(rng(100010), false),
     }),
 
-    // 11 ── Медичний доступ + переміщення (спостереження)
+    // 11 ── Розрив медичного супроводу при переїзді в Естонію (UA→EE)
     makeHero({
       id: 5011, pib: "Петренко Марія Андріївна", birth: "2020-12-07", age: 4, oblast: "Запорізька",
       unzr: "20201207-13408",
+      country: "UA+EE", isikukood: "62012074081", link_score: 0.91,
       contribs: [
-        mkContribution("W8_medical_access", ["EHEALTH", "VPO"], "active"),
-        mkContribution("W1_displacement", ["VPO"], "chronic"),
+        mkContribution("X3_med_rupture", ["EHEALTH", "RAHV"], "acute"),
       ],
-      registries: ["EDDR", "VPO", "EHEALTH"],
+      // дитина з хронічним діагнозом виїхала; RAHV є, TERVIS (медицина EE) запису про неї не має
+      registries: ["EDDR", "DRACS", "VPO", "EHEALTH", "RAHV"],
       timeline: [
         tev("2023-04-11", "VPO", "Облік ВПО"),
-        tev("2023-10-22", "EHEALTH", "Декларацію закрито; хронічний діагноз без супроводу"),
+        tev("2023-08-19", "RAHV", "Перетин кордону: реєстрація в населенні Естонії"),
+        tev("2023-10-22", "EHEALTH", "Декларацію в НСЗУ закрито; хронічний діагноз без супроводу"),
       ],
     }),
 
@@ -548,6 +563,23 @@ function hero(): FullCase[] {
         tev("2023-09-01", "EDEBO", "Вихід зі школи (переведено), нову не зафіксовано"),
       ],
     }),
+
+    // 15 ── Дитина без супроводу дорослого за кордоном (UASC, UA→EE) [immediate]
+    makeHero({
+      id: 5015, pib: "Шевченко Артем Вікторович", birth: "2009-04-17", age: 15, oblast: "Донецька",
+      unzr: "20090417-30921", immediate: true,
+      country: "UA+EE", isikukood: "50904173092", link_score: 0.88,
+      contribs: [
+        mkContribution("X2_uasc", ["RAHV", "SKAIS"], "acute"),
+        mkContribution("X1_gap", ["RAHV", "EDEBO"], "active"),
+      ],
+      registries: ["EDDR", "VPO", "CHILDWAR", "RAHV", "SKAIS"],
+      timeline: [
+        tev("2023-06-10", "CHILDWAR", "Статус «Діти війни»: виїзд із зони бойових дій"),
+        tev("2023-07-02", "RAHV", "Перетин кордону: реєстрація в населенні Естонії — без супроводу дорослого"),
+        tev("2023-07-15", "SKAIS", "Естонська служба опіки (SKAIS): відкрито справу неповнолітнього без супроводу"),
+      ],
+    }),
   ];
 }
 
@@ -581,6 +613,9 @@ function toQueueItem(c: FullCase): QueueItem {
     contributions: c.contributions,
     oblast: c.oblast,
     worker_id: c.worker_id,
+    country: c.country,
+    isikukood: c.isikukood,
+    link_score: c.link_score,
   };
 }
 
@@ -724,6 +759,14 @@ export const MOCK_METRICS: Metrics = {
   privacy: { n_pairs: 5218, precision: 1, recall: 0.95 },
 };
 
+/* ── Фаза 4: крос-кордон UA↔EE (PPRL-звʼязування без обміну ПІБ) ── */
+export const MOCK_CROSSBORDER: CrossBorderStats = {
+  ee_entities: 563, // українських дітей, відомих естонським реєстрам
+  linked: 533, // звʼязано з українським профілем через PPRL (приватне зіставлення)
+  ee_unmatched: 30, // лишилися «у щілині» — є в EE, не знайдено пари в UA
+  link_rate: 0.947,
+};
+
 export const mockData = {
   items: DATA.items,
   full: DATA.all,
@@ -732,6 +775,7 @@ export const mockData = {
   attendance: DATA.attendance,
   metrics: MOCK_METRICS,
   caseload: DATA.caseload,
+  crossborder: MOCK_CROSSBORDER,
 };
 
 export function mockOblastOf(entityId: number): string {

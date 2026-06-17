@@ -89,6 +89,7 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
     return {
         "entity_id": entity["entity_id"], "unzr": entity.get("unzr"),
         "pib": entity.get("pib"), "birth_date": entity.get("birth_date"),
+        "country": entity.get("country", "UA"), "isikukood": entity.get("isikukood"),
         "oblast": _oblast(entity), "age": _age(entity.get("birth_date"), cfg),
         "score": score, "tier": tier, "immediate": immediate,
         "vulnerability": round(vuln, 2), "vuln_factors": vfactors,
