@@ -56,10 +56,10 @@ function Hero({ metrics }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetr
           </h1>
 
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-            Ластівка збирає дитину з розрізнених держреєстрів —{" "}
-            <span className="font-medium text-ink-2">не зливаючи персональні дані</span> — знаходить
-            порушення на перетині сигналів, ранжує за терміновістю і віддає спеціалісту пояснену
-            чергу на реагування.
+            Ластівка збирає дитину з розрізнених окремих реєстрів —{" "}
+            <span className="font-medium text-ink-2">із захистом персональних даних</span> — знаходить
+            порушення там, де збігаються сигнали з кількох реєстрів, ранжує за терміновістю і віддає
+            спеціалісту зрозумілу чергу на реагування з поясненням.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -79,9 +79,9 @@ function Hero({ metrics }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetr
           </div>
 
           <dl className="mt-9 flex flex-wrap gap-x-8 gap-y-4">
-            <Stat value={metrics.detection.overall.f1.toFixed(2)} label="F1 виявлення" />
-            <Stat value={formatPct(metrics.matching.reconstruction_rate)} label="дітей зібрано з силосів" />
-            <Stat value={metrics.privacy.precision.toFixed(2)} label="PPRL precision · без plaintext" />
+            <Stat value={metrics.detection.overall.f1.toFixed(2)} label="загальна якість виявлення (F1)" />
+            <Stat value={formatPct(metrics.matching.reconstruction_rate)} label="дітей зібрано з окремих реєстрів" />
+            <Stat value={metrics.privacy.precision.toFixed(2)} label="точність зіставлення · без розкриття імен" />
           </dl>
         </div>
 
@@ -158,7 +158,7 @@ const TASKS = [
   {
     icon: IconScale,
     title: "Підтримка ведення випадків",
-    text: "Інструмент на основі даних для рішень, проактивного втручання та кейс-менеджменту служб захисту.",
+    text: "Інструмент на основі даних: підтримка рішень, не вирок — для раннього втручання та супроводу дітей службами захисту.",
   },
 ];
 
@@ -227,8 +227,9 @@ function HowItWorks() {
         ))}
       </div>
       <p className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-        Метод генерації — темпоральна агентна симуляція: причина (прихований шок) породжує симптом
-        (крос-реєстровий лог-патерн). Детектор бачить лише силоси, не god-view — як у реальних умовах.
+        Дані готуються через покрокове моделювання життя дитини: прихована причина (раптовий удар по
+        родині) поступово проявляється сигналами в кількох реєстрах. Система бачить лише окремі
+        реєстри, а не повну картину згори — так само, як у реальному житті.
       </p>
     </Section>
   );
@@ -287,8 +288,8 @@ const AUDIENCE = [
   },
   {
     icon: IconQueue,
-    role: "Кейсворкер / спеціаліст",
-    text: "Отримує пояснену ранжовану чергу: що з ким робити сьогодні й чому саме так.",
+    role: "Соціальний працівник / спеціаліст",
+    text: "Отримує зрозумілу впорядковану за терміновістю чергу: що з ким робити сьогодні й чому саме так.",
     href: "/queue",
     cta: "Черга реагування",
   },
@@ -340,8 +341,8 @@ function CtaBand() {
             Подивіться, як це працює
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-white/70">
-            Жива демонстрація на синтетичних даних: управлінська панель, пояснена черга реагування й
-            крос-реєстровий профіль дитини.
+            Жива демонстрація на навчальних даних: управлінська панель, зрозуміла черга реагування з
+            поясненням і профіль дитини, зібраний з кількох реєстрів.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link

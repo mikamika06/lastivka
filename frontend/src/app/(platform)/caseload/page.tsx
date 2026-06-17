@@ -27,22 +27,22 @@ export default async function CaseloadPage() {
       <SectionHeading
         index="05"
         title="Навантаження по службах"
-        subtitle="Розподіл черги по кейсворкерах ССД: територіальна маршрутизація + ємність за нормативом. Де перелив понад ємність — бракує штатних одиниць."
+        subtitle="Розподіл черги між фахівцями ССД: спрямування за місцем проживання дитини + ємність за нормативом. Де навантаження перевищує ємність — бракує працівників."
       />
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-        <span className="font-medium text-ink">{formatNumber(cl.total_caseworkers)} кейсворкерів</span>
+        <span className="font-medium text-ink">{formatNumber(cl.total_caseworkers)} фахівців</span>
         <span className="text-faint">·</span>
         <span>норматив ємності — {cl.capacity_per_worker} активних сімей на фахівця</span>
       </div>
 
       {/* KPI */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <KpiCard label="Кейсів усього" value={s.total_cases} tone="neutral" />
+        <KpiCard label="Дітей усього" value={s.total_cases} tone="neutral" />
         <KpiCard label="Призначено" value={s.assigned} tone="brand" hint="у межах ємності" />
-        <KpiCard label="Перелив" value={s.overflow} tone="t1" hint="понад ємність" />
-        <KpiCard label="Невкрите T0/T1" value={s.urgent_uncovered} tone="t0" hint="термінові без фахівця" />
-        <KpiCard label="Бракує працівників" value={s.extra_workers_needed} tone="t0" hint="щоб покрити перелив" />
+        <KpiCard label="Понад ємність" value={s.overflow} tone="t1" hint="більше за норматив" />
+        <KpiCard label="Термінові без фахівця" value={s.urgent_uncovered} tone="t0" hint="негайні випадки T0/T1" />
+        <KpiCard label="Бракує працівників" value={s.extra_workers_needed} tone="t0" hint="щоб покрити надлишок" />
       </div>
 
       {/* дедлайни */}
@@ -72,12 +72,12 @@ export default async function CaseloadPage() {
               <tr className="border-b border-line text-left text-xs font-medium text-muted">
                 <th className="py-2 pr-3 font-medium">Область</th>
                 <th className="px-2 py-2 text-center font-medium">Фахівці</th>
-                <th className="px-2 py-2 text-center font-medium">Кейси</th>
+                <th className="px-2 py-2 text-center font-medium">Діти</th>
                 <th className="px-2 py-2 text-center font-medium">T0</th>
                 <th className="px-2 py-2 text-center font-medium">T1</th>
                 <th className="px-2 py-2 text-center font-medium">T2</th>
                 <th className="px-3 py-2 font-medium">Завантаження</th>
-                <th className="px-2 py-2 text-center font-medium">Перелив</th>
+                <th className="px-2 py-2 text-center font-medium">Понад ємність</th>
                 <th className="px-2 py-2 text-center font-medium">Бракує</th>
               </tr>
             </thead>
@@ -112,8 +112,8 @@ export default async function CaseloadPage() {
           </table>
         </div>
         <p className="mt-4 text-xs leading-relaxed text-muted">
-          «Завантаження» = частка зайнятої ємності служби. Понад 100% кейси переливаються на район/область
-          і генерують сигнал «потрібні штатні одиниці». Маршрутизація — за місцем проживання дитини.
+          «Завантаження» = частка зайнятої ємності служби. Понад 100% діти переходять на район/область
+          і з’являється сигнал «потрібні додаткові працівники». Дитину спрямовують за місцем її проживання.
         </p>
       </Card>
     </div>

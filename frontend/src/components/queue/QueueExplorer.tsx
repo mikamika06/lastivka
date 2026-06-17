@@ -68,7 +68,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted">
-              <IconFilter className="h-3.5 w-3.5" /> Рівень
+              <IconFilter className="h-3.5 w-3.5" /> Терміновість
             </span>
             {TIERS.map((t) => {
               const on = tiers.has(t);
@@ -127,7 +127,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
 
       <p className="px-1 text-sm text-muted">
         Показано <span className="font-semibold text-ink">{Math.min(shown.length, filtered.length)}</span> із{" "}
-        {plural(filtered.length, "сигнал", "сигнали", "сигналів")}. Сортування — за терміновістю.
+        {plural(filtered.length, "дитина", "дитини", "дітей")}. Спочатку — найтерміновіші.
       </p>
 
       {/* список */}
@@ -137,7 +137,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
         ))}
         {filtered.length === 0 && (
           <div className="card grid place-items-center py-16 text-center text-sm text-muted">
-            За цими фільтрами кейсів немає.
+            За цими фільтрами дітей немає.
           </div>
         )}
       </div>

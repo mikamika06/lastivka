@@ -38,7 +38,7 @@ export function AccessLockBadge({ registries }: Readonly<{ registries: string[] 
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full bg-lock-soft px-2 py-0.5 text-[11px] font-medium text-lock-ink"
-      title="Дані Рівня 1: отримано як PSI-булеан «сигнал є». Повний доступ — лише за ухвалою суду / медтаємниця."
+      title="Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту. Повний доступ — тільки за рішенням суду (лікарська таємниця)."
     >
       <LockIcon className="h-3 w-3" />
       Рівень-1 {registries.length > 0 && `(${registries.join(", ")})`}

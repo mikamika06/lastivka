@@ -57,7 +57,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
         <div className="hidden flex-col items-end sm:flex">
           <TierBadge tier={item.tier} />
           <span className="mt-1 text-xs text-faint">
-            score <span className="font-semibold tnum text-ink-2">{formatScore(item.score)}</span>
+            індекс терміновості <span className="font-semibold tnum text-ink-2">{formatScore(item.score)}</span>
           </span>
         </div>
 
@@ -69,10 +69,10 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
       {/* розкрите пояснення */}
       {open && (
         <div className="grid gap-5 border-t border-line bg-paper/30 px-4 py-5 sm:px-5 lg:grid-cols-[1fr_300px]">
-          {/* пояснення score */}
+          {/* пояснення індексу терміновості */}
           <div>
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-              Чому в черзі — пояснення score
+              Чому в черзі — пояснення індексу терміновості
             </h4>
             <ul className="space-y-3">
               {item.contributions.map((c) => {
@@ -93,7 +93,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                       <AcuityTag acuity={c.acuity} />
                     </div>
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-faint">перетин реєстрів:</span>
+                      <span className="text-[11px] text-faint">збіг сигналів з кількох реєстрів:</span>
                       {c.evidence.map((e) => (
                         <span
                           key={e}
@@ -115,17 +115,18 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
               })}
             </ul>
             <p className="mt-3 text-[11px] leading-relaxed text-faint">
-              Жодне порушення не доводить один реєстр — доводить <span className="font-medium">перетин</span>{" "}
-              сигналів. Acuity ({Object.values(ACUITY_UA).join(" / ")}) відображає свіжість зламу.
+              Жодне порушення не доводить один реєстр — доводить <span className="font-medium">збіг сигналів</span>{" "}
+              з кількох реєстрів. Свіжість сигналу ({Object.values(ACUITY_UA).join(" / ")}) показує, наскільки
+              недавно почалося погіршення.
             </p>
           </div>
 
-          {/* права колонка: score + дія */}
+          {/* права колонка: індекс терміновості + дія */}
           <div className="space-y-4">
             <div className="rounded-xl border border-line bg-surface p-4">
               <div className="flex items-end justify-between">
                 <div>
-                  <div className="text-xs text-muted">Urgency score</div>
+                  <div className="text-xs text-muted">Індекс терміновості</div>
                   <div className="font-display text-3xl font-bold tnum text-ink">
                     {formatScore(item.score)}
                   </div>
@@ -135,7 +136,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
               <div className="mt-3 space-y-1.5 border-t border-line pt-3 text-xs">
                 <Row label="Вразливість ×" value={`${item.vulnerability.toFixed(2)}`} />
                 <Row label="Реєстрів" value={String(item.registries.length)} />
-                <Row label="УНЗР" value={item.unzr ?? "— (матч по ПІБ+дата)"} mono />
+                <Row label="УНЗР" value={item.unzr ?? "— (зіставлення за ПІБ+дата)"} mono />
               </div>
               {item.vuln_factors.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -171,8 +172,8 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
             </div>
 
             <p className="text-[11px] leading-relaxed text-faint">
-              Decision support: рішення ухвалює спеціаліст. «Взяти в роботу» — демо-заглушка статусу
-              кейсу.
+              Підтримка рішень, не вирок: остаточне рішення ухвалює фахівець. «Взяти в роботу» —
+              демо-приклад зміни статусу дитини.
             </p>
           </div>
         </div>

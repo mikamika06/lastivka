@@ -3,7 +3,7 @@ import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock
 
 export interface NavItem {
   href: string;
-  pillar: string; // індекс стовпа продукту (зі слайда)
+  pillar: string; // порядковий індекс розділу
   title: string;
   desc: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -12,48 +12,48 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   {
     href: "/dashboard",
-    pillar: "04",
+    pillar: "01",
     title: "Управлінська панель",
-    desc: "Огляд і підтримка рішень",
+    desc: "Загальна картина для керівника",
     icon: IconDashboard,
   },
   {
     href: "/queue",
-    pillar: "03",
+    pillar: "02",
     title: "Черга реагування",
-    desc: "Ранжовані кейси",
+    desc: "Список дітей за терміновістю",
     icon: IconQueue,
   },
   {
     href: "/profile",
-    pillar: "01",
+    pillar: "03",
     title: "Профіль дитини",
-    desc: "Інтеграція даних",
+    desc: "Зібрано з різних реєстрів",
     icon: IconProfile,
   },
   {
     href: "/privacy",
-    pillar: "02",
-    title: "Приватність і якість",
-    desc: "Довіра до моделі",
+    pillar: "04",
+    title: "Захист даних і якість",
+    desc: "Чому системі можна довіряти",
     icon: IconShield,
   },
 ];
 
-/** Фаза 3 — кейсворкінг: розподіл навантаження та персональна черга. */
+/** Фаза 3 — робота служби: розподіл навантаження та кабінет фахівця. */
 export const CASELOAD_NAV: NavItem[] = [
   {
     href: "/caseload",
     pillar: "05",
-    title: "Навантаження",
-    desc: "Розподіл по службах",
+    title: "Навантаження служб",
+    desc: "Скільки дітей на одного фахівця",
     icon: IconScale,
   },
   {
     href: "/my-queue",
     pillar: "06",
-    title: "Моя черга",
-    desc: "Кейси наглядача",
+    title: "Кабінет фахівця",
+    desc: "Особиста черга та рішення",
     icon: IconClock,
   },
 ];

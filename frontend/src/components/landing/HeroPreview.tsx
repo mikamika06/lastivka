@@ -1,7 +1,7 @@
 import { SwallowMark } from "@/components/ui/Logo";
 import { LockIcon } from "@/components/ui/badges";
 
-/** Превʼю продукту для hero: кейс «дитина у щілині» зібраний із силосів. */
+/** Превʼю продукту для hero: дитина «у щілині», зібрана з окремих реєстрів. */
 export function HeroPreview() {
   return (
     <div className="card animate-fade-up p-5">
@@ -35,13 +35,13 @@ export function HeroPreview() {
             <span className="h-1.5 w-1.5 rounded-full bg-t0" /> T0
           </span>
           <span className="mt-1 text-[11px] text-faint">
-            score <span className="font-semibold tnum text-ink-2">2.41</span>
+            індекс терміновості <span className="font-semibold tnum text-ink-2">2.41</span>
           </span>
         </div>
       </div>
 
       <div className="mt-4 rounded-xl border border-line bg-paper/50 p-3">
-        <p className="text-[11px] font-medium text-muted">Доведено перетином реєстрів:</p>
+        <p className="text-[11px] font-medium text-muted">Підтверджено збігом сигналів з кількох реєстрів:</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Chip>ВПО → переміщення</Chip>
           <Chip>ЄДЕБО → вихід зі школи</Chip>
@@ -49,7 +49,7 @@ export function HeroPreview() {
         </div>
         <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-muted">
           <LockIcon className="h-3 w-3 text-lock" />
-          Дані Рівня-1 — лише як PSI-булеан
+          Найчутливіші дані (Рівень 1) — лише сигнал «є / немає», повний доступ за рішенням суду
         </p>
       </div>
     </div>

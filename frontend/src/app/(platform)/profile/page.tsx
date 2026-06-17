@@ -15,9 +15,9 @@ export default async function ProfilePage({
   return (
     <div className="space-y-6">
       <SectionHeading
-        index="01"
+        index="03"
         title="Профіль дитини"
-        subtitle="Як система «бачить» дитину, зібрану з силосованих реєстрів — без злиття персональних даних у спільну базу."
+        subtitle="Як система «бачить» дитину, зібрану з різних реєстрів — не зливаючи персональні дані в одну спільну базу."
       />
       <ProfileExplorer key={initialId ?? "default"} items={items} initialId={initialId} />
     </div>
