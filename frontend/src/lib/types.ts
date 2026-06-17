@@ -39,13 +39,39 @@ export interface CrossBorderStats {
   link_rate: number;
 }
 
-/** Внесок одного порушення в urgency-score (scoring.score_entity). */
+/** Вимір ризику: власні сигнали дитини чи батьківські/сімейні. */
+export type RiskDimension = "child" | "parental";
+
+/** Сила доказу (King 2013, Besemer): вирок > підтверджено > звернення > невідомо. */
+export type EvidenceStrength = "adjudicated" | "substantiated" | "alleged" | "unknown";
+
+/** Стосунок кривдника до дитини (re-perpetration: вітчим → новий потерпілий). */
+export type Relationship = "biological" | "stepparent" | "other";
+
+/** Тип батьківського/сімейного фактора ризику (SUBSTANCE_FEATURES §1–4,8). */
+export type ParentalKind =
+  | "crime_violent" // насильницький злочин батька/матері (ЄРДР/ЄДРСР)
+  | "crime_other" // інший злочин опікуна
+  | "dv_abuser" // домашнє насильство, кривдник — батько/вітчим
+  | "deprivation" // позбавлення/обмеження батьківських прав (ЄДРСР)
+  | "bereavement" // смерть одного з батьків (ДРАЦС)
+  | "addiction" // залежність із впливом на догляд
+  | "mental_health" // психічний розлад із впливом на догляд
+  | "economic_shock" // санкція/припинення допомоги, безробіття годувальника (НЕ бідність)
+  | "sibling_harm"; // підтверджене насильство над братом/сестрою
+
+/** Внесок одного фактора в urgency-score (scoring.score_entity). */
 export interface Contribution {
-  violation: string;
-  value: number; // severity * evidence * acuity
+  violation: string; // код порушення (W*/F*/…) або батьківського фактора (PAR_*)
+  value: number; // severity * evidence * acuity (× субстантивні модифікатори)
   severity: number;
   evidence: RegistryCode[]; // перетин яких реєстрів довів
   acuity: Acuity;
+  dimension?: RiskDimension; // "child" (за замовч.) | "parental"
+  evidence_strength?: EvidenceStrength; // сила доказу (для батьківських факторів)
+  relationship?: Relationship; // стосунок кривдника (crime/dv)
+  role?: "victim" | "witness"; // роль дитини у ДН
+  recency_months?: number; // давність події (міс.) для згасання
 }
 
 /** Кейс у черзі реагування (pipeline.queue / GET /queue). */

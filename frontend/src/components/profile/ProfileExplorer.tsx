@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import type { QueueItem, Entity, TimelineEvent, AttendanceSeries, RegistryCode } from "@/lib/types";
 import { getEntity, getTimeline, getAttendance, oblastOf } from "@/lib/api";
-import { violName } from "@/lib/registries";
+import { violName, regName, regAccess, evidenceStrengthLabel, relationshipLabel } from "@/lib/registries";
+import { isParentalContribution } from "@/lib/parental";
+import type { Contribution } from "@/lib/types";
 import { formatDate, ageLabel, formatScore } from "@/lib/format";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
-import type { Msg } from "@/lib/i18n";
+import type { Msg, Locale } from "@/lib/i18n";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { RegistryChip } from "@/components/ui/Stat";
 import { TierBadge, ImmediateBadge } from "@/components/ui/badges";
@@ -127,6 +129,9 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
         </div>
       </Card>
 
+      {/* Сімейні фактори ризику — батьківський вимір (фаза 5) */}
+      <FamilyRiskFactors contributions={item.contributions} t={t} locale={locale} />
+
       {/* Слід в Естонії — крос-кордон (фаза 4) */}
       {isCrossBorder(item) && (
         <EstonianTrace item={item} registries={entity?.registries ?? item.registries} t={t} />
@@ -149,6 +154,103 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
         </Card>
       </div>
     </div>
+  );
+}
+
+/* ── Сімейні фактори ризику (батьківський вимір) ── */
+const STRENGTH_CLASS: Record<string, string> = {
+  adjudicated: "bg-ink text-paper",
+  substantiated: "bg-brand-soft text-brand-ink",
+  alleged: "bg-t1-soft text-t1-ink",
+  unknown: "bg-paper-2 text-faint",
+};
+
+const ROLE_MSG: Record<string, Msg> = {
+  victim: { uk: "дитина — пряма жертва", en: "child is a direct victim" },
+  witness: { uk: "дитина — свідок", en: "child is a witness" },
+};
+
+function FactorRow({ f, t, locale }: Readonly<{ f: Contribution; t: (m: Msg) => string; locale: Locale }>) {
+  return (
+    <li className="rounded-xl border border-line bg-surface p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-semibold text-ink">{violName(f.violation, locale)}</span>
+        <span className="text-xs text-muted">
+          {t({ uk: "внесок", en: "contribution" })}{" "}
+          <span className="font-semibold tnum text-brand-ink">{f.value.toFixed(2)}</span>
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+        {f.evidence_strength && (
+          <span className={`rounded-md px-1.5 py-0.5 font-medium ${STRENGTH_CLASS[f.evidence_strength] ?? "bg-paper-2 text-faint"}`}>
+            {evidenceStrengthLabel(f.evidence_strength, locale)}
+          </span>
+        )}
+        {f.relationship && <span>{relationshipLabel(f.relationship, locale)}</span>}
+        {f.role && <span>· {t(ROLE_MSG[f.role] ?? { uk: f.role, en: f.role })}</span>}
+        {f.recency_months != null && (
+          <span className="text-faint">· {f.recency_months} {t({ uk: "міс. тому", en: "mo ago" })}</span>
+        )}
+      </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        {f.evidence.map((e) => (
+          <span
+            key={e}
+            className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+              regAccess(e) === 1 ? "bg-lock-soft text-lock-ink" : "bg-brand-soft text-brand-ink"
+            }`}
+          >
+            {regName(e, locale)}
+          </span>
+        ))}
+      </div>
+    </li>
+  );
+}
+
+/**
+ * Блок «Сімейні фактори ризику»: частина ризику дитини походить від обставин
+ * батьків (кримінал, ДН з боку опікуна, залежність, втрата батьків, обрив
+ * доходу, насильство над сиблінгом). Зважено за СУТТЮ + запобіжники.
+ */
+function FamilyRiskFactors({
+  contributions,
+  t,
+  locale,
+}: Readonly<{ contributions: Contribution[]; t: (m: Msg) => string; locale: Locale }>) {
+  const factors = contributions.filter(isParentalContribution).sort((a, b) => b.value - a.value);
+  if (!factors.length) return null;
+  return (
+    <Card className="overflow-hidden border-t1/30">
+      <div className="flex items-center gap-2 border-b border-line bg-t1-soft/40 px-5 py-3 sm:px-6">
+        <span aria-hidden className="text-base">👪</span>
+        <h3 className="font-display text-sm font-bold text-ink">
+          {t({ uk: "Сімейні фактори ризику", en: "Family risk factors" })}
+        </h3>
+        <span className="ml-auto rounded-md bg-surface px-2 py-0.5 text-[11px] font-medium text-muted">
+          {t({ uk: "ризик від батьків / родини", en: "risk from parents / family" })}
+        </span>
+      </div>
+      <div className="px-5 py-5 sm:px-6">
+        <p className="mb-4 text-sm text-muted">
+          {t({
+            uk: "Частина ризику дитини походить не від її власних сигналів, а від обставин батьків. Оцінюємо СУТЬ: силу доказу, давність, стосунок кривдника — а не сам факт.",
+            en: "Part of the child's risk comes not from their own signals but from the parents' circumstances. We weigh the substance: evidence strength, recency, the abuser's relationship — not the mere fact.",
+          })}
+        </p>
+        <ul className="space-y-3">
+          {factors.map((f) => (
+            <FactorRow key={f.violation} f={f} t={t} locale={locale} />
+          ))}
+        </ul>
+        <p className="mt-4 rounded-lg bg-paper/50 px-3 py-2 text-[11px] leading-relaxed text-faint">
+          {t({
+            uk: "Запобіжники: бідність сама по собі — не ризик (рахуємо лише припинення допомоги); психіка/залежність — лише за впливом на догляд, брак даних не штрафуємо; це контекст для фахівця, не вирок.",
+            en: "Guardrails: poverty alone is not a risk (only benefit termination counts); mental health / addiction only by impact on care, data gaps are not penalised; this is context for the specialist, not a verdict.",
+          })}
+        </p>
+      </div>
+    </Card>
   );
 }
 

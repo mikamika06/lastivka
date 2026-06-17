@@ -39,6 +39,12 @@ export default async function DashboardPage() {
     color: TIER_COLOR[t.tier],
   }));
 
+  const parentalData = stats.byParental.map((p) => ({
+    label: violName(p.key, locale),
+    value: p.count,
+    color: "var(--color-t1)",
+  }));
+
   return (
     <div className="space-y-6">
       <SectionHeading
@@ -158,6 +164,38 @@ export default async function DashboardPage() {
           </Link>
         </Card>
       </div>
+
+      {/* батьківські / сімейні фактори ризику (фаза 5) */}
+      {parentalData.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="p-5 lg:col-span-2">
+            <CardTitle
+              icon={<span aria-hidden className="text-sm">👪</span>}
+              hint={t({ uk: "кількість дітей", en: "number of children" })}
+            >
+              {t({ uk: "Ризик від батьків / родини — за типом фактора", en: "Risk from parents / family — by factor type" })}
+            </CardTitle>
+            <HBar data={parentalData} />
+          </Card>
+          <Card className="flex flex-col justify-center p-5">
+            <div className="text-xs text-muted">
+              {t({ uk: "Дітей із вагомим сімейним фактором", en: "Children with a significant family factor" })}
+            </div>
+            <div className="mt-1 font-display text-4xl font-bold tnum text-t1-ink">
+              {formatNumber(stats.parentalChildren, locale)}
+            </div>
+            <div className="mt-1 text-xs text-faint">
+              {t({ uk: "із", en: "of" })} {formatNumber(stats.kpis.total, locale)} {t({ uk: "у черзі", en: "in queue" })}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              {t({
+                uk: "Ризик дитини враховує СУТЬ батьківських обставин (сила доказу, давність, стосунок кривдника), а не сам факт. Бідність сама по собі — не ризик.",
+                en: "A child's risk accounts for the substance of the parents' circumstances (evidence strength, recency, abuser relationship), not the mere fact. Poverty alone is not a risk.",
+              })}
+            </p>
+          </Card>
+        </div>
+      )}
 
       {/* крос-кордон UA↔EE (фаза 4) */}
       {crossborder.ee_entities > 0 && (

@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import date
 import yaml
 
+from . import parental as _parental
+
 
 def load_weights(path: str) -> dict:
     return yaml.safe_load(open(path, encoding="utf-8"))
@@ -68,6 +70,11 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
         acu = w["acuity"].get(d["acuity"], 1.0)
         contribs.append({"violation": d["violation"], "value": round(sev * ev * acu, 3),
                          "severity": sev, "evidence": d["evidence"], "acuity": d["acuity"]})
+    # власні порушення дитини (для чіпів/фільтра)
+    child_violations = [c["violation"] for c in sorted(contribs, key=lambda c: c["value"], reverse=True)]
+
+    # батьківські/сімейні фактори — повноцінні члени агрегації (фаза 5)
+    contribs += _parental.derive_parental(entity, cfg, w.get("parental", {}))
     contribs.sort(key=lambda c: c["value"], reverse=True)
 
     sw = w["aggregation"]["secondary_weight"]
@@ -94,7 +101,7 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
         "score": score, "tier": tier, "immediate": immediate,
         "vulnerability": round(vuln, 2), "vuln_factors": vfactors,
         "contributions": contribs,
-        "violations": [c["violation"] for c in contribs],
+        "violations": child_violations,
         "registries": entity.get("registries", []),
     }
 

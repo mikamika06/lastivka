@@ -83,7 +83,58 @@ export const VIOLATION_LABELS: Record<string, Msg> = {
   X2_uasc: { uk: "Без супроводу (UASC)", en: "Unaccompanied (UASC)" },
   X3_med_rupture: { uk: "Розрив медицини", en: "Healthcare rupture" },
   X4_edu_rupture: { uk: "Розрив освіти", en: "Education rupture" },
+  // ── батьківські / сімейні фактори (фаза 5, SUBSTANCE §1–4,8) ──
+  PAR_crime_violent: { uk: "Насильницький злочин батьків", en: "Parental violent crime" },
+  PAR_crime_other: { uk: "Судимість опікуна", en: "Guardian criminal record" },
+  PAR_dv_abuser: { uk: "Кривдник у домі — батько/вітчим", en: "Abuser at home — parent/stepparent" },
+  PAR_deprivation: { uk: "Позбавлення батьківських прав", en: "Deprivation of parental rights" },
+  PAR_bereavement: { uk: "Втрата одного з батьків", en: "Loss of a parent" },
+  PAR_addiction: { uk: "Залежність батьків (вплив на догляд)", en: "Parental addiction (affects care)" },
+  PAR_mental_health: { uk: "Психічний стан батьків (вплив на догляд)", en: "Parental mental health (affects care)" },
+  PAR_economic_shock: { uk: "Втрата доходу / припинення допомоги", en: "Income loss / benefit termination" },
+  PAR_sibling_harm: { uk: "Насильство над братом/сестрою", en: "Harm to a sibling" },
 };
+
+/** Метадані батьківських факторів (іконка-група, домен каталогу). */
+export const PARENTAL_KIND_MSG: Record<string, Msg> = {
+  crime_violent: VIOLATION_LABELS.PAR_crime_violent,
+  crime_other: VIOLATION_LABELS.PAR_crime_other,
+  dv_abuser: VIOLATION_LABELS.PAR_dv_abuser,
+  deprivation: VIOLATION_LABELS.PAR_deprivation,
+  bereavement: VIOLATION_LABELS.PAR_bereavement,
+  addiction: VIOLATION_LABELS.PAR_addiction,
+  mental_health: VIOLATION_LABELS.PAR_mental_health,
+  economic_shock: VIOLATION_LABELS.PAR_economic_shock,
+  sibling_harm: VIOLATION_LABELS.PAR_sibling_harm,
+};
+
+/** Чи є код внеском батьківського/сімейного виміру. */
+export function isParentalCode(code: string): boolean {
+  return code.startsWith("PAR_");
+}
+
+/** Сила доказу — людська назва (вирок > підтверджено > звернення > невідомо). */
+export const EVIDENCE_STRENGTH_MSG: Record<string, Msg> = {
+  adjudicated: { uk: "є вирок суду", en: "court conviction" },
+  substantiated: { uk: "підтверджено", en: "substantiated" },
+  alleged: { uk: "звернення / триває розслідування", en: "report / under investigation" },
+  unknown: { uk: "лише факт обліку", en: "registration only" },
+};
+
+export function evidenceStrengthLabel(s: string, locale: Locale = "uk"): string {
+  return pick(locale, EVIDENCE_STRENGTH_MSG[s] ?? { uk: s, en: s });
+}
+
+/** Стосунок кривдника до дитини. */
+export const RELATIONSHIP_MSG: Record<string, Msg> = {
+  biological: { uk: "рідний батько/мати", en: "biological parent" },
+  stepparent: { uk: "вітчим / співмешканець", en: "stepparent / cohabitant" },
+  other: { uk: "інший член родини", en: "other family member" },
+};
+
+export function relationshipLabel(r: string, locale: Locale = "uk"): string {
+  return pick(locale, RELATIONSHIP_MSG[r] ?? { uk: r, en: r });
+}
 
 export function violMsg(v: string): Msg {
   return VIOLATION_LABELS[v] ?? { uk: v, en: v };

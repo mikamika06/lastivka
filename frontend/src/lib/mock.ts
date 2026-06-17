@@ -20,8 +20,11 @@ import type {
   FeedbackStats,
   Country,
   CrossBorderStats,
+  Relationship,
+  EvidenceStrength,
 } from "./types";
 import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
+import { makeParentalContribution, type ParentalInput } from "./parental";
 
 /* ── детермінований PRNG (mulberry32) ── */
 function rng(seed: number) {
@@ -240,6 +243,73 @@ function buildRegistries(contribs: Contribution[]): RegistryCode[] {
   return registries;
 }
 
+/**
+ * Батьківські / сімейні фактори ризику (фаза 5), корельовані з кейсом.
+ * Суть, а не факт: сила доказу, давність, стосунок кривдника, роль дитини.
+ * Запобіжники: економічний фактор — лише на ПОДІЇ припинення допомоги (не на
+ * самій бідності); психіка/залежність — сила доказу «unknown» (мед.таємниця).
+ */
+function deriveParentalFactors(r: () => number, chosen: string[], registries: RegistryCode[]): ParentalInput[] {
+  const out: ParentalInput[] = [];
+  const has = (v: string) => chosen.includes(v);
+  const rec = () => 1 + Math.floor(r() * 30); // давність 1..30 міс
+  const rel = (): Relationship => (r() < 0.3 ? "stepparent" : "biological");
+
+  // Домашнє насильство, кривдник — опікун (дитина жертва/свідок)
+  if (has("P1_physical_home") || has("F1_psych_violence")) {
+    let strength: EvidenceStrength = "substantiated";
+    const evidence: RegistryCode[] = ["DV"];
+    if (registries.includes("EDRSR")) { strength = "adjudicated"; evidence.push("EDRSR"); }
+    else if (registries.includes("ERDR")) { strength = "alleged"; evidence.push("ERDR"); }
+    out.push({
+      kind: "dv_abuser", evidence, evidence_strength: strength, recency_months: rec(),
+      relationship: rel(), role: has("P1_physical_home") ? "victim" : "witness",
+    });
+  }
+
+  // Кримінал батьків (провадження/вирок щодо опікуна)
+  if (registries.includes("ERDR") && (r() < 0.6 || has("F6_sexual_abuse"))) {
+    const adjudicated = registries.includes("EDRSR") && r() < 0.5;
+    out.push({
+      kind: "crime_violent",
+      evidence: adjudicated ? ["ERDR", "EDRSR"] : ["ERDR"],
+      evidence_strength: adjudicated ? "adjudicated" : "alleged",
+      recency_months: rec(), relationship: rel(),
+    });
+  } else if (r() < 0.04) {
+    out.push({ kind: "crime_other", evidence: ["ERDR"], evidence_strength: "alleged", recency_months: rec() });
+  }
+
+  // Втрата / позбавлення батьків
+  if (has("W6_orphanhood")) {
+    out.push({ kind: "bereavement", evidence: ["DRACS"], evidence_strength: "adjudicated", recency_months: rec() });
+    if (r() < 0.5) out.push({ kind: "deprivation", evidence: ["EDRSR"], evidence_strength: "adjudicated", recency_months: rec() });
+  } else if (r() < 0.03) {
+    out.push({ kind: "deprivation", evidence: ["EDRSR"], evidence_strength: "substantiated", recency_months: rec() });
+  }
+
+  // Залежність батьків із впливом на догляд (мед.таємниця → сила «unknown»)
+  if (r() < (has("F3_neglect") ? 0.4 : 0.08)) {
+    out.push({ kind: "addiction", evidence: ["EHEALTH"], evidence_strength: "unknown", recency_months: rec() });
+  }
+  // Психічний стан батьків із впливом на догляд
+  if (r() < (has("W2_psych_trauma") ? 0.25 : 0.06)) {
+    out.push({ kind: "mental_health", evidence: ["EHEALTH"], evidence_strength: "unknown", recency_months: rec() });
+  }
+
+  // Економічний шок — ЛИШЕ подія припинення/санкції допомоги (не статус бідності)
+  if (r() < (has("F3_neglect") ? 0.3 : 0.06)) {
+    out.push({ kind: "economic_shock", evidence: ["PFU", "EISSS"], evidence_strength: "substantiated", recency_months: rec() });
+  }
+
+  // Насильство над братом/сестрою (сильний проксі ризику)
+  if (r() < 0.05) {
+    out.push({ kind: "sibling_harm", evidence: ["DITY"], evidence_strength: "substantiated", recency_months: rec() });
+  }
+
+  return out.slice(0, 3); // не захаращуємо: до 3 факторів
+}
+
 /* ── генератор одного кейсу (null = підпороговий, у чергу не потрапляє) ── */
 function genCase(i: number): FullCase | null {
   const r = rng(1000 + i * 2654435761);
@@ -250,7 +320,11 @@ function genCase(i: number): FullCase | null {
   const oblast = pickOblast(r);
 
   const chosen = chooseViolations(r, age);
-  const contribs = buildContributions(chosen, r);
+  const childContribs = buildContributions(chosen, r);
+  // батьківські/сімейні фактори — повноцінні внески, входять у скоринг і пояснення
+  const parental = deriveParentalFactors(r, chosen, buildRegistries(childContribs));
+  const parentalContribs = parental.map(makeParentalContribution);
+  const contribs = [...childContribs, ...parentalContribs].sort((a, b) => b.value - a.value);
   const registries = buildRegistries(contribs);
 
   const immediate = chosen.some((v) => IMMEDIATE_VIOLATIONS.has(v));
@@ -273,9 +347,9 @@ function genCase(i: number): FullCase | null {
     immediate,
     vulnerability: vuln,
     vuln_factors: factors,
-    violations: contribs.map((c) => c.violation),
+    violations: childContribs.map((c) => c.violation), // чіпи/фільтр — лише власні порушення дитини
     registries: registries.toSorted((x, y) => x.localeCompare(y, "uk")),
-    contributions: contribs,
+    contributions: contribs, // обидва виміри (з тегом dimension)
     oblast,
     worker_id: null,
     country: "UA",
@@ -345,18 +419,23 @@ function makeHero(
     contribs: Contribution[]; registries: RegistryCode[]; immediate?: boolean;
     unzr: string | null; timeline: TimelineEvent[]; attendance?: AttendanceSeries | null;
     country?: Country; isikukood?: string | null; link_score?: number;
+    parental?: ParentalInput[]; // батьківські/сімейні фактори (фаза 5)
   },
 ): FullCase {
-  const contribs = [...args.contribs].sort((a, b) => b.value - a.value);
-  const viols = contribs.map((c) => c.violation);
-  const { mult, factors } = vulnerability(args.age, args.registries, viols);
+  const parentalContribs = (args.parental ?? []).map(makeParentalContribution);
+  const childContribs = [...args.contribs];
+  const contribs = [...childContribs, ...parentalContribs].sort((a, b) => b.value - a.value);
+  const viols = childContribs.map((c) => c.violation); // чіпи — лише власні порушення
+  // реєстри-докази батьківських факторів додаються до набору профілю
+  const registries = Array.from(new Set([...args.registries, ...parentalContribs.flatMap((c) => c.evidence)])) as RegistryCode[];
+  const { mult, factors } = vulnerability(args.age, registries, viols);
   const immediate = !!args.immediate;
   const score = scoreOf(contribs, mult);
   return {
     rank: 0, entity_id: args.id, unzr: args.unzr, pib: args.pib,
     birth_date: args.birth, age: args.age, tier: tierOf(score, immediate) ?? "T2",
     score, immediate, vulnerability: mult, vuln_factors: factors,
-    violations: viols, registries: args.registries.toSorted((x, y) => x.localeCompare(y, "uk")), contributions: contribs,
+    violations: viols, registries: registries.toSorted((x, y) => x.localeCompare(y, "uk")), contributions: contribs,
     oblast: args.oblast, worker_id: null, timeline: args.timeline, attendance: args.attendance ?? null,
     country: args.country ?? "UA", isikukood: args.isikukood ?? null, link_score: args.link_score,
   };
@@ -411,12 +490,16 @@ function hero(): FullCase[] {
       ],
     }),
 
-    // 3 ── Фізичне насильство вдома — перетин 4 реєстрів
+    // 3 ── Фізичне насильство вдома — перетин 4 реєстрів; ризик прямо від кривдника
     makeHero({
       id: 5003, pib: "Мельник Данило Олександрович", birth: "2017-05-18", age: 7, oblast: "Дніпропетровська",
       unzr: "20170518-30945",
       contribs: [mkContribution("P1_physical_home", ["EHEALTH", "DV", "ERDR", "DITY"], "acute")],
       registries: ["EDDR", "DRACS", "EHEALTH", "DV", "ERDR", "DITY"],
+      parental: [
+        { kind: "dv_abuser", evidence: ["DV", "ERDR"], evidence_strength: "alleged", recency_months: 3, relationship: "stepparent", role: "victim" },
+        { kind: "crime_violent", evidence: ["ERDR"], evidence_strength: "alleged", recency_months: 4, relationship: "stepparent" },
+      ],
       timeline: [
         tev("2023-10-03", "EHEALTH", "Звернення: травма (домашня обстановка)"),
         tev("2023-11-19", "DV", "Виклик поліції за адресою (дитина присутня)"),
@@ -453,6 +536,10 @@ function hero(): FullCase[] {
       unzr: "20190415-19022",
       contribs: [mkContribution("W6_orphanhood", ["DRACS", "EDRSR", "DITY"], "active")],
       registries: ["EDDR", "DRACS", "EDRSR", "DITY"],
+      parental: [
+        { kind: "bereavement", evidence: ["DRACS"], evidence_strength: "adjudicated", recency_months: 6 },
+        { kind: "deprivation", evidence: ["EDRSR"], evidence_strength: "adjudicated", recency_months: 5 },
+      ],
       timeline: [
         tev("2023-12-02", "DRACS", "Актовий запис про смерть одного з батьків"),
         tev("2024-01-10", "EDRSR", "Судове рішення: позбавлення батьківських прав"),
@@ -460,12 +547,16 @@ function hero(): FullCase[] {
       ],
     }),
 
-    // 7 ── Нехтування потребами
+    // 7 ── Нехтування потребами; контекст — залежність батьків + обрив допомоги
     makeHero({
       id: 5007, pib: "Лисенко Артем Петрович", birth: "2015-06-25", age: 9, oblast: "Запорізька",
       unzr: null,
       contribs: [mkContribution("F3_neglect", ["EHEALTH", "AIKOM", "DITY"], "active")],
       registries: ["EDDR", "EHEALTH", "AIKOM", "DITY"],
+      parental: [
+        { kind: "addiction", evidence: ["EHEALTH"], evidence_strength: "unknown", recency_months: 7 },
+        { kind: "economic_shock", evidence: ["PFU", "EISSS"], evidence_strength: "substantiated", recency_months: 4 },
+      ],
       timeline: [
         tev("2023-09-10", "AIKOM", "Систематичні пропуски без поважної причини"),
         tev("2023-10-05", "EHEALTH", "Пропущено планову імунізацію / огляд"),
@@ -578,6 +669,25 @@ function hero(): FullCase[] {
         tev("2023-06-10", "CHILDWAR", "Статус «Діти війни»: виїзд із зони бойових дій"),
         tev("2023-07-02", "RAHV", "Перетин кордону: реєстрація в населенні Естонії — без супроводу дорослого"),
         tev("2023-07-15", "SKAIS", "Естонська служба опіки (SKAIS): відкрито справу неповнолітнього без супроводу"),
+      ],
+    }),
+
+    // 16 ── ПРЕВЕНЦІЯ: немовля без власних порушень, але кривдник-вітчим удома з вироком.
+    //        Ризик дитини походить ВИКЛЮЧНО від батьків — система бачить його ДО прямої шкоди.
+    makeHero({
+      id: 5016, pib: "Гриценко Єва Олександрівна", birth: "2023-09-04", age: 1, oblast: "Миколаївська",
+      unzr: "20230904-50118",
+      contribs: [],
+      registries: ["EDDR", "DRACS"],
+      parental: [
+        { kind: "crime_violent", evidence: ["ERDR", "EDRSR"], evidence_strength: "adjudicated", recency_months: 5, relationship: "stepparent" },
+        { kind: "dv_abuser", evidence: ["DV"], evidence_strength: "substantiated", recency_months: 2, relationship: "stepparent", role: "witness" },
+        { kind: "sibling_harm", evidence: ["DITY"], evidence_strength: "substantiated", recency_months: 8 },
+      ],
+      timeline: [
+        tev("2024-01-12", "DV", "Виклик поліції за адресою; у домі немовля"),
+        tev("2024-02-03", "EDRSR", "Обвинувальний вирок вітчиму за насильство (інша дитина)"),
+        tev("2024-03-01", "DITY", "Сигнал ССД: загроза для наймолодшої дитини в родині"),
       ],
     }),
   ];

@@ -166,6 +166,8 @@ export interface DashboardStats {
   byViolation: { key: string; count: number }[];
   byRegion: { key: string; count: number }[];
   byTier: { tier: Tier; count: number }[];
+  byParental: { key: string; count: number }[]; // розподіл батьківських/сімейних факторів
+  parentalChildren: number; // скільки дітей мають вагомий батьківський фактор
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -199,11 +201,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     count: tierCount(tier, tierCounts),
   }));
 
+  // батьківські/сімейні фактори (фаза 5): розподіл за типом + охоплення
+  const pcount = new Map<string, number>();
+  let parentalChildren = 0;
+  for (const i of items) {
+    const par = i.contributions.filter((c) => c.dimension === "parental" || c.violation.startsWith("PAR_"));
+    if (par.length) parentalChildren += 1;
+    for (const c of par) pcount.set(c.violation, (pcount.get(c.violation) ?? 0) + 1);
+  }
+  const byParental = [...pcount.entries()]
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count);
+
   return {
     kpis: { t0, t1, t2, immediate, total: items.length },
     byViolation,
     byRegion,
     byTier,
+    byParental,
+    parentalChildren,
   };
 }
 

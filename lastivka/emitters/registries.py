@@ -508,6 +508,11 @@ def emit_eisss(child, cfg, rng):
         "case_file_number": _rid(rng, 8), "benefit_type": "; ".join(btype),
         "application_registration_date": month_date(cfg, rng.randint(0, 6)).isoformat(),
         "payout_account_iban": f"UA{_rid(rng,10)}",
+        # ПОДІЯ припинення/санкції допомоги (каузальний ризик, Ginther 2017),
+        # а не статус бідності — лише за глибокої скрути з ознакою зриву догляду
+        "benefit_termination_flag": "так" if (child.poverty == "deep"
+            and (getattr(child, "par_addiction", False) or "F3_neglect" in child.labels)
+            and rng.random() < 0.5) else "ні",
     }]
 
 

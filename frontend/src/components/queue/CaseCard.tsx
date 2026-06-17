@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { QueueItem } from "@/lib/types";
-import { violName, regName, regAccess, ACUITY_MSG, vulnFactorLabel } from "@/lib/registries";
+import { violName, regName, regAccess, ACUITY_MSG, vulnFactorLabel, evidenceStrengthLabel, relationshipLabel } from "@/lib/registries";
+import { isParentalContribution } from "@/lib/parental";
 import { ageLabel, formatScore } from "@/lib/format";
 import { oblastOfItem } from "@/lib/api";
 import { TierBadge, ImmediateBadge, AccessLockBadge, AcuityTag } from "@/components/ui/badges";
@@ -16,6 +17,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
   const [open, setOpen] = useState(defaultOpen);
   const [taken, setTaken] = useState(false);
   const oblast = oblastOfItem(item);
+  const hasParentalRisk = item.contributions.some(isParentalContribution);
 
   return (
     <article
@@ -44,6 +46,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
             <span className="text-xs text-faint">· {ageLabel(item.age, locale)}</span>
             {item.immediate && <ImmediateBadge />}
             {isCrossBorder(item) && <CrossBorderChip />}
+            {hasParentalRisk && <FamilyChip />}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {item.violations.slice(0, 3).map((v) => (
@@ -84,10 +87,18 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
             <ul className="space-y-3">
               {item.contributions.map((c) => {
                 const lvl1 = c.evidence.filter((e) => regAccess(e) === 1);
+                const parental = isParentalContribution(c);
                 return (
-                  <li key={c.violation} className="rounded-xl border border-line bg-surface p-3">
+                  <li key={c.violation} className={`rounded-xl border p-3 ${parental ? "border-t1-line/40 bg-t1-soft/20" : "border-line bg-surface"}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-semibold text-ink">{violName(c.violation, locale)}</span>
+                      <span className="flex items-center gap-1.5 font-semibold text-ink">
+                        {parental && (
+                          <span className="rounded bg-t1-soft px-1 py-0.5 text-[10px] font-bold uppercase tracking-wide text-t1-ink" aria-hidden>
+                            {t({ uk: "родина", en: "family" })}
+                          </span>
+                        )}
+                        {violName(c.violation, locale)}
+                      </span>
                       <span className="text-xs text-muted">
                         {t({ uk: "внесок", en: "contribution" })}{" "}
                         <span className="font-semibold tnum text-brand-ink">{c.value.toFixed(2)}</span>
@@ -99,6 +110,12 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                         <span className="font-medium text-ink-2 tnum">{c.severity.toFixed(2)}</span>
                       </span>
                       <AcuityTag acuity={c.acuity} />
+                      {parental && c.evidence_strength && (
+                        <span className="font-medium text-ink-2">· {evidenceStrengthLabel(c.evidence_strength, locale)}</span>
+                      )}
+                      {parental && c.relationship && (
+                        <span>· {relationshipLabel(c.relationship, locale)}</span>
+                      )}
                     </div>
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                       <span className="text-[11px] text-faint">
@@ -239,6 +256,20 @@ function CrossBorderChip() {
     >
       <span aria-hidden>🇪🇪</span>
       {t({ uk: "слід в Естонії", en: "Estonian trace" })}
+    </span>
+  );
+}
+
+/** Маркер: у ризику дитини вагомі батьківські/сімейні фактори. */
+function FamilyChip() {
+  const t = useTx();
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md bg-t1-soft px-1.5 py-0.5 text-[11px] font-semibold text-t1-ink"
+      title={t({ uk: "Частина ризику походить від обставин батьків/родини", en: "Part of the risk comes from parents' / family circumstances" })}
+    >
+      <span aria-hidden>👪</span>
+      {t({ uk: "ризик від родини", en: "family risk" })}
     </span>
   );
 }
