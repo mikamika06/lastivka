@@ -8,11 +8,11 @@ export function HBar({
   data,
   unit = "",
   max,
-}: {
+}: Readonly<{
   data: Row[];
   unit?: string;
   max?: number;
-}) {
+}>) {
   const top = max ?? Math.max(...data.map((d) => d.value), 1);
   return (
     <div className="space-y-2.5">

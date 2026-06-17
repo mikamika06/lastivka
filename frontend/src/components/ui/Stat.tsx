@@ -20,12 +20,12 @@ export function KpiCard({
   value,
   hint,
   tone = "neutral",
-}: {
+}: Readonly<{
   label: string;
   value: ReactNode;
   hint?: string;
   tone?: Tone;
-}) {
+}>) {
   const t = TONE[tone];
   return (
     <div className={`card group p-5 ring-1 ring-transparent transition ${t.ring}`}>
@@ -46,11 +46,11 @@ export function MiniStat({
   label,
   value,
   tone = "neutral",
-}: {
+}: Readonly<{
   label: string;
   value: ReactNode;
   tone?: Tone;
-}) {
+}>) {
   const t = TONE[tone];
   return (
     <div className="rounded-xl border border-line bg-paper/40 px-4 py-3">
@@ -60,7 +60,7 @@ export function MiniStat({
   );
 }
 
-export function Chip({ children, title }: { children: ReactNode; title?: string }) {
+export function Chip({ children, title }: Readonly<{ children: ReactNode; title?: string }>) {
   return (
     <span
       title={title}
@@ -72,7 +72,7 @@ export function Chip({ children, title }: { children: ReactNode; title?: string 
 }
 
 /** Чіп реєстру-силоса з позначкою рівня доступу. */
-export function RegistryChip({ code }: { code: RegistryCode }) {
+export function RegistryChip({ code }: Readonly<{ code: RegistryCode }>) {
   const meta = REG_BY_CODE[code];
   const level1 = regAccess(code) === 1;
   return (
