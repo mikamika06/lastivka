@@ -8,7 +8,9 @@ import os
 import sqlite3
 import yaml
 
-from . import matching, detection, scoring, validation
+import yaml as _yaml
+
+from . import matching, detection, scoring, validation, caseload
 from .storage import OUT
 
 
