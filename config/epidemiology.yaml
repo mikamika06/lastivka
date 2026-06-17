@@ -128,6 +128,17 @@ derived_flags_note: >
   war_loss = (no_parental_care або orphanhood) і війна; dv_household = P1 або наявне ДН;
   war_exposure = geo_tier in (frontline,deoccupied,occupied); no_breadwinner = unemployment у неповній сім'ї.
 
+# ── Крос-кордон Україна → Естонія (тимчасовий захист) ──
+crossborder_ee:
+  abroad_rate: 0.05           # частка дітей-біженців у Естонії (×війна)
+  war_mult: 2.2               # підвищення для дітей із зон бойових дій
+  ee_registered: 0.90         # реєстрація проживання (Rahvastikuregister) після прибуття
+  ee_in_school: 0.60          # зарахування в естонську школу (EHIS) — решта = освітній розрив
+  ee_in_health: 0.55          # мед. прикріплення (Tervise infosüsteem)
+  ee_gets_benefit: 0.70       # дитяча допомога (SKAIS)
+  uasc_rate: 0.04             # неповнолітні без супроводу (UASC)
+  name_variation: 0.5         # розбіжність транслітерації імені на естонському боці
+
 # Очікувані сумарні орієнтири (для валідації):
 validation_targets:
   clean_children_pct: [0.55, 0.68]     # без жодного порушення

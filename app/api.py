@@ -63,6 +63,7 @@ def queue(tier: str | None = None, immediate: bool = False, limit: int = 500):
             "rank": int(r["rank"]), "entity_id": int(r["entity_id"]),
             "unzr": r["unzr"] if r["unzr"] not in (None, "", "None") else None,
             "pib": r["pib"], "birth_date": r["birth_date"], "age": r["age"],
+            "country": r.get("country", "UA"), "isikukood": r.get("isikukood"),
             "oblast": r.get("oblast"), "worker_id": r.get("worker_id"),
             "tier": r["tier"], "score": r["score"], "immediate": bool(r["immediate"]),
             "vulnerability": r["vulnerability"],
@@ -127,6 +128,12 @@ def post_feedback(fb: FeedbackIn):
 @app.get("/feedback/stats")
 def feedback_stats():
     return _feedback.stats()
+
+
+@app.get("/crossborder")
+def crossborder():
+    """Крос-кордонна статистика UA↔EE: скільки естонських дітей зв'язано (PPRL), скільки незнайдених."""
+    return pipeline.read_metrics().get("crossborder", {})
 
 
 @app.get("/entity/{entity_id}")
