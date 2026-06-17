@@ -158,6 +158,15 @@ def _signals(ent, cfg) -> dict:
     s["court_deprivation"] = any("батьк" in str(r.get("case_category", "")) for r in R.get("EDRSR", []))
     s["has_disability"] = bool(R.get("CBI"))
 
+    # ── нові реєстри: ДРРП (житло), гарячі лінії, ПФУ, СКАЙД
+    s["housing_alienation"] = any(r.get("child_residence_alienation") == "так" for r in R.get("DRRP", []))
+    hot = R.get("HOTLINE", [])
+    s["hotline_present"] = bool(hot)
+    s["hotline_psych"] = any(r.get("violence_type") == "психологічне" for r in hot)
+    s["pfu_unemployed"] = any(r.get("employment_status_indicator") == "безробітний" for r in R.get("PFU", []))
+    s["skaid_present"] = bool(R.get("SKAID"))
+    s["dv_psych"] = any(r.get("form_of_violence") == "психологічне" for r in R.get("DV", []))
+
     bd = ent.get("birth_date")
     s["age_end"] = None
     if bd and bd != "None":
@@ -184,16 +193,17 @@ def detect_entity(ent, cfg) -> list[dict]:
                       "onset_month": onset, "acuity": _acuity(onset, T)})
 
     school_age = s["age_end"] is None or 6 <= s["age_end"] <= 17
-    # dropout = тиша в АІКОМ задовго до кінця (дитина перестала відвідувати)
-    isuo_dropout = s["isuo_last_month"] is not None and s["isuo_last_month"] < T - 3
+    # dropout = тиша в АІКОМ задовго до кінця (НЕ через випуск зі школи у 18 р.)
+    isuo_dropout = school_age and s["isuo_last_month"] is not None and s["isuo_last_month"] < T - 3
     w3_sig = s["school_exit"] or isuo_dropout
     w8_sig = (s["decl_terminated"] or s["missed_checkup"]) and s["has_chronic"]
     w2_sig = s["psych_present"]
 
-    # W1 Вимушене переміщення (ВПО + реальний обрив сервісу: освіта або медицина)
-    if s["has_idp"] and (w3_sig or w8_sig):
+    # W1 Вимушене переміщення (ВПО + обрив сервісу: освіта, або медицина не через нехтування)
+    w8_displacement = w8_sig and not s["ssd_low_income"]
+    if s["has_idp"] and (w3_sig or w8_displacement):
         ev = ["VPO"] + (["EDEBO"] if s["school_exit"] else []) + \
-             (["EHEALTH"] if w8_sig else []) + (["CHILDWAR"] if s["childwar_status"] else [])
+             (["EHEALTH"] if w8_displacement else []) + (["CHILDWAR"] if s["childwar_status"] else [])
         add("W1_displacement", ev, _earliest(s["idp_month"], s["exit_month"]))
 
     # W3 Поза освітою (вихід зі школи АБО тривала тиша відвідуваності)
@@ -201,8 +211,8 @@ def detect_entity(ent, cfg) -> list[dict]:
         ev = (["EDEBO"] if s["school_exit"] else []) + (["AIKOM"] if s["isuo_last_month"] is not None else [])
         add("W3_out_of_education", ev or ["EDEBO"], _earliest(s["exit_month"]))
 
-    # W8 Обмеження доступу до медицини (хронік + обрив декларації + контекст переміщення/фронту)
-    if w8_sig and s["decl_terminated"] and s["has_idp"]:
+    # W8 Обмеження доступу до медицини (хронік + обрив декларації + переміщення, не нехтування)
+    if w8_sig and s["decl_terminated"] and s["has_idp"] and not s["ssd_low_income"]:
         ev = ["EHEALTH"] + (["VPO"] if not s["reatt_doctor"] else [])
         add("W8_medical_access", ev, s["decl_end_month"])
 
@@ -250,9 +260,21 @@ def detect_entity(ent, cfg) -> list[dict]:
     if s["erdr_article"] == "152":
         add("F6_sexual_abuse", ["ERDR"], s["erdr_month"])
 
-    # W2 Психотравма — додаємо в кінці, ЛИШЕ якщо немає іншого пояснення (насильство/булінг)
+    # W9 Порушення права на ідентичність (відчуження житла дитини без дозволу опіки)
+    if s["housing_alienation"]:
+        add("W9_identity", ["DRRP", "EDDR"], None)
+
+    # F1 Психологічне насильство в сім'ї (гаряча лінія / реєстр ДН (психологічне) + психолог/облік)
     found_ids = {f["violation"] for f in found}
-    abuse_related = {"P1_physical_home", "F6_sexual_abuse", "W7_trafficking", "E1_bullying"}
+    if ((s["hotline_psych"] or s["dv_psych"]) and (s["psych_present"] or s["ssd_present"])
+            and not (found_ids & {"P1_physical_home", "F6_sexual_abuse"})):
+        ev = (["HOTLINE"] if s["hotline_psych"] else []) + (["DV"] if s["dv_psych"] else []) + \
+             (["EHEALTH"] if s["psych_present"] else []) + (["DITY"] if s["ssd_present"] else [])
+        add("F1_psych_violence", ev, None)
+
+    # W2 Психотравма — в кінці, ЛИШЕ якщо немає іншого пояснення (насильство/булінг/F1)
+    found_ids = {f["violation"] for f in found}
+    abuse_related = {"P1_physical_home", "F6_sexual_abuse", "W7_trafficking", "E1_bullying", "F1_psych_violence"}
     if s["psych_present"] and not (found_ids & abuse_related):
         ev = ["EHEALTH"] + (["CHILDWAR"] if s["childwar_status"] else [])
         add("W2_psych_trauma", ev, None)

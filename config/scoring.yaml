@@ -29,6 +29,8 @@ severity:
   E2_discrimination: 0.45
   E3_teacher_pressure: 0.40
   E5_voice: 0.30
+  W9_identity: 0.70
+  F1_psych_violence: 0.60
   # immediate-порушення теж мають severity (для впорядкування всередині T0)
   W5_deportation: 1.00
   W7_trafficking: 1.00

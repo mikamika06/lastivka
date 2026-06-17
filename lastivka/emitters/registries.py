@@ -64,6 +64,22 @@ REGISTRIES = [
      "subsystem": "EDRSR_prod", "owner": "ДСА", "db": "edrsr.db", "access": 3,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "child_birth_date"}},
+    {"code": "SKAID", "ua": "ІКС «СКАЙД» — ювенальна превенція", "member": "00032684",
+     "subsystem": "20_NP_SKAID_prod", "owner": "Нацполіція", "db": "skaid.db", "access": 2,
+     "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
+                "unzr": "unzr", "rnokpp": "rnokpp", "dob": "child_birth_date"}},
+    {"code": "PFU", "ua": "Реєстр застрахованих осіб (ПФУ)", "member": "00035261",
+     "subsystem": "PFU_RZO_prod", "owner": "ПФУ", "db": "pfu.db", "access": 2,
+     "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
+                "unzr": "linked_child_unzr", "rnokpp": "linked_child_rnokpp", "dob": "child_birth_date"}},
+    {"code": "DRRP", "ua": "ДРРП — речові права (житло)", "member": "00015622",
+     "subsystem": "3_MJU_DRRP_prod", "owner": "Мінʼюст", "db": "drrp.db", "access": 2,
+     "id_map": {"last": "subject_last_name", "first": "subject_first_name", "second": "subject_patronymic",
+                "unzr": "unzr", "rnokpp": "rnokpp", "dob": "subject_birth_date"}},
+    {"code": "HOTLINE", "ua": "Гарячі лінії 116 111 / 1545", "member": "00000000",
+     "subsystem": "HOTLINE_prod", "owner": "Ла Страда / УКЦ", "db": "hotline.db", "access": 2,
+     "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
+                "unzr": "child_unzr", "rnokpp": "child_rnokpp", "dob": "child_birth_date"}},
 ]
 REG_BY_CODE = {r["code"]: r for r in REGISTRIES}
 
@@ -386,28 +402,30 @@ def emit_erdr(child, cfg, rng):
 
 # ════════════ R10 Реєстр випадків домашнього насильства ════════════
 def emit_dv(child, cfg, rng):
-    if not (getattr(child, "dv_household", False) or "P1_physical_home" in child.labels):
+    physical = "P1_physical_home" in child.labels
+    psych = "F1_psych_violence" in child.labels
+    if not (physical or psych):  # запис у реєстр ДН — лише за зафіксованим насильством
         return []
     ln, fn, sn, unzr = _nm(child, cfg, rng)
-    m = child.labels.get("P1_physical_home", getattr(child, "idp_month", rng.randint(3, 18)))
-    is_victim = "P1_physical_home" in child.labels
+    m = child.labels.get("P1_physical_home") or child.labels.get("F1_psych_violence") \
+        or getattr(child, "idp_month", rng.randint(3, 18))
+    child_victim = physical or psych
     rows = []
     for k in range(rng.randint(1, 3)):
         dm = min(m + rng.randint(0, 4), cfg["population"]["months"] - 1)
         rows.append({
             "case_record_id": _rid(rng, 9), "reporting_authority": f"ГУНП у {child.oblast} обл.",
-            "victim_full_name": _full(child) if is_victim else "дорослий член родини",
+            "victim_full_name": _full(child) if child_victim else "дорослий член родини",
             "child_last_name": ln, "child_first_name": fn, "child_patronymic": sn,
             "child_date_of_birth": child.birth_date.isoformat(), "child_unzr": unzr, "child_rnokpp": child.rnokpp,
             "child_sex": "ж" if child.gender == "FEMALE" else "ч",
-            "child_witnessed_violence": "так",
-            "presence_of_children_flag": "так",
-            "parents_are_abusers_flag": "так" if is_victim else "ні",
+            "child_witnessed_violence": "так", "presence_of_children_flag": "так",
+            "parents_are_abusers_flag": "так" if child_victim else "ні",
             "abuser_full_name": "член родини", "incident_datetime": month_date(cfg, dm).isoformat(),
             "incident_place": f"{child.oblast} обл., {child.settlement}",
-            "form_of_violence": "фізичне" if is_victim else "психологічне",
-            "primary_recurrent_flag": "повторний" if (is_victim and k > 0) else "первинний",
-            "police_call": "так", "emergency_restraining_order": "так" if is_victim else "ні",
+            "form_of_violence": "фізичне" if physical else "психологічне",
+            "primary_recurrent_flag": "повторний" if (physical and k > 0) else "первинний",
+            "police_call": "так", "emergency_restraining_order": "так" if physical else "ні",
             "child_services_notification": "так",
             "record_timestamp": month_date(cfg, dm).isoformat(),
         })
@@ -493,8 +511,118 @@ def emit_edrsr(child, cfg, rng):
     }]
 
 
+# ════════════ R14 ІКС «СКАЙД» (ювенальна превенція) ════════════
+def emit_skaid(child, cfg, rng):
+    age0 = child.age_at(sim_start(cfg), 0)
+    behavioral = ("F3_neglect" in child.labels or "P1_physical_home" in child.labels or child.par_addiction)
+    if not (age0 >= 11 and behavioral and rng.random() < 0.35):
+        return []
+    ln, fn, sn, unzr = _nm(child, cfg, rng)
+    m = rng.randint(3, cfg["population"]["months"] - 3)
+    return [{
+        "preventive_case_file_number": _rid(rng, 8), "case_file_opening_date": month_date(cfg, m).isoformat(),
+        "registration_category": rng.choice(["схильна до правопорушень", "перебуває у конфлікті із законом",
+                                             "вчинила булінг", "потерпіла від насильства"]),
+        "grounds_documents": "подання ССД / матеріали поліції",
+        "child_last_name": ln, "child_first_name": fn, "child_patronymic": sn,
+        "child_birth_date": child.birth_date.isoformat(), "sex": "ж" if child.gender == "FEMALE" else "ч",
+        "citizenship": "Україна", "place_of_residence": f"{child.oblast} обл., {child.settlement}",
+        "identity_document": "свідоцтво про народження" if age0 < 14 else "паспорт",
+        "unzr": unzr, "rnokpp": child.rnokpp,
+        "administrative_liability_record": "ні",
+        "criminal_liability_record": "так" if "P1_physical_home" in child.labels and rng.random() < 0.2 else "ні",
+        "individual_prevention_measures": "профілактичні бесіди, соц-психологічний супровід",
+        "child_as_perpetrator_of_bullying": "так" if "E1_bullying" in child.labels and rng.random() < 0.3 else "ні",
+        "child_as_victim_records": "так" if behavioral else "ні",
+        "parents_data": f"мати: РНОКПП {child.mother_rnokpp}",
+    }]
+
+
+# ════════════ R15 ПФУ (зайнятість батьків) ════════════
+def emit_pfu(child, cfg, rng):
+    if not child.par_unemployment:  # реєструємо лише сигнал — безробіття опікуна
+        return []
+    return [{
+        "unique_account_number": _rid(rng, 12), "rnokpp": child.mother_rnokpp,
+        "full_name": f"{child.last_name} {rng.choice(['Марія','Олена','Ірина'])} {rng.choice(['Петрівна','Іванівна'])}",
+        "birth_date": (child.birth_date - timedelta(days=rng.randint(7000, 12000))).isoformat(),
+        "sex": "Ж", "citizenship": "Україна",
+        "employment_status_indicator": "безробітний",
+        "reporting_year": str(cfg["population"]["start_year"]),
+        "insurer_employer_id": None, "employment_period": "немає чинних трудових відносин",
+        "wage_subject_to_contributions": "0", "occupation": None,
+        # демо-лінк до дитини (у реалі — через РНОКПП батька в ДРАЦС)
+        "linked_child_unzr": child.unzr, "linked_child_rnokpp": child.rnokpp,
+        "child_last_name": child.last_name, "child_first_name": child.first_name,
+        "child_patronymic": child.second_name, "child_birth_date": child.birth_date.isoformat(),
+    }]
+
+
+# ════════════ R16 ДРРП (речові права / житло) ════════════
+def emit_drrp(child, cfg, rng):
+    alienation = "W9_identity" in child.labels
+    if not (alienation or rng.random() < 0.05):
+        return []
+    ln, fn, sn, unzr = _nm(child, cfg, rng)
+    return [{
+        "real_property_object_number": _rid(rng, 10), "land_cadastral_number": None,
+        "object_type": "квартира", "object_address": f"{child.oblast} обл., {child.settlement}",
+        "total_area": str(rng.randint(40, 90)), "living_area": str(rng.randint(25, 60)),
+        "subject_last_name": ln, "subject_first_name": fn, "subject_patronymic": sn,
+        "subject_birth_date": child.birth_date.isoformat(), "rnokpp": child.rnokpp, "unzr": unzr,
+        "right_type": "спільна часткова власність", "ownership_share_size": "1/4",
+        "registration_basis": "договір приватизації",
+        "registration_datetime": month_date(cfg, 0).isoformat(),
+        "encumbrance_type": ("відчуження без дозволу органу опіки" if alienation else None),
+        "object_price": None,
+        "child_residence_registration_flag": "так",
+        "child_residence_alienation": "так" if alienation else "ні",
+    }]
+
+
+# ════════════ R17 Гарячі лінії 116 111 / 1545 ════════════
+_HOTLINE_TOPIC = {
+    "F1_psych_violence": ("психологічне насильство", "психологічне"),
+    "P1_physical_home": ("фізичне насильство в сім'ї", "фізичне"),
+    "F6_sexual_abuse": ("сексуальне насильство", "сексуальне"),
+    "F3_neglect": ("занедбаність / нехтування", "нехтування"),
+    "E1_bullying": ("булінг у школі", "психологічне"),
+}
+
+
+def emit_hotline(child, cfg, rng):
+    rel = [v for v in child.labels if v in _HOTLINE_TOPIC]
+    if not rel or rng.random() > 0.35:
+        return []
+    vid = rng.choice(rel)
+    topic, vtype = _HOTLINE_TOPIC[vid]
+    anon = rng.random() < 0.6  # дзвінки часто анонімні -> без ідентифікатора
+    ln, fn, sn, unzr = _nm(child, cfg, rng)
+    if anon:
+        unzr = None
+    m = child.labels[vid]
+    caller = rng.choice(["дитина", "сусід", "родич", "вчитель"])
+    return [{
+        "appeal_id": _rid(rng, 9), "received_at": month_date(cfg, m).isoformat(),
+        "channel_source": rng.choice(["116111", "1545"]), "caller_type": caller,
+        "reporter_full_name": None if anon else "заявник",
+        "contact_phone": None if anon else f"+380{_rid(rng, 9)}",
+        "child_last_name": ln, "child_first_name": fn, "child_patronymic": sn,
+        "child_birth_date": None if anon else child.birth_date.isoformat(),
+        "child_sex": "ж" if child.gender == "FEMALE" else "ч",
+        "child_rnokpp": None if anon else child.rnokpp, "child_unzr": unzr,
+        "child_location": f"{child.oblast} обл., {child.settlement}",
+        "appeal_category": "звернення щодо дитини", "topic": topic, "violence_type": vtype,
+        "circumstances": "потребує перевірки", "safety_risk_flag": "так" if vid in ("P1_physical_home", "F6_sexual_abuse") else "можливо",
+        "summary": f"повідомлення про {topic}", "operator_name": f"оператор {_rid(rng, 3)}",
+        "action_taken": "передано до ССД та поліції", "status": "опрацьовується",
+        "is_anonymous": "так" if anon else "ні",
+    }]
+
+
 EMITTERS = {
     "DRACS": emit_dracs, "EDDR": emit_eddr, "EHEALTH": emit_ehealth, "EDEBO": emit_edebo,
     "AIKOM": emit_aikom, "VPO": emit_vpo, "CHILDWAR": emit_childwar, "DITY": emit_dity,
     "ERDR": emit_erdr, "DV": emit_dv, "CBI": emit_cbi, "EISSS": emit_eisss, "EDRSR": emit_edrsr,
+    "SKAID": emit_skaid, "PFU": emit_pfu, "DRRP": emit_drrp, "HOTLINE": emit_hotline,
 }

@@ -101,7 +101,8 @@ def assign_violations(child: Child, epi: dict, sim_start: date, T: int, rng: ran
 
     for vid in ("W3_out_of_education", "W8_medical_access", "W2_psych_trauma",
                 "W6_orphanhood", "W5_deportation", "W7_trafficking",
-                "F3_neglect", "P1_physical_home", "F6_sexual_abuse", "F4_child_labor"):
+                "F3_neglect", "P1_physical_home", "F6_sexual_abuse", "F4_child_labor",
+                "W9_identity", "F1_psych_violence"):
         maybe(vid, school_age_only=(vid in ("W3_out_of_education", "F4_child_labor")))
 
     # E4 інклюзія — лише для дітей з інвалідністю
@@ -162,6 +163,8 @@ def build_states(child: Child, sim_start: date, T: int, rng: random.Random) -> N
         _set_from(states, L["P1_physical_home"], safety="abuse_active", family="crisis")
     if "F6_sexual_abuse" in L:
         _set_from(states, L["F6_sexual_abuse"], safety="abuse_active", family="crisis")
+    if "F1_psych_violence" in L:
+        _set_from(states, L["F1_psych_violence"], family="stressed", safety="abuse_risk")
 
 
 def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:
