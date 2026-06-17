@@ -725,7 +725,8 @@ const WORKER_INDEX: Record<string, FullCase[]> = (() => {
   const idx: Record<string, FullCase[]> = {};
   for (const c of DATA.all) {
     if (!c.worker_id) continue;
-    (idx[c.worker_id] ??= []).push(c);
+    if (!idx[c.worker_id]) idx[c.worker_id] = [];
+    idx[c.worker_id].push(c);
   }
   for (const id of Object.keys(idx)) {
     idx[id].sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || b.score - a.score);
