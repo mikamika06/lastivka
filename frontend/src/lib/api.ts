@@ -12,7 +12,6 @@ import type {
   Tier,
 } from "./types";
 import { mockData, mockOblastOf } from "./mock";
-import { TIER_META } from "./registries";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ?? "";
 const USE_API = API_BASE.length > 0;
@@ -83,6 +82,10 @@ export function oblastOf(entityId: number): string {
   return mockOblastOf(entityId);
 }
 
+function tierCount(tier: Tier, counts: Record<Tier, number>): number {
+  return counts[tier];
+}
+
 /* ── агрегати для управлінської панелі ── */
 export interface DashboardStats {
   kpis: { t0: number; t1: number; t2: number; immediate: number; total: number };
@@ -116,9 +119,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  const tierCounts: Record<Tier, number> = { T0: t0, T1: t1, T2: t2 };
   const byTier = (["T0", "T1", "T2"] as Tier[]).map((tier) => ({
     tier,
-    count: tier === "T0" ? t0 : tier === "T1" ? t1 : t2,
+    count: tierCount(tier, tierCounts),
   }));
 
   return {
@@ -129,4 +133,4 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-export { TIER_META };
+export { TIER_META } from "./registries";

@@ -78,7 +78,30 @@ def _prob(base, mult, flags, cap):
 
 
 # ── призначення порушень ──
-def assign_violations(child: Child, epi: dict, sim_start: date, T: int, rng: random.Random) -> None:
+def _is_school_age(child: Child, sim_start: date, total_months: int) -> bool:
+    return 6 <= child.age_at(sim_start, total_months - 1) <= 17
+
+
+def _assign_idp_displacement(child: Child, total_months: int) -> None:
+    """W1: переміщення з порушенням сервісу (ВПО + обрив освіти/медицини)."""
+    if child.is_idp and (child.labels.keys() & {"W3_out_of_education", "W8_medical_access"}):
+        child.labels["W1_displacement"] = min(
+            child.labels.get("W3_out_of_education", total_months),
+            child.labels.get("W8_medical_access", total_months),
+        )
+
+
+def _assign_war_status(child: Child, flags: dict) -> None:
+    """Статус «Діти війни»."""
+    if "W5_deportation" in child.labels:
+        child.war_status = "deported"
+    elif "W6_orphanhood" in child.labels and flags["war_exposure"]:
+        child.war_status = "lost_parents"
+    elif child.is_idp and flags["war_exposure"]:
+        child.war_status = "displaced"
+
+
+def assign_violations(child: Child, epi: dict, sim_start: date, total_months: int, rng: random.Random) -> None:
     V = epi["violations"]
     cap = V["cap"]
     flags = _flags(child)
@@ -87,13 +110,13 @@ def assign_violations(child: Child, epi: dict, sim_start: date, T: int, rng: ran
     def maybe(vid, school_age_only=False):
         if vid not in V:
             return
-        if school_age_only and not (6 <= child.age_at(sim_start, T - 1) <= 17):
+        if school_age_only and not _is_school_age(child, sim_start, total_months):
             return
         if vid == "W8_medical_access" and not (child.has_chronic and child.is_idp):
             return  # обрив медичної допомоги: хронік + переміщення (втрата прикріплення)
         p = _prob(V[vid]["base"], V[vid].get("mult"), flags, cap)
         if rng.random() < p:
-            child.labels[vid] = rng.randint(3, max(4, T - 4))
+            child.labels[vid] = rng.randint(3, max(4, total_months - 4))
 
     # E1 спершу (W2 від нього залежить)
     maybe("E1_bullying", school_age_only=True)
@@ -105,63 +128,66 @@ def assign_violations(child: Child, epi: dict, sim_start: date, T: int, rng: ran
         maybe(vid, school_age_only=(vid in ("W3_out_of_education", "F4_child_labor")))
 
     # E4 інклюзія — лише для дітей з інвалідністю
-    if child.has_disability and 6 <= child.age_at(sim_start, T - 1) <= 17:
+    if child.has_disability and _is_school_age(child, sim_start, total_months):
         p = _prob(V["E4_inclusion"]["base"], V["E4_inclusion"].get("mult"), flags, cap)
         if rng.random() < p:
-            child.labels["E4_inclusion"] = rng.randint(3, max(4, T - 4))
+            child.labels["E4_inclusion"] = rng.randint(3, max(4, total_months - 4))
 
-    # W1: переміщення з порушенням сервісу (ВПО + обрив освіти/медицини)
-    if child.is_idp and (child.labels.keys() & {"W3_out_of_education", "W8_medical_access"}):
-        child.labels["W1_displacement"] = min(child.labels.get("W3_out_of_education", T),
-                                              child.labels.get("W8_medical_access", T))
-
-    # статус «Діти війни»
-    if "W5_deportation" in child.labels:
-        child.war_status = "deported"
-    elif "W6_orphanhood" in child.labels and flags["war_exposure"]:
-        child.war_status = "lost_parents"
-    elif child.is_idp and flags["war_exposure"]:
-        child.war_status = "displaced"
+    _assign_idp_displacement(child, total_months)
+    _assign_war_status(child, flags)
 
 
 # ── траєкторія (стан у часі для емітерів) ──
-def build_states(child: Child, sim_start: date, T: int, rng: random.Random) -> None:
+def _school_status(age: int) -> str:
+    if age < 6:
+        return "preschool"
+    if age > 17:
+        return "graduated"
+    return "enrolled"
+
+
+def _apply_label_states(child: Child, states: list) -> None:
+    """Накладає зміни прихованого стану відповідно до призначених порушень."""
+    labels = child.labels
+    if "W3_out_of_education" in labels:
+        m = labels["W3_out_of_education"]; states[m].school = "at_risk"; _set_from(states, m + 1, school="dropped")
+    if "F4_child_labor" in labels:
+        m = labels["F4_child_labor"]; _set_from(states, m, school="at_risk")
+    if "W8_medical_access" in labels:
+        _set_from(states, labels["W8_medical_access"], health="lapsed")
+    if "F3_neglect" in labels:
+        m = labels["F3_neglect"]; _set_from(states, m, health="lapsed", school="at_risk", protection="observed")
+    if "W2_psych_trauma" in labels:
+        _set_from(states, labels["W2_psych_trauma"], family="stressed", safety="abuse_risk")
+    if "E1_bullying" in labels:
+        _set_from(states, labels["E1_bullying"], school="at_risk")
+    if "W6_orphanhood" in labels:
+        _set_from(states, labels["W6_orphanhood"], family="orphan", protection="in_care")
+    if "W5_deportation" in labels:
+        _set_from(states, labels["W5_deportation"], residence="abroad", family="separated", protection="unaccompanied")
+    if "W7_trafficking" in labels:
+        _set_from(states, labels["W7_trafficking"], protection="unaccompanied", safety="abuse_active")
+    if "P1_physical_home" in labels:
+        _set_from(states, labels["P1_physical_home"], safety="abuse_active", family="crisis")
+    if "F6_sexual_abuse" in labels:
+        _set_from(states, labels["F6_sexual_abuse"], safety="abuse_active", family="crisis")
+
+
+def build_states(child: Child, sim_start: date, total_months: int, rng: random.Random) -> None:
     states = []
-    for t in range(T):
+    for t in range(total_months):
         age = child.age_at(sim_start, t)
-        school = "preschool" if age < 6 else ("graduated" if age > 17 else "enrolled")
+        school = _school_status(age)
         fam = "stressed" if (child.family_type == "single_parent" and rng.random() < 0.2) else "intact"
         states.append(MonthState(school=school, family=fam))
     child.states = states
 
     # переміщення (ВПО) — навіть без порушення populates VPO
     if child.is_idp:
-        child.idp_month = rng.randint(2, max(3, T - 6))
+        child.idp_month = rng.randint(2, max(3, total_months - 6))
         _set_from(states, child.idp_month, residence="displaced")
 
-    L = child.labels
-    if "W3_out_of_education" in L:
-        m = L["W3_out_of_education"]; states[m].school = "at_risk"; _set_from(states, m + 1, school="dropped")
-    if "F4_child_labor" in L:
-        m = L["F4_child_labor"]; _set_from(states, m, school="at_risk")
-    if "W8_medical_access" in L:
-        _set_from(states, L["W8_medical_access"], health="lapsed")
-    if "F3_neglect" in L:
-        m = L["F3_neglect"]; _set_from(states, m, health="lapsed", school="at_risk", protection="observed")
-    if "W2_psych_trauma" in L:
-        _set_from(states, L["W2_psych_trauma"], family="stressed", safety="abuse_risk")
-    if "E1_bullying" in L:
-        _set_from(states, L["E1_bullying"], school="at_risk")
-    if "W6_orphanhood" in L:
-        _set_from(states, L["W6_orphanhood"], family="orphan", protection="in_care")
-    if "W5_deportation" in L:
-        _set_from(states, L["W5_deportation"], residence="abroad", family="separated", protection="unaccompanied")
-    if "W7_trafficking" in L:
-        _set_from(states, L["W7_trafficking"], protection="unaccompanied", safety="abuse_active")
-    if "P1_physical_home" in L:
-        _set_from(states, L["P1_physical_home"], safety="abuse_active", family="crisis")
-    if "F6_sexual_abuse" in L:
-        _set_from(states, L["F6_sexual_abuse"], safety="abuse_active", family="crisis")
+    _apply_label_states(child, states)
 
 
 def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:

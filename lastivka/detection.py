@@ -51,12 +51,12 @@ def change_point(series: list[float]):
     return best_idx, best_mag, best_dir
 
 
-def _acuity(onset: int | None, T: int) -> str:
+def _acuity(onset: int | None, total_months: int) -> str:
     if onset is None:
         return "active"
-    if onset >= T - 4:
+    if onset >= total_months - 4:
         return "acute"
-    if onset >= T // 2:
+    if onset >= total_months // 2:
         return "active"
     return "chronic"
 
@@ -80,12 +80,7 @@ def _childwar_status(text):
     return None
 
 
-def _signals(ent, cfg) -> dict:
-    sy = cfg["population"]["start_year"]
-    T = cfg["population"]["months"]
-    R = ent["rows_by_reg"]
-    s = {"T": T}
-
+def _signals_vpo(s, R, sy) -> None:
     # ── ВПО (точні поля)
     vpo = R.get("VPO", [])
     s["has_idp"] = bool(vpo)
@@ -93,6 +88,8 @@ def _signals(ent, cfg) -> dict:
     s["reatt_school"] = bool(vpo[0].get("education_place")) if vpo else True
     s["reatt_doctor"] = (vpo[0].get("medical_needs") == "забезпечено") if vpo else True
 
+
+def _signals_edebo(s, R, sy) -> None:
     # ── ЄДЕБО
     edebo = R.get("EDEBO", [])
     s["school_exit"] = bool(edebo) and edebo[0].get("study_status") in ("transferred", "expelled")
@@ -100,6 +97,19 @@ def _signals(ent, cfg) -> dict:
     s["enrolled_ever"] = bool(edebo)
     s["edebo_inclusive"] = bool(edebo) and bool(edebo[0].get("special_category"))
 
+
+def _aikom_last_month(aikom, sy) -> int | None:
+    if not aikom:
+        return None
+    last = aikom[-1].get("attendance_period")
+    try:
+        y, m = map(int, last.split("-"))
+        return (y - sy) * 12 + (m - 1)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _signals_aikom(s, R, sy) -> None:
     # ── АІКОМ (відвідуваність/оцінки) — change-point + dropout
     aikom = sorted(R.get("AIKOM", []), key=lambda r: r.get("attendance_period", ""))
     absc = [_i(r.get("missed_lessons_count")) for r in aikom]
@@ -110,15 +120,10 @@ def _signals(ent, cfg) -> dict:
     s["gpa_drop"] = g_mag >= 2 and g_dir < 0
     s["anti_bullying"] = any(_b(r.get("anti_bullying_commission")) for r in aikom)
     s["out_of_education"] = any(_b(r.get("out_of_education_flag")) for r in aikom)
-    s["isuo_last_month"] = None
-    if aikom:
-        last = aikom[-1].get("attendance_period")
-        try:
-            y, m = map(int, last.split("-"))
-            s["isuo_last_month"] = (y - sy) * 12 + (m - 1)
-        except (ValueError, AttributeError):
-            pass
+    s["isuo_last_month"] = _aikom_last_month(aikom, sy)
 
+
+def _signals_ehealth(s, R, sy) -> None:
     # ── eHealth (resource_type: person/declaration/encounter/condition/immunization)
     eh = R.get("EHEALTH", [])
     decl = [r for r in eh if r.get("resource_type") == "declaration"]
@@ -132,10 +137,8 @@ def _signals(ent, cfg) -> dict:
     s["trauma_repeat"] = any(_b(r.get("is_repeat")) for r in traumas) or len(traumas) >= 2
     s["psych_present"] = any(r.get("condition_category") == "psych" for r in eh)
 
-    # ── «Діти війни»
-    cw = R.get("CHILDWAR", [])
-    s["childwar_status"] = _childwar_status(cw[0].get("status_category")) if cw else None
 
+def _signals_ssd(s, R, sy) -> None:
     # ── ССД / «Діти»
     dity = R.get("DITY", [])
     s["ssd_present"] = bool(dity)
@@ -144,28 +147,54 @@ def _signals(ent, cfg) -> dict:
     s["ssd_low_income"] = bool(dity) and dity[0].get("difficult_life_circumstances") == "так"
     s["ssd_open_month"] = _month_index(dity[0].get("primary_registration_date"), sy) if dity else None
 
-    # ── ДРАЦС (смерть батька/матері)
-    dracs = R.get("DRACS", [])
-    s["parent_death"] = any(r.get("act_type") == "смерть" for r in dracs)
 
+def _signals_erdr(s, R, sy) -> None:
     # ── ЄРДР
     erdr = R.get("ERDR", [])
     s["erdr_article"] = _erdr_article(erdr[0].get("preliminary_legal_qualification")) if erdr else None
     s["erdr_month"] = _month_index(erdr[0].get("register_entry_datetime"), sy) if erdr else None
+
+
+def _entity_age_end(ent, sy, total_months) -> int | None:
+    bd = ent.get("birth_date")
+    if bd and bd != "None":
+        try:
+            b = date.fromisoformat(str(bd)[:10])
+            return (sy + (total_months - 1) // 12) - b.year
+        except ValueError:
+            return None
+    return None
+
+
+def _signals(ent, cfg) -> dict:
+    sy = cfg["population"]["start_year"]
+    T = cfg["population"]["months"]
+    R = ent["rows_by_reg"]
+    s = {"T": T}
+
+    _signals_vpo(s, R, sy)
+    _signals_edebo(s, R, sy)
+    _signals_aikom(s, R, sy)
+    _signals_ehealth(s, R, sy)
+
+    # ── «Діти війни»
+    cw = R.get("CHILDWAR", [])
+    s["childwar_status"] = _childwar_status(cw[0].get("status_category")) if cw else None
+
+    _signals_ssd(s, R, sy)
+
+    # ── ДРАЦС (смерть батька/матері)
+    dracs = R.get("DRACS", [])
+    s["parent_death"] = any(r.get("act_type") == "смерть" for r in dracs)
+
+    _signals_erdr(s, R, sy)
 
     # ── ДН-реєстр + суд + інвалідність
     s["police_calls"] = len(R.get("DV", []))
     s["court_deprivation"] = any("батьк" in str(r.get("case_category", "")) for r in R.get("EDRSR", []))
     s["has_disability"] = bool(R.get("CBI"))
 
-    bd = ent.get("birth_date")
-    s["age_end"] = None
-    if bd and bd != "None":
-        try:
-            b = date.fromisoformat(str(bd)[:10])
-            s["age_end"] = (sy + (T - 1) // 12) - b.year
-        except ValueError:
-            pass
+    s["age_end"] = _entity_age_end(ent, sy, T)
     return s
 
 
@@ -174,22 +203,7 @@ def _earliest(*months):
     return min(vals) if vals else None
 
 
-def detect_entity(ent, cfg) -> list[dict]:
-    s = _signals(ent, cfg)
-    T = s["T"]
-    found = []
-
-    def add(vid, evidence, onset):
-        found.append({"violation": vid, "evidence": sorted(set(evidence)),
-                      "onset_month": onset, "acuity": _acuity(onset, T)})
-
-    school_age = s["age_end"] is None or 6 <= s["age_end"] <= 17
-    # dropout = тиша в АІКОМ задовго до кінця (дитина перестала відвідувати)
-    isuo_dropout = s["isuo_last_month"] is not None and s["isuo_last_month"] < T - 3
-    w3_sig = s["school_exit"] or isuo_dropout
-    w8_sig = (s["decl_terminated"] or s["missed_checkup"]) and s["has_chronic"]
-    w2_sig = s["psych_present"]
-
+def _detect_displacement_education(s, add, school_age, w3_sig, w8_sig) -> None:
     # W1 Вимушене переміщення (ВПО + реальний обрив сервісу: освіта або медицина)
     if s["has_idp"] and (w3_sig or w8_sig):
         ev = ["VPO"] + (["EDEBO"] if s["school_exit"] else []) + \
@@ -206,6 +220,8 @@ def detect_entity(ent, cfg) -> list[dict]:
         ev = ["EHEALTH"] + (["VPO"] if not s["reatt_doctor"] else [])
         add("W8_medical_access", ev, s["decl_end_month"])
 
+
+def _detect_custody_immediate(s, add) -> None:
     # W6 Сирітство / втрата опіки (смерть батьків АБО рішення суду) + облік ССД
     if (s["parent_death"] or s["court_deprivation"]) and s["ssd_present"]:
         ev = (["DRACS"] if s["parent_death"] else []) + (["EDRSR"] if s["court_deprivation"] else []) + ["DITY"]
@@ -221,6 +237,8 @@ def detect_entity(ent, cfg) -> list[dict]:
         ev = ["ERDR"] + (["DITY"] if s["ssd_present"] else [])
         add("W7_trafficking", ev, _earliest(s["erdr_month"], s["ssd_open_month"]))
 
+
+def _detect_abuse_neglect(s, add, w3_sig) -> None:
     # F3 Нехтування потребами
     if s["missed_checkup"] and (s["absence_spike"] or s["isuo_last_month"] is not None) and s["ssd_low_income"]:
         add("F3_neglect", ["EHEALTH", "AIKOM", "DITY"], s["ssd_open_month"])
@@ -241,6 +259,8 @@ def detect_entity(ent, cfg) -> list[dict]:
             and not s["psych_present"] and not s["anti_bullying"]):
         add("F4_child_labor", ["AIKOM"], None)
 
+
+def _detect_inclusion_sexual(s, add, school_age) -> None:
     # E4 Обмеження доступу до інклюзивної освіти (інвалідність + немає інклюзивного супроводу)
     if s["has_disability"] and school_age and not s["edebo_inclusive"]:
         ev = ["CBI"] + (["EDEBO"] if s["enrolled_ever"] else [])
@@ -250,12 +270,36 @@ def detect_entity(ent, cfg) -> list[dict]:
     if s["erdr_article"] == "152":
         add("F6_sexual_abuse", ["ERDR"], s["erdr_month"])
 
+
+def _detect_psych_trauma(s, add, found) -> None:
     # W2 Психотравма — додаємо в кінці, ЛИШЕ якщо немає іншого пояснення (насильство/булінг)
     found_ids = {f["violation"] for f in found}
     abuse_related = {"P1_physical_home", "F6_sexual_abuse", "W7_trafficking", "E1_bullying"}
     if s["psych_present"] and not (found_ids & abuse_related):
         ev = ["EHEALTH"] + (["CHILDWAR"] if s["childwar_status"] else [])
         add("W2_psych_trauma", ev, None)
+
+
+def detect_entity(ent, cfg) -> list[dict]:
+    s = _signals(ent, cfg)
+    T = s["T"]
+    found = []
+
+    def add(vid, evidence, onset):
+        found.append({"violation": vid, "evidence": sorted(set(evidence)),
+                      "onset_month": onset, "acuity": _acuity(onset, T)})
+
+    school_age = s["age_end"] is None or 6 <= s["age_end"] <= 17
+    # dropout = тиша в АІКОМ задовго до кінця (дитина перестала відвідувати)
+    isuo_dropout = s["isuo_last_month"] is not None and s["isuo_last_month"] < T - 3
+    w3_sig = s["school_exit"] or isuo_dropout
+    w8_sig = (s["decl_terminated"] or s["missed_checkup"]) and s["has_chronic"]
+
+    _detect_displacement_education(s, add, school_age, w3_sig, w8_sig)
+    _detect_custody_immediate(s, add)
+    _detect_abuse_neglect(s, add, w3_sig)
+    _detect_inclusion_sexual(s, add, school_age)
+    _detect_psych_trauma(s, add, found)
 
     return found
 

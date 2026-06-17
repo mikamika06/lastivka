@@ -39,11 +39,12 @@ def eval_matching(entities) -> dict:
     }
 
 
-def eval_detection(detections) -> dict:
+def _read_all_true() -> dict:
     gv = storage.read_godview()
-    all_true = {r.unzr: (json.loads(r.labels) if r.labels else {}) for r in gv.itertuples()}
-    per_v = defaultdict(lambda: [0, 0, 0])  # tp, fp, fn
-    detected = defaultdict(set)
+    return {r.unzr: (json.loads(r.labels) if r.labels else {}) for r in gv.itertuples()}
+
+
+def _tally_predictions(detections, all_true, per_v, detected):
     for d in detections:
         u = d["unzr"]
         pred = {x["violation"] for x in d["detections"]}
@@ -51,18 +52,28 @@ def eval_detection(detections) -> dict:
         truth = set(all_true.get(u, {}).keys()) if u else set()
         for v in pred:
             per_v[v][0 if v in truth else 1] += 1
+
+
+def _tally_false_negatives(all_true, per_v, detected):
     for u, truth in all_true.items():
         pred = detected.get(u, set())
         for v in truth:
             if v not in pred:
                 per_v[v][2] += 1
+
+
+def _per_violation_row(tp, fp, fn) -> dict:
+    return {"tp": tp, "fp": fp, "fn": fn,
+            "precision": round(tp / (tp + fp), 3) if tp + fp else 0,
+            "recall": round(tp / (tp + fn), 3) if tp + fn else 0}
+
+
+def _build_metrics(per_v) -> dict:
     rows = {}
     TP = FP = FN = 0
     for v, (tp, fp, fn) in per_v.items():
         TP += tp; FP += fp; FN += fn
-        rows[v] = {"tp": tp, "fp": fp, "fn": fn,
-                   "precision": round(tp / (tp + fp), 3) if tp + fp else 0,
-                   "recall": round(tp / (tp + fn), 3) if tp + fn else 0}
+        rows[v] = _per_violation_row(tp, fp, fn)
     P = TP / (TP + FP) if TP + FP else 0
     R = TP / (TP + FN) if TP + FN else 0
     return {"per_violation": rows,
@@ -71,7 +82,16 @@ def eval_detection(detections) -> dict:
                         "f1": round(2 * P * R / (P + R), 3) if P + R else 0}}
 
 
-def eval_privacy(entities, cfg, sample_n: int = 400) -> dict:
+def eval_detection(detections) -> dict:
+    all_true = _read_all_true()
+    per_v = defaultdict(lambda: [0, 0, 0])  # tp, fp, fn
+    detected = defaultdict(set)
+    _tally_predictions(detections, all_true, per_v, detected)
+    _tally_false_negatives(all_true, per_v, detected)
+    return _build_metrics(per_v)
+
+
+def eval_privacy(entities, sample_n: int = 400) -> dict:
     """Будує A/B вибірки з реальних сутностей і перевіряє PPRL (Bloom-Dice)."""
     from . import privacy
     key = b"lastivka-demo-key"

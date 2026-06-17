@@ -12,26 +12,23 @@ import { Timeline } from "./Timeline";
 import { TrendChart } from "@/components/charts/TrendChart";
 import { IconChevronDown, IconLayers, IconClock, IconPulse } from "@/components/ui/icons";
 
-export function ProfileExplorer({ items, initialId }: { items: QueueItem[]; initialId?: number }) {
+interface ProfileData {
+  id: number;
+  entity: Entity | null;
+  events: TimelineEvent[];
+  attendance: AttendanceSeries | null;
+}
+
+export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueItem[]; initialId?: number }>) {
   const valid = initialId && items.some((i) => i.entity_id === initialId) ? initialId : items[0]?.entity_id;
   const [selectedId, setSelectedId] = useState<number>(valid);
-  const [entity, setEntity] = useState<Entity | null>(null);
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceSeries | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const item = items.find((i) => i.entity_id === selectedId);
+  const [data, setData] = useState<ProfileData | null>(null);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
     Promise.all([getEntity(selectedId), getTimeline(selectedId), getAttendance(selectedId)]).then(
-      ([e, t, a]) => {
-        if (!active) return;
-        setEntity(e);
-        setEvents(t);
-        setAttendance(a);
-        setLoading(false);
+      ([entity, events, attendance]) => {
+        if (active) setData({ id: selectedId, entity, events, attendance });
       },
     );
     return () => {
@@ -39,10 +36,16 @@ export function ProfileExplorer({ items, initialId }: { items: QueueItem[]; init
     };
   }, [selectedId]);
 
+  const item = items.find((i) => i.entity_id === selectedId);
   if (!item) {
     return <div className="card grid place-items-center py-16 text-sm text-muted">Немає дітей у черзі.</div>;
   }
 
+  const current = data && data.id === selectedId ? data : null;
+  const loading = !current;
+  const entity = current?.entity ?? null;
+  const events = current?.events ?? [];
+  const attendance = current?.attendance ?? null;
   const oblast = oblastOf(selectedId);
 
   return (
@@ -132,24 +135,27 @@ export function ProfileExplorer({ items, initialId }: { items: QueueItem[]; init
           <CardTitle icon={<IconPulse className="h-4 w-4 text-brand" />} hint="ІСУО / AIKOM">
             Відвідуваність і успішність
           </CardTitle>
-          {loading ? (
-            <Loader />
-          ) : attendance ? (
-            <TrendChart data={attendance} />
-          ) : (
-            <div className="grid place-items-center rounded-xl border border-dashed border-line py-12 text-center text-sm text-muted">
-              Для цієї дитини немає шкільних даних відвідуваності.
-              <br />
-              <span className="text-xs text-faint">Сигнали зосереджені в інших реєстрах (див. хронологію).</span>
-            </div>
-          )}
+          {loading ? <Loader /> : <AttendanceContent attendance={attendance} />}
         </Card>
       </div>
     </div>
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function AttendanceContent({ attendance }: Readonly<{ attendance: AttendanceSeries | null }>) {
+  if (!attendance) {
+    return (
+      <div className="grid place-items-center rounded-xl border border-dashed border-line py-12 text-center text-sm text-muted">
+        Для цієї дитини немає шкільних даних відвідуваності.
+        <br />
+        <span className="text-xs text-faint">Сигнали зосереджені в інших реєстрах (див. хронологію).</span>
+      </div>
+    );
+  }
+  return <TrendChart data={attendance} />;
+}
+
+function Field({ label, value, mono }: Readonly<{ label: string; value: string; mono?: boolean }>) {
   return (
     <div>
       <div className="text-xs text-muted">{label}</div>

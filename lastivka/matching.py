@@ -83,41 +83,50 @@ class _Cluster:
         return Counter(self.dobs).most_common(1)[0][0] if self.dobs else None
 
 
-def match(records: list[dict] | None = None) -> list[dict]:
-    if records is None:
-        records = load_all_records()
-    clusters: list[_Cluster] = []
+def _union_by_unzr(records: list[dict], clusters: list[_Cluster]) -> list[dict]:
+    """Прохід 1 — точний union по УНЗР. Повертає записи без УНЗР."""
     by_unzr: dict[str, _Cluster] = {}
-
-    # Прохід 1 — точний union по УНЗР
-    no_unzr = []
+    no_unzr: list[dict] = []
     for rec in records:
-        if rec["unzr"]:
-            c = by_unzr.get(rec["unzr"])
-            if c is None:
-                c = _Cluster(len(clusters))
-                clusters.append(c)
-                by_unzr[rec["unzr"]] = c
-            c.add(rec)
-        else:
+        if not rec["unzr"]:
             no_unzr.append(rec)
+            continue
+        c = by_unzr.get(rec["unzr"])
+        if c is None:
+            c = _Cluster(len(clusters))
+            clusters.append(c)
+            by_unzr[rec["unzr"]] = c
+        c.add(rec)
+    return no_unzr
 
-    # індекс блокування за датою народження
+
+def _index_by_dob(clusters: list[_Cluster]) -> dict[str, list[_Cluster]]:
+    """Індекс блокування за датою народження."""
     by_dob: dict[str, list[_Cluster]] = {}
     for c in clusters:
         if c.rep_dob:
             by_dob.setdefault(c.rep_dob, []).append(c)
+    return by_dob
 
-    # Прохід 2 — fuzzy для записів без УНЗР
+
+def _best_match(nk: str, cand: list[_Cluster]) -> tuple[_Cluster | None, int]:
+    """Найкращий кандидат-кластер за fuzzy-схожістю ПІБ."""
+    best, best_score = None, 0
+    for c in cand:
+        sc = fuzz.token_sort_ratio(nk, c.rep_name)
+        if sc > best_score:
+            best, best_score = c, sc
+    return best, best_score
+
+
+def _fuzzy_attach(no_unzr: list[dict], clusters: list[_Cluster],
+                  by_dob: dict[str, list[_Cluster]]) -> int:
+    """Прохід 2 — fuzzy для записів без УНЗР. Повертає к-сть приєднаних."""
     fuzzy_attached = 0
     for rec in no_unzr:
         nk = _name_key(rec["ln"], rec["fn"], rec["sn"])
         cand = by_dob.get(rec["dob"], []) if rec["dob"] else []
-        best, best_score = None, 0
-        for c in cand:
-            sc = fuzz.token_sort_ratio(nk, c.rep_name)
-            if sc > best_score:
-                best, best_score = c, sc
+        best, best_score = _best_match(nk, cand)
         if best is not None and best_score >= FUZZY_THRESHOLD:
             best.add(rec)
             fuzzy_attached += 1
@@ -127,19 +136,32 @@ def match(records: list[dict] | None = None) -> list[dict]:
             c.add(rec)
             if rec["dob"]:
                 by_dob.setdefault(rec["dob"], []).append(c)
+    return fuzzy_attached
 
-    entities = []
-    for c in clusters:
-        entities.append({
-            "entity_id": c.id,
-            "unzr": c.unzr,
-            "pib": c.rep_name.title(),
-            "birth_date": c.rep_dob,
-            "registries": sorted(c.rows_by_reg.keys()),
-            "n_registries": len(c.rows_by_reg),
-            "rows_by_reg": c.rows_by_reg,
-            "members": c.members,
-        })
+
+def _build_entity(c: _Cluster) -> dict:
+    return {
+        "entity_id": c.id,
+        "unzr": c.unzr,
+        "pib": c.rep_name.title(),
+        "birth_date": c.rep_dob,
+        "registries": sorted(c.rows_by_reg.keys()),
+        "n_registries": len(c.rows_by_reg),
+        "rows_by_reg": c.rows_by_reg,
+        "members": c.members,
+    }
+
+
+def match(records: list[dict] | None = None) -> list[dict]:
+    if records is None:
+        records = load_all_records()
+    clusters: list[_Cluster] = []
+
+    no_unzr = _union_by_unzr(records, clusters)
+    by_dob = _index_by_dob(clusters)
+    fuzzy_attached = _fuzzy_attach(no_unzr, clusters, by_dob)
+
+    entities = [_build_entity(c) for c in clusters]
     global LAST_STATS
     LAST_STATS = {"n_entities": len(entities), "fuzzy_attached": fuzzy_attached,
                   "no_unzr_records": len(no_unzr)}

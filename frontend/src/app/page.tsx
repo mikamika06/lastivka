@@ -41,13 +41,13 @@ export default async function LandingPage() {
 }
 
 /* ───────────────────────── HERO ───────────────────────── */
-function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) {
+function Hero({ metrics }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetrics>> }>) {
   return (
     <section className="relative overflow-hidden border-b border-line bg-surface">
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
         <div className="animate-fade-up">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-surface px-3 py-1.5 text-xs font-medium text-brand-ink">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-2" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-2" />{" "}
             Українсько-естонське партнерство · 16–18.06.2026
           </span>
 
@@ -93,7 +93,7 @@ function Hero({ metrics }: { metrics: Awaited<ReturnType<typeof getMetrics>> }) 
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label }: Readonly<{ value: string; label: string }>) {
   return (
     <div>
       <dd className="font-display text-3xl font-bold tnum text-ink">{value}</dd>
@@ -367,11 +367,11 @@ function Section({
   children,
   id,
   tone = "base",
-}: {
+}: Readonly<{
   children: React.ReactNode;
   id?: string;
   tone?: "base" | "alt";
-}) {
+}>) {
   return (
     <section id={id} className={`scroll-mt-20 px-4 py-16 sm:px-6 lg:py-20 ${tone === "alt" ? "bg-surface" : ""}`}>
       <div className="mx-auto max-w-6xl">{children}</div>
@@ -383,11 +383,11 @@ function SectionLabel({
   index,
   eyebrow,
   title,
-}: {
+}: Readonly<{
   index?: string;
   eyebrow: string;
   title: string;
-}) {
+}>) {
   return (
     <div className="flex items-start gap-4">
       {index && (

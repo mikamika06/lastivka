@@ -23,11 +23,11 @@ MALE_PATRONYMIC_BASE = [
 
 
 def _surname(base: str, gender: str) -> str:
-    if base.endswith("к"):  # ...енк -> о / а
-        return base + ("о" if gender == "MALE" else "о")  # обидві форми -енко
+    if base.endswith("к"):  # ...енк -> о (чол.) / а (жін.)
+        return base + ("о" if gender == "MALE" else "а")
     if base in ("Мороз", "Гончар"):
         return base
-    if base.endswith("ук") or base.endswith("чук"):
+    if base.endswith(("ук", "чук")):
         return base
     return base
 

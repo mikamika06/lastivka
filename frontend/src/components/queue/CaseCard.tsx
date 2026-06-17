@@ -9,7 +9,7 @@ import { oblastOf } from "@/lib/api";
 import { TierBadge, ImmediateBadge, AccessLockBadge, AcuityTag } from "@/components/ui/badges";
 import { IconChevronDown, IconArrowRight, IconCheck, IconProfile } from "@/components/ui/icons";
 
-export function CaseCard({ item, defaultOpen = false }: { item: QueueItem; defaultOpen?: boolean }) {
+export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueItem; defaultOpen?: boolean }>) {
   const [open, setOpen] = useState(defaultOpen);
   const [taken, setTaken] = useState(false);
   const oblast = oblastOf(item.entity_id);
@@ -75,10 +75,10 @@ export function CaseCard({ item, defaultOpen = false }: { item: QueueItem; defau
               Чому в черзі — пояснення score
             </h4>
             <ul className="space-y-3">
-              {item.contributions.map((c, i) => {
+              {item.contributions.map((c) => {
                 const lvl1 = c.evidence.filter((e) => regAccess(e) === 1);
                 return (
-                  <li key={i} className="rounded-xl border border-line bg-surface p-3">
+                  <li key={c.violation} className="rounded-xl border border-line bg-surface p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-semibold text-ink">{violName(c.violation)}</span>
                       <span className="text-xs text-muted">
@@ -181,7 +181,7 @@ export function CaseCard({ item, defaultOpen = false }: { item: QueueItem; defau
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({ label, value, mono }: Readonly<{ label: string; value: string; mono?: boolean }>) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-muted">{label}</span>

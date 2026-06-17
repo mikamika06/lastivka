@@ -65,9 +65,17 @@ def isikukood_checksum(first10: str) -> int:
     return s2 if s2 < 10 else 0
 
 
+def _isikukood_century_base(year: int) -> int:
+    if year < 1900:
+        return 1
+    if year < 2000:
+        return 3
+    return 5
+
+
 def gen_isikukood(birth_date: date, gender: str, rng) -> str:
     y = birth_date.year
-    base = 1 if y < 1900 else 3 if y < 2000 else 5
+    base = _isikukood_century_base(y)
     g = base + (0 if gender == "MALE" else 1)
     first10 = f"{g}{y % 100:02d}{birth_date.month:02d}{birth_date.day:02d}{rng.randint(0, 999):03d}"
     return f"{first10}{isikukood_checksum(first10)}"

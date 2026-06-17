@@ -72,28 +72,47 @@ def psi_membership(query_unzrs, sensitive_tokens: set[str], key: bytes) -> dict:
 
 
 # ── демонстрація/валідація PPRL: чи відновлює ті самі лінки, що й plaintext ──
+def _clk_of(record: dict, key: bytes) -> int:
+    """CLK для одного запису реєстру (істина 'unzr' — опціональна)."""
+    return clk(record["last"], record["first"], record["second"],
+               record["birth_date"], record.get("unzr"), key)
+
+
+def _best_match(ca: int, enc_b: list[tuple[dict, int]]) -> tuple[dict | None, float]:
+    """Найкращий B-кандидат для A за Bloom-Dice схожістю."""
+    best, best_s = None, 0.0
+    for rb, cb in enc_b:
+        s = dice(ca, cb)
+        if s > best_s:
+            best, best_s = rb, s
+    return best, best_s
+
+
+def _classify(ra: dict, best: dict | None, best_s: float, threshold: float) -> str:
+    """Класифікує лінк A↔best як tp/fp/fn (або '' — поза підрахунком)."""
+    matched = best is not None and best_s >= threshold
+    true_link = best is not None and ra.get("unzr") and best.get("unzr") == ra["unzr"]
+    if matched and true_link:
+        return "tp"
+    if matched and not true_link:
+        return "fp"
+    if not matched and ra.get("unzr"):
+        return "fn"
+    return ""
+
+
 def pprl_selfcheck(records_a: list[dict], records_b: list[dict],
                    key: bytes, threshold: float = 0.85) -> dict:
     """records_*: {'last','first','second','birth_date','unzr'(істина для перевірки)}.
     Матчимо A↔B по Bloom-Dice (без plaintext) і звіряємо з істинним УНЗР."""
-    enc_b = [(r, clk(r["last"], r["first"], r["second"], r["birth_date"], r.get("unzr"), key))
-             for r in records_b]
-    tp = fp = fn = 0
+    enc_b = [(r, _clk_of(r, key)) for r in records_b]
+    counts = {"tp": 0, "fp": 0, "fn": 0}
     for ra in records_a:
-        ca = clk(ra["last"], ra["first"], ra["second"], ra["birth_date"], ra.get("unzr"), key)
-        best, best_s = None, 0.0
-        for rb, cb in enc_b:
-            s = dice(ca, cb)
-            if s > best_s:
-                best, best_s = rb, s
-        matched = best is not None and best_s >= threshold
-        true_link = best is not None and ra.get("unzr") and best.get("unzr") == ra["unzr"]
-        if matched and true_link:
-            tp += 1
-        elif matched and not true_link:
-            fp += 1
-        elif not matched and ra.get("unzr"):
-            fn += 1
+        best, best_s = _best_match(_clk_of(ra, key), enc_b)
+        outcome = _classify(ra, best, best_s, threshold)
+        if outcome:
+            counts[outcome] += 1
+    tp, fp, fn = counts["tp"], counts["fp"], counts["fn"]
     prec = tp / (tp + fp) if tp + fp else 0.0
     rec = tp / (tp + fn) if tp + fn else 0.0
     return {"tp": tp, "fp": fp, "fn": fn, "precision": round(prec, 3), "recall": round(rec, 3)}

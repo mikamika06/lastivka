@@ -10,6 +10,10 @@ from datetime import date, timedelta
 from ..entity import Child
 from ..names import corrupt_name
 
+# Модульні константи для уникнення дублювання літералів
+OWNER_MINSOC = "Мінсоцполітики"
+COUNTRY_UA = "Україна"
+
 # id_map: яке поле реєстру = яка роль ідентичності (для матчингу)
 REGISTRIES = [
     {"code": "DRACS", "ua": "ДРАЦС — актовий запис про народження", "member": "00015622",
@@ -33,7 +37,7 @@ REGISTRIES = [
      "id_map": {"last": "last_name", "first": "first_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
     {"code": "VPO", "ua": "ЄІБД ВПО", "member": "37567866",
-     "subsystem": "85_OISSS_VPO_prod", "owner": "Мінсоцполітики", "db": "vpo.db", "access": 2,
+     "subsystem": "85_OISSS_VPO_prod", "owner": OWNER_MINSOC, "db": "vpo.db", "access": 2,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "child_rnokpp", "dob": "child_birth_date"}},
     {"code": "CHILDWAR", "ua": "«Діти війни»", "member": "37567866",
@@ -53,11 +57,11 @@ REGISTRIES = [
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "child_unzr", "rnokpp": "child_rnokpp", "dob": "child_date_of_birth"}},
     {"code": "CBI", "ua": "Центр. банк даних з інвалідності", "member": "37567866",
-     "subsystem": "CBI_prod", "owner": "Мінсоцполітики", "db": "cbi.db", "access": 2,
+     "subsystem": "CBI_prod", "owner": OWNER_MINSOC, "db": "cbi.db", "access": 2,
      "id_map": {"last": "last_name", "first": "first_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
     {"code": "EISSS", "ua": "ЄІССС — соц. допомоги", "member": "37567866",
-     "subsystem": "EISSS_prod", "owner": "Мінсоцполітики", "db": "eisss.db", "access": 2,
+     "subsystem": "EISSS_prod", "owner": OWNER_MINSOC, "db": "eisss.db", "access": 2,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp_child", "dob": "birth_date_child"}},
     {"code": "EDRSR", "ua": "ЄДРСР — судові рішення", "member": "00018090",
@@ -121,13 +125,13 @@ def emit_dracs(child, cfg, rng):
         "birth_certificate_series_number": f"{rng.choice(['I-СГ','II-БК','I-АБ'])} № {_rid(rng,6)}",
         "mother_full_name": f"{child.last_name} {rng.choice(['Марія','Олена','Ірина','Наталія'])} {rng.choice(['Петрівна','Іванівна'])}",
         "mother_birth_date": (child.birth_date - timedelta(days=rng.randint(7000,12000))).isoformat(),
-        "mother_citizenship": "Україна", "mother_nationality": "українка",
+        "mother_citizenship": COUNTRY_UA, "mother_nationality": "українка",
         "mother_address": f"{child.oblast} обл., {child.settlement}",
         "mother_id_document": f"Паспорт громадянина України № {_rid(rng,9)}", "mother_rnokpp": child.mother_rnokpp,
         "father_full_name": (None if child.father_rnokpp is None else
                              f"{child.last_name} {rng.choice(['Андрій','Іван','Сергій'])} {rng.choice(['Іванович','Петрович'])}"),
         "father_birth_date": None if child.father_rnokpp is None else (child.birth_date - timedelta(days=rng.randint(8000,14000))).isoformat(),
-        "father_citizenship": None if child.father_rnokpp is None else "Україна",
+        "father_citizenship": None if child.father_rnokpp is None else COUNTRY_UA,
         "father_address": None if child.father_rnokpp is None else f"{child.oblast} обл., {child.settlement}",
         "father_rnokpp": child.father_rnokpp,
         "basis_father_record": "спільна заява" if child.father_rnokpp else "ч.1 ст.135 СК",
@@ -162,7 +166,7 @@ def emit_eddr(child, cfg, rng):
         "register_entry_date": (child.birth_date + timedelta(days=rng.randint(5, 30))).isoformat(),
         "registered_residence": f"{child.oblast} обл., {child.settlement}",
         "parents_info": f"мати: РНОКПП {child.mother_rnokpp}",
-        "citizenship": "Україна", "citizenship_grounds": "за народженням",
+        "citizenship": COUNTRY_UA, "citizenship_grounds": "за народженням",
         "issued_document": "ID-картка" if age0 >= 14 else "свідоцтво про народження",
         "issued_document_number": _rid(rng, 9), "rnokpp": child.rnokpp,
         "birth_act_details": f"акт № {rng.randint(1,9999)}", "special_status": None,
@@ -170,6 +174,54 @@ def emit_eddr(child, cfg, rng):
 
 
 # ════════════ R3 eHealth / ЕСОЗ (точна схема: person/declaration/encounter/condition/immunization) ════════════
+def _ehealth_person_row(base, child, cfg, rng, person_id, age0):
+    return {**base, "resource_type": "person", "id": person_id,
+            "birth_country": COUNTRY_UA, "birth_settlement": child.settlement,
+            "gender": "FEMALE" if child.gender == "FEMALE" else "MALE",
+            "no_tax_id": "true" if child.rnokpp is None else "false",
+            "document_type": "BIRTH_CERTIFICATE" if age0 < 14 else "PASSPORT",
+            "document_number": f"ПП{_rid(rng,8)}" if age0 < 14 else _rid(rng, 9),
+            "confidant_person_relation": "PRIMARY" if age0 < 14 else None,
+            "authentication_method": "THIRD_PERSON" if age0 < 14 else "OTP",
+            "status": "active"}
+
+
+def _ehealth_declaration_row(base, child, cfg, rng):
+    lapse = _first_month(child, lambda s: s.health == "lapsed")
+    return {**base, "resource_type": "declaration", "declaration_number": f"{_rid(rng,4)}-{_rid(rng,4)}",
+            "employee_id": _rid(rng, 6), "legal_entity_id": _rid(rng, 6),
+            "start_date": month_date(cfg, 0).isoformat(),
+            "end_date": month_date(cfg, lapse).isoformat() if lapse is not None else None,
+            "status": "terminated" if lapse is not None else "active"}
+
+
+def _ehealth_checkup_rows(rows, base, child, cfg, rng, t, s):
+    done = s.health == "active"
+    rows.append({**base, "resource_type": "immunization", "date": month_date(cfg, t).isoformat(),
+                 "vaccine_code": rng.choice(["DTP", "MMR", "Polio", "Hep_B"]),
+                 "status": "completed" if done else "not_done"})
+    if child.has_chronic:
+        rows.append({**base, "resource_type": "condition", "date": month_date(cfg, t).isoformat(),
+                     "condition_code": "chronic", "clinical_status": "active",
+                     "verification_status": "confirmed"})
+
+
+def _ehealth_psych_row(rows, base, child, cfg, rng, t, s):
+    if rng.random() < 0.5:
+        rows.append({**base, "resource_type": "condition", "date": month_date(cfg, t).isoformat(),
+                     "condition_code": "F43" if s.safety == "abuse_risk" else "F94",  # ПТСР/стрес
+                     "condition_category": "psych", "clinical_status": "active"})
+
+
+def _ehealth_trauma_row(rows, base, child, cfg, rng, t, s):
+    if s.safety == "abuse_active" and rng.random() < 0.5:
+        prior = any(r.get("condition_category") == "trauma" for r in rows)
+        rows.append({**base, "resource_type": "encounter", "date": month_date(cfg, t).isoformat(),
+                     "encounter_class": "emergency", "condition_category": "trauma",
+                     "condition_code": "T14", "is_repeat": "true" if prior else "false",
+                     "is_unexplained": "true", "location_context": "home"})
+
+
 def emit_ehealth(child, cfg, rng):
     from ..transliteration import translit_official
     rows = []
@@ -179,49 +231,29 @@ def emit_ehealth(child, cfg, rng):
     base = {"last_name": ln, "first_name": fn, "second_name": sn, "unzr": unzr, "tax_id": child.rnokpp,
             "birth_date": child.birth_date.isoformat()}
     # PERSON
-    rows.append({**base, "resource_type": "person", "id": person_id,
-                 "birth_country": "Україна", "birth_settlement": child.settlement,
-                 "gender": "FEMALE" if child.gender == "FEMALE" else "MALE",
-                 "no_tax_id": "true" if child.rnokpp is None else "false",
-                 "document_type": "BIRTH_CERTIFICATE" if age0 < 14 else "PASSPORT",
-                 "document_number": f"ПП{_rid(rng,8)}" if age0 < 14 else _rid(rng, 9),
-                 "confidant_person_relation": "PRIMARY" if age0 < 14 else None,
-                 "authentication_method": "THIRD_PERSON" if age0 < 14 else "OTP",
-                 "status": "active"})
+    rows.append(_ehealth_person_row(base, child, cfg, rng, person_id, age0))
     # DECLARATION (декларація з лікарем ПМД)
-    lapse = _first_month(child, lambda s: s.health == "lapsed")
-    rows.append({**base, "resource_type": "declaration", "declaration_number": f"{_rid(rng,4)}-{_rid(rng,4)}",
-                 "employee_id": _rid(rng, 6), "legal_entity_id": _rid(rng, 6),
-                 "start_date": month_date(cfg, 0).isoformat(),
-                 "end_date": month_date(cfg, lapse).isoformat() if lapse is not None else None,
-                 "status": "terminated" if lapse is not None else "active"})
+    rows.append(_ehealth_declaration_row(base, child, cfg, rng))
     # ENCOUNTER/CONDITION/OBSERVATION/IMMUNIZATION у часі
     checkup_off = child.internal_id % 6
     for t, s in enumerate(child.states):
         if t % 6 == checkup_off:  # планові огляди / вакцинація
-            done = s.health == "active"
-            rows.append({**base, "resource_type": "immunization", "date": month_date(cfg, t).isoformat(),
-                         "vaccine_code": rng.choice(["DTP", "MMR", "Polio", "Hep_B"]),
-                         "status": "completed" if done else "not_done"})
-            if child.has_chronic:
-                rows.append({**base, "resource_type": "condition", "date": month_date(cfg, t).isoformat(),
-                             "condition_code": "chronic", "clinical_status": "active",
-                             "verification_status": "confirmed"})
+            _ehealth_checkup_rows(rows, base, child, cfg, rng, t, s)
         if s.safety in ("abuse_risk", "abuse_active") or s.family == "crisis":
-            if rng.random() < 0.5:
-                rows.append({**base, "resource_type": "condition", "date": month_date(cfg, t).isoformat(),
-                             "condition_code": "F43" if s.safety == "abuse_risk" else "F94",  # ПТСР/стрес
-                             "condition_category": "psych", "clinical_status": "active"})
-        if s.safety == "abuse_active" and rng.random() < 0.5:
-            prior = any(r.get("condition_category") == "trauma" for r in rows)
-            rows.append({**base, "resource_type": "encounter", "date": month_date(cfg, t).isoformat(),
-                         "encounter_class": "emergency", "condition_category": "trauma",
-                         "condition_code": "T14", "is_repeat": "true" if prior else "false",
-                         "is_unexplained": "true", "location_context": "home"})
+            _ehealth_psych_row(rows, base, child, cfg, rng, t, s)
+        _ehealth_trauma_row(rows, base, child, cfg, rng, t, s)
     return rows
 
 
 # ════════════ R4 ЄДЕБО (освіта) ════════════
+def _edebo_study_status(drop, displaced):
+    if drop is None:
+        return "навчається"
+    if displaced:
+        return "transferred"
+    return "expelled"
+
+
 def emit_edebo(child, cfg, rng):
     ever = any(s.school in ("enrolled", "at_risk", "dropped") for s in child.states)
     if not ever:
@@ -229,10 +261,10 @@ def emit_edebo(child, cfg, rng):
     ln, fn, sn, unzr = _nm(child, cfg, rng)
     drop = _first_month(child, lambda s: s.school == "dropped")
     displaced = any(s.residence in ("displaced", "abroad") for s in child.states)
-    status = ("transferred" if displaced else "expelled") if drop is not None else "навчається"
+    status = _edebo_study_status(drop, displaced)
     return [{
         "surname": ln, "given_name": fn, "patronymic": sn, "birth_date": child.birth_date.isoformat(),
-        "sex": "Ж" if child.gender == "FEMALE" else "Ч", "citizenship": "Україна",
+        "sex": "Ж" if child.gender == "FEMALE" else "Ч", "citizenship": COUNTRY_UA,
         "identity_document": ("свідоцтво про народження" if child.age_at(sim_start(cfg), 0) < 14 else "паспорт"),
         "rnokpp": child.rnokpp, "unzr": unzr,
         "edebo_person_id": _rid(rng, 8), "student_card_id": _rid(rng, 7),
@@ -248,6 +280,21 @@ def emit_edebo(child, cfg, rng):
 
 
 # ════════════ R5 ІСУО/АІКОМ (відвідуваність/оцінки) ════════════
+def _aikom_period_row(base, cfg, rng, t, at_risk, missed, consec, ooe, bully_m):
+    return {**base, "class_grade": str(rng.randint(1, 11)),
+            "attendance_period": month_date(cfg, t).strftime("%Y-%m"),
+            "missed_lessons_count": str(missed),
+            "absence_is_valid": "false" if at_risk else "true",
+            "consecutive_absent_days": str(consec // 6),
+            "out_of_education_flag": "true" if ooe else "false",
+            "police_notified_date": month_date(cfg, t).isoformat() if ooe else None,
+            "child_service_notified_date": month_date(cfg, t).isoformat() if ooe else None,
+            "score_12": str(rng.randint(3, 6) if at_risk else rng.randint(7, 12)),
+            "behavior_note": ("замкнутість/агресія" if at_risk and rng.random() < 0.4 else None),
+            "anti_bullying_commission": "true" if (bully_m is not None and t == bully_m + 1) else "false",
+            "nush_level": rng.choice(["початковий", "середній", "достатній", "високий"])}
+
+
 def emit_aikom(child, cfg, rng):
     rows = []
     ln, fn, sn, unzr = _nm(child, cfg, rng)
@@ -264,18 +311,7 @@ def emit_aikom(child, cfg, rng):
         missed = rng.randint(8, 24) if at_risk else rng.randint(0, 4)
         consec = consec + missed if at_risk else 0
         ooe = consec >= 20
-        rows.append({**base, "class_grade": str(rng.randint(1, 11)),
-                     "attendance_period": month_date(cfg, t).strftime("%Y-%m"),
-                     "missed_lessons_count": str(missed),
-                     "absence_is_valid": "false" if at_risk else "true",
-                     "consecutive_absent_days": str(consec // 6),
-                     "out_of_education_flag": "true" if ooe else "false",
-                     "police_notified_date": month_date(cfg, t).isoformat() if ooe else None,
-                     "child_service_notified_date": month_date(cfg, t).isoformat() if ooe else None,
-                     "score_12": str(rng.randint(3, 6) if at_risk else rng.randint(7, 12)),
-                     "behavior_note": ("замкнутість/агресія" if at_risk and rng.random() < 0.4 else None),
-                     "anti_bullying_commission": "true" if (bully_m is not None and t == bully_m + 1) else "false",
-                     "nush_level": rng.choice(["початковий", "середній", "достатній", "високий"])})
+        rows.append(_aikom_period_row(base, cfg, rng, t, at_risk, missed, consec, ooe, bully_m))
     return rows
 
 
@@ -289,7 +325,7 @@ def emit_vpo(child, cfg, rng):
     reatt_doctor = any(s.health == "active" for s in child.states[m + 1:])
     dest = rng.choice([o for o in cfg["oblasts"] if o != child.oblast])
     return [{
-        "full_name": _full(child), "citizenship": "Україна", "birth_date": child.birth_date.isoformat(),
+        "full_name": _full(child), "citizenship": COUNTRY_UA, "birth_date": child.birth_date.isoformat(),
         "birth_place": child.settlement, "sex": "Ж" if child.gender == "FEMALE" else "Ч",
         "child_rnokpp": child.rnokpp, "unzr": unzr,
         "certificate_number": _rid(rng, 10), "certificate_issue_date": month_date(cfg, m).isoformat(),
@@ -307,6 +343,14 @@ def emit_vpo(child, cfg, rng):
 
 
 # ════════════ R7 «Діти війни» ════════════
+def _childwar_harm(war_status):
+    if war_status == "deported":
+        return "депортація"
+    if war_status == "displaced":
+        return "психологічна травма"
+    return "втрата піклування"
+
+
 def emit_childwar(child, cfg, rng):
     if not child.war_status:
         return []
@@ -315,7 +359,7 @@ def emit_childwar(child, cfg, rng):
                   "lost_parents": "втратила батьків"}
     m = (child.labels.get("W5_deportation") or child.labels.get("W6_orphanhood")
          or getattr(child, "idp_month", 3))
-    harm = "депортація" if child.war_status == "deported" else ("психологічна травма" if child.war_status == "displaced" else "втрата піклування")
+    harm = _childwar_harm(child.war_status)
     return [{
         "last_name": ln, "first_name": fn, "patronymic": sn, "birth_date": child.birth_date.isoformat(),
         "age_at_incident": str(child.age_at(sim_start(cfg), m)), "gender": "ж" if child.gender == "FEMALE" else "ч",
@@ -343,7 +387,7 @@ def emit_dity(child, cfg, rng):
         "patronymic": child.second_name, "birth_date": child.birth_date.isoformat(),
         "sex": "Ж" if child.gender == "FEMALE" else "Ч", "birth_place": child.settlement,
         "birth_certificate": f"{rng.choice(['I-СГ','II-БК'])} № {_rid(rng,6)}",
-        "rnokpp": child.rnokpp, "unzr": child.unzr, "citizenship": "Україна",
+        "rnokpp": child.rnokpp, "unzr": child.unzr, "citizenship": COUNTRY_UA,
         "place_of_residence": f"{child.oblast} обл., {child.settlement}",
         "child_status": status, "status_grounds": f"наказ ССД № {_rid(rng,4)}",
         "primary_registration_date": month_date(cfg, m).isoformat(),
@@ -385,6 +429,26 @@ def emit_erdr(child, cfg, rng):
 
 
 # ════════════ R10 Реєстр випадків домашнього насильства ════════════
+def _dv_case_row(child, cfg, rng, ln, fn, sn, unzr, dm, k, is_victim):
+    return {
+        "case_record_id": _rid(rng, 9), "reporting_authority": f"ГУНП у {child.oblast} обл.",
+        "victim_full_name": _full(child) if is_victim else "дорослий член родини",
+        "child_last_name": ln, "child_first_name": fn, "child_patronymic": sn,
+        "child_date_of_birth": child.birth_date.isoformat(), "child_unzr": unzr, "child_rnokpp": child.rnokpp,
+        "child_sex": "ж" if child.gender == "FEMALE" else "ч",
+        "child_witnessed_violence": "так",
+        "presence_of_children_flag": "так",
+        "parents_are_abusers_flag": "так" if is_victim else "ні",
+        "abuser_full_name": "член родини", "incident_datetime": month_date(cfg, dm).isoformat(),
+        "incident_place": f"{child.oblast} обл., {child.settlement}",
+        "form_of_violence": "фізичне" if is_victim else "психологічне",
+        "primary_recurrent_flag": "повторний" if (is_victim and k > 0) else "первинний",
+        "police_call": "так", "emergency_restraining_order": "так" if is_victim else "ні",
+        "child_services_notification": "так",
+        "record_timestamp": month_date(cfg, dm).isoformat(),
+    }
+
+
 def emit_dv(child, cfg, rng):
     if not (getattr(child, "dv_household", False) or "P1_physical_home" in child.labels):
         return []
@@ -394,23 +458,7 @@ def emit_dv(child, cfg, rng):
     rows = []
     for k in range(rng.randint(1, 3)):
         dm = min(m + rng.randint(0, 4), cfg["population"]["months"] - 1)
-        rows.append({
-            "case_record_id": _rid(rng, 9), "reporting_authority": f"ГУНП у {child.oblast} обл.",
-            "victim_full_name": _full(child) if is_victim else "дорослий член родини",
-            "child_last_name": ln, "child_first_name": fn, "child_patronymic": sn,
-            "child_date_of_birth": child.birth_date.isoformat(), "child_unzr": unzr, "child_rnokpp": child.rnokpp,
-            "child_sex": "ж" if child.gender == "FEMALE" else "ч",
-            "child_witnessed_violence": "так",
-            "presence_of_children_flag": "так",
-            "parents_are_abusers_flag": "так" if is_victim else "ні",
-            "abuser_full_name": "член родини", "incident_datetime": month_date(cfg, dm).isoformat(),
-            "incident_place": f"{child.oblast} обл., {child.settlement}",
-            "form_of_violence": "фізичне" if is_victim else "психологічне",
-            "primary_recurrent_flag": "повторний" if (is_victim and k > 0) else "первинний",
-            "police_call": "так", "emergency_restraining_order": "так" if is_victim else "ні",
-            "child_services_notification": "так",
-            "record_timestamp": month_date(cfg, dm).isoformat(),
-        })
+        rows.append(_dv_case_row(child, cfg, rng, ln, fn, sn, unzr, dm, k, is_victim))
     return rows
 
 

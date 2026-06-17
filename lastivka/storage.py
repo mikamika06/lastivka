@@ -10,6 +10,7 @@ import sqlite3
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(__file__)), "out")
 REG_DIR = os.path.join(OUT, "registries")
+GODVIEW_DB = "godview.db"
 
 
 def _ensure_dirs():
@@ -57,7 +58,7 @@ def write_registry(code: str, db_file: str, rows: list[dict]):
 def write_record_truth(membership: list[tuple]):
     """Прихована істина: (reg, rowid, true_id) — лише в god-view, не в реєстрах."""
     _ensure_dirs()
-    path = os.path.join(OUT, "godview.db")
+    path = os.path.join(OUT, GODVIEW_DB)
     con = sqlite3.connect(path)
     con.execute("DROP TABLE IF EXISTS record_truth")
     con.execute("CREATE TABLE record_truth (reg TEXT, rowid INTEGER, true_id INTEGER)")
@@ -68,7 +69,7 @@ def write_record_truth(membership: list[tuple]):
 
 def read_record_truth():
     import pandas as pd
-    con = sqlite3.connect(os.path.join(OUT, "godview.db"))
+    con = sqlite3.connect(os.path.join(OUT, GODVIEW_DB))
     df = pd.read_sql_query("SELECT * FROM record_truth", con)
     con.close()
     return df
@@ -91,10 +92,10 @@ def read_registry(db_file: str, code: str):
     return df
 
 
-def write_godview(children, cfg):
+def write_godview(children):
     """God-view ground truth (окрема БД, недоступна детектору)."""
     _ensure_dirs()
-    path = os.path.join(OUT, "godview.db")
+    path = os.path.join(OUT, GODVIEW_DB)
     con = sqlite3.connect(path)
     con.execute("DROP TABLE IF EXISTS children")
     con.execute("""CREATE TABLE children (
@@ -117,7 +118,7 @@ def write_godview(children, cfg):
 
 def read_godview():
     import pandas as pd
-    path = os.path.join(OUT, "godview.db")
+    path = os.path.join(OUT, GODVIEW_DB)
     con = sqlite3.connect(path)
     df = pd.read_sql_query("SELECT * FROM children", con)
     con.close()

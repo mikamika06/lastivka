@@ -11,6 +11,8 @@ import yaml
 from . import matching, detection, scoring, validation
 from .storage import OUT
 
+DB_FILENAME = "pipeline.db"
+
 
 def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.yaml",
                  log_to_mlflow=True) -> dict:
@@ -24,7 +26,7 @@ def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.
 
     m_match = validation.eval_matching(entities)
     m_detect = validation.eval_detection(detections)
-    m_priv = validation.eval_privacy(entities, cfg)
+    m_priv = validation.eval_privacy(entities)
 
     _write_pipeline_db(queue, {"matching": m_match, "detection": m_detect, "privacy": m_priv},
                        matching.LAST_STATS)
@@ -37,7 +39,7 @@ def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.
 
 
 def _write_pipeline_db(queue, metrics, match_stats):
-    path = os.path.join(OUT, "pipeline.db")
+    path = os.path.join(OUT, DB_FILENAME)
     con = sqlite3.connect(path)
     con.execute("DROP TABLE IF EXISTS queue")
     con.execute("""CREATE TABLE queue (
@@ -63,14 +65,14 @@ def _write_pipeline_db(queue, metrics, match_stats):
 
 def read_queue():
     import pandas as pd
-    con = sqlite3.connect(os.path.join(OUT, "pipeline.db"))
+    con = sqlite3.connect(os.path.join(OUT, DB_FILENAME))
     df = pd.read_sql_query("SELECT * FROM queue ORDER BY rank", con)
     con.close()
     return df
 
 
 def read_metrics():
-    con = sqlite3.connect(os.path.join(OUT, "pipeline.db"))
+    con = sqlite3.connect(os.path.join(OUT, DB_FILENAME))
     rows = dict(con.execute("SELECT key, value FROM metrics").fetchall())
     con.close()
     return {k: json.loads(v) for k, v in rows.items()}

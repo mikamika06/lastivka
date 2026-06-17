@@ -12,7 +12,7 @@ const TIER_DOT: Record<Tier, string> = {
   T2: "bg-t2",
 };
 
-export function TierBadge({ tier, withHorizon = true }: { tier: Tier; withHorizon?: boolean }) {
+export function TierBadge({ tier, withHorizon = true }: Readonly<{ tier: Tier; withHorizon?: boolean }>) {
   const m = TIER_META[tier];
   return (
     <span
@@ -28,13 +28,13 @@ export function TierBadge({ tier, withHorizon = true }: { tier: Tier; withHorizo
 export function ImmediateBadge() {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-t0 px-2.5 py-1 text-xs font-bold text-white">
-      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+      <span className="h-1.5 w-1.5 rounded-full bg-white" />{" "}
       НЕГАЙНО
     </span>
   );
 }
 
-export function AccessLockBadge({ registries }: { registries: string[] }) {
+export function AccessLockBadge({ registries }: Readonly<{ registries: string[] }>) {
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full bg-lock-soft px-2 py-0.5 text-[11px] font-medium text-lock-ink"
@@ -46,13 +46,14 @@ export function AccessLockBadge({ registries }: { registries: string[] }) {
   );
 }
 
-export function AcuityTag({ acuity }: { acuity: Acuity }) {
-  const color =
-    acuity === "acute"
-      ? "text-t0-ink bg-t0-soft"
-      : acuity === "active"
-        ? "text-t1-ink bg-t1-soft"
-        : "text-muted bg-paper-2";
+function acuityColor(acuity: Acuity): string {
+  if (acuity === "acute") return "text-t0-ink bg-t0-soft";
+  if (acuity === "active") return "text-t1-ink bg-t1-soft";
+  return "text-muted bg-paper-2";
+}
+
+export function AcuityTag({ acuity }: Readonly<{ acuity: Acuity }>) {
+  const color = acuityColor(acuity);
   return (
     <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${color}`}>
       {ACUITY_UA[acuity]}
@@ -60,7 +61,7 @@ export function AcuityTag({ acuity }: { acuity: Acuity }) {
   );
 }
 
-export function LockIcon({ className = "h-4 w-4" }: { className?: string }) {
+export function LockIcon({ className = "h-4 w-4" }: Readonly<{ className?: string }>) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
       <rect x="4" y="10" width="16" height="11" rx="2.5" fill="currentColor" opacity="0.18" />

@@ -48,12 +48,12 @@ def run(config_path: str, n_override: int | None = None, seed_override: int | No
                 rows.append(row)
         if reg["code"] not in ("DRACS", "EDDR"):
             rows = _apply_record_noise(rows, cfg, rng)
-        path, table, n, truth_ids = storage.write_registry(reg["code"], reg["db"], rows)
+        _path, _table, n, truth_ids = storage.write_registry(reg["code"], reg["db"], rows)
         for i, tid in enumerate(truth_ids, start=1):  # sqlite rowid = 1-based порядок вставки
             membership.append((reg["code"], i, tid))
         stats[reg["code"]] = n
 
-    storage.write_godview(children, cfg)
+    storage.write_godview(children)
     storage.write_record_truth(membership)
     return {
         "n_children": len(children),

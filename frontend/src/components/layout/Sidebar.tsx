@@ -7,7 +7,7 @@ import { NAV } from "./nav";
 import { dataSource } from "@/lib/api";
 import { IconArrowRight } from "@/components/ui/icons";
 
-export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
   const pathname = usePathname();
 
   return (

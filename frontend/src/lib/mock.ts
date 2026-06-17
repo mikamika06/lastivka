@@ -20,9 +20,9 @@ import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
 function rng(seed: number) {
   let a = seed >>> 0;
   return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), 1 | t);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
@@ -46,9 +46,9 @@ interface VProfile {
   evidence: RegistryCode[];
 }
 const VPROFILE: Record<string, VProfile> = {
-  W7_trafficking: { sev: 1.0, evidence: ["ERDR", "DITY"] },
-  F6_sexual_abuse: { sev: 1.0, evidence: ["ERDR"] },
-  W5_deportation: { sev: 1.0, evidence: ["CHILDWAR", "DITY"] },
+  W7_trafficking: { sev: 1, evidence: ["ERDR", "DITY"] },
+  F6_sexual_abuse: { sev: 1, evidence: ["ERDR"] },
+  W5_deportation: { sev: 1, evidence: ["CHILDWAR", "DITY"] },
   P1_physical_home: { sev: 0.9, evidence: ["EHEALTH", "DV", "ERDR", "DITY"] },
   W6_orphanhood: { sev: 0.85, evidence: ["DRACS", "EDRSR", "DITY"] },
   W8_medical_access: { sev: 0.75, evidence: ["EHEALTH", "VPO"] },
@@ -77,11 +77,11 @@ function wpick(r: () => number, pool: string[]): string {
     x -= SELECT_WEIGHT[v] ?? 1;
     if (x <= 0) return v;
   }
-  return pool[pool.length - 1];
+  return pool.at(-1) as string;
 }
 
-const EV_MULT: Record<number, number> = { 1: 0.6, 2: 1.0, 3: 1.3, 4: 1.5 };
-const ACU_MULT: Record<Acuity, number> = { acute: 1.5, active: 1.0, chronic: 0.7, improving: 0.5 };
+const EV_MULT: Record<number, number> = { 1: 0.6, 2: 1, 3: 1.3, 4: 1.5 };
+const ACU_MULT: Record<Acuity, number> = { acute: 1.5, active: 1, chronic: 0.7, improving: 0.5 };
 
 function evMult(n: number) {
   return EV_MULT[Math.min(n, 4) as 1 | 2 | 3 | 4] ?? 1.5;
@@ -121,7 +121,7 @@ function vulnerability(
   if (viols.includes("W5_deportation") || viols.includes("W7_trafficking")) { m *= 1.4; f.push("без опікуна"); }
   if (registries.includes("VPO") || viols.includes("W1_displacement")) { m *= 1.2; f.push("ВПО"); }
   if (registries.includes("ERDR")) { m *= 1.25; f.push("фактор ризику (ЄРДР)"); }
-  return { mult: Math.min(+m.toFixed(2), 2.0), factors: f };
+  return { mult: Math.min(+m.toFixed(2), 2), factors: f };
 }
 
 type Gender = "m" | "f";
@@ -145,6 +145,17 @@ function pickOblast(r: () => number): string {
 
 const ACUITIES: Acuity[] = ["acute", "active", "chronic"];
 
+/**
+ * Кількість порушень для звичайного кейсу.
+ * Зберігає послідовність викликів PRNG: другий r() викликається лише
+ * якщо перший дав ≥ 0.6 (як у вихідному короткому замиканні тернара).
+ */
+function pickViolationCount(r: () => number): number {
+  if (r() < 0.6) return 1;
+  if (r() < 0.9) return 2;
+  return 3;
+}
+
 interface FullCase extends QueueItem {
   oblast: string;
   timeline: TimelineEvent[];
@@ -156,6 +167,45 @@ function tev(date: string, registry: RegistryCode, label: string): TimelineEvent
   return { date, registry, label, level1: regAccess(registry) === 1 };
 }
 
+/** Вибір набору порушень для згенерованого кейсу (зберігає порядок викликів PRNG). */
+function chooseViolations(r: () => number): string[] {
+  const chosen: string[] = [];
+  if (r() < 0.08) {
+    chosen.push(wpick(r, IMMEDIATE_LIST));
+    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE));
+    return chosen;
+  }
+  const nViol = pickViolationCount(r);
+  const pool = [...NONIMMEDIATE];
+  for (let k = 0; k < nViol && pool.length; k++) {
+    const v = wpick(r, pool);
+    chosen.push(v);
+    pool.splice(pool.indexOf(v), 1);
+  }
+  return chosen;
+}
+
+/** Побудова відсортованого списку внесків за обраними порушеннями. */
+function buildContributions(chosen: string[], r: () => number): Contribution[] {
+  const contribs: Contribution[] = chosen.map((v) => {
+    const prof = VPROFILE[v];
+    const nEv = 1 + Math.floor(r() * Math.min(prof.evidence.length, 3));
+    const evidence = prof.evidence.slice(0, Math.max(1, nEv));
+    const acuity = ACUITIES[Math.floor(r() * ACUITIES.length)];
+    return mkContribution(v, evidence, acuity);
+  });
+  contribs.sort((a, b) => b.value - a.value);
+  return contribs;
+}
+
+/** Реєстри-докази для кейсу (база з внесків + службові EDDR/DRACS). */
+function buildRegistries(contribs: Contribution[], r: () => number): RegistryCode[] {
+  const registries = Array.from(new Set(contribs.flatMap((c) => c.evidence))) as RegistryCode[];
+  if (!registries.includes("EDDR")) registries.push("EDDR");
+  if (r() < 0.6 && !registries.includes("DRACS")) registries.push("DRACS");
+  return registries;
+}
+
 /* ── генератор одного кейсу ── */
 function genCase(i: number): FullCase {
   const r = rng(1000 + i * 2654435761);
@@ -165,32 +215,9 @@ function genCase(i: number): FullCase {
   const birth_date = `${birthYear}-${String(1 + Math.floor(r() * 12)).padStart(2, "0")}-${String(1 + Math.floor(r() * 27)).padStart(2, "0")}`;
   const oblast = pickOblast(r);
 
-  const chosen: string[] = [];
-  if (r() < 0.08) {
-    chosen.push(wpick(r, IMMEDIATE_LIST));
-    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE));
-  } else {
-    const nViol = r() < 0.6 ? 1 : r() < 0.9 ? 2 : 3;
-    const pool = [...NONIMMEDIATE];
-    for (let k = 0; k < nViol && pool.length; k++) {
-      const v = wpick(r, pool);
-      chosen.push(v);
-      pool.splice(pool.indexOf(v), 1);
-    }
-  }
-
-  const contribs: Contribution[] = chosen.map((v) => {
-    const prof = VPROFILE[v];
-    const nEv = 1 + Math.floor(r() * Math.min(prof.evidence.length, 3));
-    const evidence = prof.evidence.slice(0, Math.max(1, nEv));
-    const acuity = ACUITIES[Math.floor(r() * ACUITIES.length)];
-    return mkContribution(v, evidence, acuity);
-  });
-  contribs.sort((a, b) => b.value - a.value);
-
-  const registries = Array.from(new Set(contribs.flatMap((c) => c.evidence))) as RegistryCode[];
-  if (!registries.includes("EDDR")) registries.push("EDDR");
-  if (r() < 0.6 && !registries.includes("DRACS")) registries.push("DRACS");
+  const chosen = chooseViolations(r);
+  const contribs = buildContributions(chosen, r);
+  const registries = buildRegistries(contribs, r);
 
   const immediate = chosen.some((v) => IMMEDIATE_VIOLATIONS.has(v));
   const { mult: vuln, factors } = vulnerability(age, registries, chosen);
@@ -211,7 +238,7 @@ function genCase(i: number): FullCase {
     vulnerability: vuln,
     vuln_factors: factors,
     violations: contribs.map((c) => c.violation),
-    registries: registries.sort(),
+    registries: registries.toSorted((x, y) => x.localeCompare(y, "uk")),
     contributions: contribs,
     oblast,
     timeline: deriveTimeline(registries, r),
@@ -250,7 +277,7 @@ function deriveAttendance(r: () => number, acute: boolean): AttendanceSeries {
   for (let m = 0; m < 12; m++) {
     const after = m >= cp;
     const absences = after ? 5 + Math.floor(r() * 8) : Math.floor(r() * 3);
-    const gpa = after ? +(3.2 + r() * 2.4).toFixed(1) : +(7.6 + r() * 4.0).toFixed(1);
+    const gpa = after ? +(3.2 + r() * 2.4).toFixed(1) : +(7.6 + r() * 4).toFixed(1);
     const y = 2023 + Math.floor((m + 8) / 12);
     const mm = ((m + 8) % 12) + 1;
     points.push({ period: `${y}-${String(mm).padStart(2, "0")}`, absences, gpa });
@@ -277,7 +304,7 @@ function makeHero(
     rank: 0, entity_id: args.id, unzr: args.unzr, pib: args.pib,
     birth_date: args.birth, age: args.age, tier: tierOf(score, immediate) ?? "T2",
     score, immediate, vulnerability: mult, vuln_factors: factors,
-    violations: viols, registries: [...args.registries].sort(), contributions: contribs,
+    violations: viols, registries: args.registries.toSorted((x, y) => x.localeCompare(y, "uk")), contributions: contribs,
     oblast: args.oblast, timeline: args.timeline, attendance: args.attendance ?? null,
   };
 }
@@ -303,7 +330,7 @@ function hero(): FullCase[] {
       attendance: {
         points: [
           { period: "2022-09", absences: 1, gpa: 11.2 }, { period: "2022-10", absences: 0, gpa: 11.5 },
-          { period: "2022-11", absences: 2, gpa: 10.8 }, { period: "2022-12", absences: 1, gpa: 11.0 },
+          { period: "2022-11", absences: 2, gpa: 10.8 }, { period: "2022-12", absences: 1, gpa: 11 },
           { period: "2023-01", absences: 2, gpa: 10.4 }, { period: "2023-02", absences: 7, gpa: 8.6 },
           { period: "2023-03", absences: 11, gpa: 6.8 }, { period: "2023-04", absences: 14, gpa: 5.4 },
           { period: "2023-05", absences: 18, gpa: 4.2 }, { period: "2023-06", absences: 20, gpa: 3.6 },
@@ -487,6 +514,34 @@ function hero(): FullCase[] {
 /* ============================================================
    Збірка повного набору
    ============================================================ */
+
+/** Кількість записів у реєстрі (демо-евристика). */
+function recordCount(reg: RegistryCode, entityId: number): number {
+  if (reg === "AIKOM") return 10;
+  if (reg === "EHEALTH") return 2 + (entityId % 3);
+  return 1;
+}
+
+/** Явна проєкція FullCase → QueueItem (без полів oblast/timeline/attendance). */
+function toQueueItem(c: FullCase): QueueItem {
+  return {
+    rank: c.rank,
+    entity_id: c.entity_id,
+    unzr: c.unzr,
+    pib: c.pib,
+    birth_date: c.birth_date,
+    age: c.age,
+    tier: c.tier,
+    score: c.score,
+    immediate: c.immediate,
+    vulnerability: c.vulnerability,
+    vuln_factors: c.vuln_factors,
+    violations: c.violations,
+    registries: c.registries,
+    contributions: c.contributions,
+  };
+}
+
 function build() {
   const featured = hero();
   const generated: FullCase[] = [];
@@ -497,10 +552,7 @@ function build() {
   all.sort((a, b) => order[a.tier] - order[b.tier] || Number(b.immediate) - Number(a.immediate) || b.score - a.score);
   all.forEach((c, idx) => (c.rank = idx + 1));
 
-  const items: QueueItem[] = all.map(({ oblast, timeline, attendance, ...q }) => {
-    void oblast; void timeline; void attendance;
-    return q;
-  });
+  const items: QueueItem[] = all.map(toQueueItem);
 
   const entities: Record<number, Entity & { oblast: string }> = {};
   const timelines: Record<number, TimelineEvent[]> = {};
@@ -508,7 +560,7 @@ function build() {
   for (const c of all) {
     const records: Partial<Record<RegistryCode, number>> = {};
     for (const reg of c.registries) {
-      records[reg] = reg === "AIKOM" ? 10 : reg === "EHEALTH" ? 2 + (c.entity_id % 3) : 1;
+      records[reg] = recordCount(reg, c.entity_id);
     }
     entities[c.entity_id] = {
       entity_id: c.entity_id, unzr: c.unzr, pib: c.pib, birth_date: c.birth_date,
@@ -531,8 +583,8 @@ export const MOCK_METRICS: Metrics = {
   detection: {
     overall: { precision: 0.97, recall: 0.88, f1: 0.92 },
     per_violation: {
-      W7_trafficking: { tp: 34, fp: 0, fn: 2, precision: 1.0, recall: 0.94 },
-      F6_sexual_abuse: { tp: 31, fp: 0, fn: 3, precision: 1.0, recall: 0.91 },
+      W7_trafficking: { tp: 34, fp: 0, fn: 2, precision: 1, recall: 0.94 },
+      F6_sexual_abuse: { tp: 31, fp: 0, fn: 3, precision: 1, recall: 0.91 },
       W5_deportation: { tp: 46, fp: 1, fn: 4, precision: 0.98, recall: 0.92 },
       P1_physical_home: { tp: 152, fp: 4, fn: 17, precision: 0.97, recall: 0.9 },
       W6_orphanhood: { tp: 58, fp: 1, fn: 6, precision: 0.98, recall: 0.91 },
@@ -546,7 +598,7 @@ export const MOCK_METRICS: Metrics = {
       E1_bullying: { tp: 142, fp: 12, fn: 26, precision: 0.92, recall: 0.85 },
     },
   },
-  privacy: { n_pairs: 5218, precision: 1.0, recall: 0.95 },
+  privacy: { n_pairs: 5218, precision: 1, recall: 0.95 },
 };
 
 export const mockData = {

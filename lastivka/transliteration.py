@@ -25,28 +25,39 @@ def translit_word(word: str) -> str:
     return translit_official(word)
 
 
+# Символи, які пропускаються при транслітерації
+_SKIPPED = ("ь", "'", "’")
+# Внутрішній маркер для буквосполучення "зг"
+_ZGH_MARKER = "\x00"
+
+
+def _translit_char(ch: str, is_first: bool) -> str:
+    """Транслітерація одного символа з урахуванням позиції у слові."""
+    if ch in _POSITIONAL:
+        return _POSITIONAL[ch][0 if is_first else 1]
+    if ch in _SIMPLE:
+        return _SIMPLE[ch]
+    return ch
+
+
+def _translit_single_word(word: str) -> str:
+    """Транслітерація одного слова з капіталізацією першої літери."""
+    w = word.lower().replace("зг", _ZGH_MARKER)
+    out = []
+    for i, ch in enumerate(w):
+        if ch in _SKIPPED:
+            continue
+        if ch == _ZGH_MARKER:
+            out.append("zgh")
+            continue
+        out.append(_translit_char(ch, i == 0))
+    s = "".join(out)
+    return s[:1].upper() + s[1:]
+
+
 def translit_official(text: str) -> str:
     """Транслітерація ПІБ (кілька слів)."""
-    # обробка зг через маркер коректно
-    parts = []
-    for word in text.split():
-        w = word.lower().replace("зг", "\x00")
-        out = []
-        for i, ch in enumerate(w):
-            if ch in ("ь", "'", "’"):
-                continue
-            if ch == "\x00":
-                out.append("zgh")
-                continue
-            if ch in _POSITIONAL:
-                out.append(_POSITIONAL[ch][0 if i == 0 else 1])
-            elif ch in _SIMPLE:
-                out.append(_SIMPLE[ch])
-            else:
-                out.append(ch)
-        s = "".join(out)
-        parts.append(s[:1].upper() + s[1:])
-    return " ".join(parts)
+    return " ".join(_translit_single_word(word) for word in text.split())
 
 
 # Поширені альтернативні написання популярних імен у інших країнах

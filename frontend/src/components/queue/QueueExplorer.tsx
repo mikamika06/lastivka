@@ -10,7 +10,14 @@ import { IconSearch, IconFilter } from "@/components/ui/icons";
 
 const TIERS: Tier[] = ["T0", "T1", "T2"];
 
-export function QueueExplorer({ items }: { items: QueueItem[] }) {
+function tierChipClassName(tier: Tier, on: boolean): string {
+  if (!on) return "bg-surface text-faint ring-line hover:text-ink-2";
+  if (tier === "T0") return "bg-t0-soft text-t0-ink ring-t0-line";
+  if (tier === "T1") return "bg-t1-soft text-t1-ink ring-t1-line";
+  return "bg-t2-soft text-t2-ink ring-t2-line";
+}
+
+export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
   const [tiers, setTiers] = useState<Set<Tier>>(new Set(["T0", "T1", "T2"]));
   const [immediateOnly, setImmediateOnly] = useState(false);
   const [violFilter, setViolFilter] = useState<Set<string>>(new Set());
@@ -70,15 +77,7 @@ export function QueueExplorer({ items }: { items: QueueItem[] }) {
                   key={t}
                   onClick={() => setTiers((s) => toggle(s, t))}
                   aria-pressed={on}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
-                    on
-                      ? t === "T0"
-                        ? "bg-t0-soft text-t0-ink ring-t0-line"
-                        : t === "T1"
-                          ? "bg-t1-soft text-t1-ink ring-t1-line"
-                          : "bg-t2-soft text-t2-ink ring-t2-line"
-                      : "bg-surface text-faint ring-line hover:text-ink-2"
-                  }`}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${tierChipClassName(t, on)}`}
                 >
                   {t}
                 </button>
@@ -163,13 +162,13 @@ function FilterChips({
   selected,
   onToggle,
   onReset,
-}: {
+}: Readonly<{
   label: string;
   options: { value: string; label: string }[];
   selected: Set<string>;
   onToggle: (v: string) => void;
   onReset: () => void;
-}) {
+}>) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
       <span className="mr-1 text-xs font-medium text-muted">{label}</span>

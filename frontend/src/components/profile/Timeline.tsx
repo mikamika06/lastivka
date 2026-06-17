@@ -3,7 +3,7 @@ import { regName } from "@/lib/registries";
 import { formatDate } from "@/lib/format";
 import { LockIcon } from "@/components/ui/badges";
 
-export function Timeline({ events }: { events: TimelineEvent[] }) {
+export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
   if (events.length === 0) {
     return <p className="text-sm text-muted">Подій для відображення немає.</p>;
   }
@@ -11,8 +11,8 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
   return (
     <ol className="relative space-y-5 pl-6">
       <span className="absolute left-[7px] top-1.5 bottom-1.5 w-px bg-line" aria-hidden="true" />
-      {events.map((e, i) => (
-        <li key={i} className="relative">
+      {events.map((e) => (
+        <li key={`${e.date}-${e.registry}`} className="relative">
           <span
             className={`absolute -left-[23px] top-1 grid h-4 w-4 place-items-center rounded-full ring-4 ring-surface ${
               e.level1 ? "bg-lock" : "bg-brand"
