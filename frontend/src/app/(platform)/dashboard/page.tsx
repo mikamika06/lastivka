@@ -9,7 +9,7 @@ import { Donut } from "@/components/charts/Donut";
 import { IconArrowRight, IconShield } from "@/components/ui/icons";
 import Link from "next/link";
 
-export const metadata = { title: "Управлінська панель — Ластівка" };
+export const metadata = { title: "Management dashboard — Lastivka" };
 
 export default async function DashboardPage() {
   const [stats, metrics] = await Promise.all([getDashboardStats(), getMetrics()]);

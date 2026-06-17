@@ -7,7 +7,7 @@ import { MiniStat } from "@/components/ui/Stat";
 import { LockIcon } from "@/components/ui/badges";
 import { IconShield, IconCheck, IconLayers } from "@/components/ui/icons";
 
-export const metadata = { title: "Захист даних і якість — Ластівка" };
+export const metadata = { title: "Data protection & quality — Lastivka" };
 
 export default async function PrivacyPage() {
   const t = await getT();

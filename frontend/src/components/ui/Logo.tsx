@@ -38,7 +38,7 @@ export function Logo({
       </span>
       <span className="leading-tight">
         <span className={`block font-display text-[17px] font-bold tracking-tight ${invert ? "text-white" : "text-ink"}`}>
-          Ластівка
+          {t({ uk: "Ластівка", en: "Lastivka" })}
         </span>
         {subtitle && (
           <span className={`block text-[10.5px] font-medium uppercase tracking-[0.14em] ${invert ? "text-white/55" : "text-faint"}`}>

@@ -1,14 +1,14 @@
 import { getCaseload } from "@/lib/api";
 import { formatNumber, formatPct } from "@/lib/format";
 import { getT, getLocale } from "@/lib/i18n.server";
-import { TIER_DEADLINE_MSG } from "@/lib/registries";
+import { TIER_DEADLINE_MSG, OBLAST_EN } from "@/lib/registries";
 import type { Tier } from "@/lib/types";
 import { Card, CardTitle, SectionHeading } from "@/components/ui/Card";
 import { KpiCard } from "@/components/ui/Stat";
 import { TierBadge } from "@/components/ui/badges";
 import { IconScale } from "@/components/ui/icons";
 
-export const metadata = { title: "Навантаження по службах — Ластівка" };
+export const metadata = { title: "Service caseload — Lastivka" };
 
 export default async function CaseloadPage() {
   const cl = await getCaseload();
@@ -129,7 +129,7 @@ export default async function CaseloadPage() {
               {cl.oblast_stats.map((o) => (
                 <tr key={o.oblast} className="border-b border-line-2 last:border-0">
                   <td className="py-2.5 pr-3 font-medium text-ink">
-                    {o.oblast}
+                    {locale === "en" ? (OBLAST_EN[o.oblast] ?? o.oblast) : o.oblast}
                     {o.urgent_uncovered > 0 && (
                       <span className="ml-2 rounded bg-t0-soft px-1.5 py-0.5 text-[10px] font-semibold text-t0-ink">
                         {t({

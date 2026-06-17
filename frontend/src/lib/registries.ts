@@ -56,6 +56,44 @@ export function regAccess(code: RegistryCode): 1 | 2 | 3 {
   return REG_BY_CODE[code]?.access ?? 2;
 }
 
+/**
+ * Транслітерація назв областей (oblast) для EN.
+ * Неперекладні топоніми — латиницею за стандартом транслітерації.
+ */
+export const OBLAST_EN: Record<string, string> = {
+  "Київська": "Kyiv",
+  "Харківська": "Kharkiv",
+  "Львівська": "Lviv",
+  "Дніпропетровська": "Dnipropetrovsk",
+  "Одеська": "Odesa",
+  "Запорізька": "Zaporizhzhia",
+  "Донецька": "Donetsk",
+  "Полтавська": "Poltava",
+  "Вінницька": "Vinnytsia",
+  "Чернігівська": "Chernihiv",
+  "Закарпатська": "Zakarpattia",
+  "Івано-Франківська": "Ivano-Frankivsk",
+};
+
+/** Назва області з суфіксом «обл.» / «oblast» за локаллю. */
+export function oblastLabel(oblast: string | null | undefined, locale: Locale = "uk"): string {
+  if (!oblast || oblast === "—") return "—";
+  if (locale === "en") return `${OBLAST_EN[oblast] ?? oblast} oblast`;
+  return `${oblast} обл.`;
+}
+
+/**
+ * Ідентифікатор робочого місця фахівця має вигляд «<область>-<n>».
+ * Для EN транслітеруємо префікс-область, зберігаючи номер.
+ */
+export function workerIdLabel(workerId: string, locale: Locale = "uk"): string {
+  if (locale !== "en") return workerId;
+  const dash = workerId.lastIndexOf("-");
+  if (dash <= 0) return workerId;
+  const obl = workerId.slice(0, dash);
+  return `${OBLAST_EN[obl] ?? obl}${workerId.slice(dash)}`;
+}
+
 /** Назви порушень (двомовні). */
 export const VIOLATION_LABELS: Record<string, Msg> = {
   W1_displacement: { uk: "Вимушене переміщення", en: "Forced displacement" },

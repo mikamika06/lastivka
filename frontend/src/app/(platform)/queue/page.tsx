@@ -1,12 +1,14 @@
 import { getQueue } from "@/lib/api";
+import { getScope } from "@/lib/auth.server";
 import { getT } from "@/lib/i18n.server";
 import { SectionHeading } from "@/components/ui/Card";
 import { QueueExplorer } from "@/components/queue/QueueExplorer";
 
-export const metadata = { title: "Черга реагування — Ластівка" };
+export const metadata = { title: "Response queue — Lastivka" };
 
 export default async function QueuePage() {
-  const items = await getQueue();
+  const scope = await getScope();
+  const items = await getQueue(scope);
   const t = await getT();
 
   return (

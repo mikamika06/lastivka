@@ -21,8 +21,8 @@ export async function HeroPreview() {
         <span className="mt-0.5 h-12 w-1 rounded-full bg-t0" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-ink">Ткаченко Софія</span>
-            <span className="text-xs text-faint">{t({ uk: "8 років", en: "8 y.o." })} · Харківська обл.</span>
+            <span className="font-semibold text-ink">{t({ uk: "Ткаченко Софія", en: "Sofiia Tkachenko" })}</span>
+            <span className="text-xs text-faint">{t({ uk: "8 років · Харківська обл.", en: "8 y.o. · Kharkiv oblast" })}</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {[

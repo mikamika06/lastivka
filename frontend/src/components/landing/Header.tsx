@@ -10,6 +10,7 @@ const LINKS: { href: string; label: Msg }[] = [
   { href: "#how", label: { uk: "Як працює", en: "How it works" } },
   { href: "#screens", label: { uk: "Система", en: "System" } },
   { href: "#audience", label: { uk: "Для кого", en: "Who it's for" } },
+  { href: "/about", label: { uk: "Про рішення", en: "About" } },
 ];
 
 export async function LandingHeader() {
@@ -32,10 +33,10 @@ export async function LandingHeader() {
           </nav>
           <Controls />
           <Link
-            href="/dashboard"
+            href="/login"
             className="hidden items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-fg transition hover:opacity-90 sm:inline-flex"
           >
-            {t({ uk: "Відкрити систему", en: "Open the system" })}
+            {t({ uk: "Увійти в систему", en: "Sign in" })}
             <IconArrowRight className="h-4 w-4" />
           </Link>
         </div>

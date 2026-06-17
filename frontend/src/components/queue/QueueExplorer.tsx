@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { QueueItem, Tier } from "@/lib/types";
-import { violName } from "@/lib/registries";
+import { violName, oblastLabel } from "@/lib/registries";
 import { pluralLoc } from "@/lib/format";
 import { oblastOfItem } from "@/lib/api";
 import { CaseCard } from "./CaseCard";
@@ -125,7 +125,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
           label={t({ uk: "Регіон", en: "Region" })}
           options={regionOptions.map((o) => ({
             value: o,
-            label: t({ uk: `${o} обл.`, en: `${o} oblast` }),
+            label: oblastLabel(o, locale),
           }))}
           selected={regionFilter}
           onToggle={(v) => setRegionFilter((s) => toggle(s, v))}

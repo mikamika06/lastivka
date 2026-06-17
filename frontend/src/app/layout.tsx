@@ -6,10 +6,10 @@ import { ThemeProvider, themeInitScript } from "@/components/providers/ThemeProv
 import { I18nProvider } from "@/components/providers/I18nProvider";
 
 export const metadata: Metadata = {
-  title: "Ластівка — проактивний захист прав дитини",
+  title: "Lastivka — proactive child-rights protection",
   description:
-    "Крос-реєстрова система раннього виявлення порушень прав дитини із захистом персональних даних. Українсько-естонське партнерство.",
-  applicationName: "Ластівка",
+    "A cross-registry system for early detection of child-rights violations with personal-data protection. A Ukrainian-Estonian partnership.",
+  applicationName: "Lastivka",
   icons: {
     icon: [{ url: "/swallow.svg", type: "image/svg+xml" }],
   },

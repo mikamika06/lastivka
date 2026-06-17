@@ -19,7 +19,8 @@ import type {
   WorkerCase,
   FeedbackStats,
 } from "./types";
-import { IMMEDIATE_VIOLATIONS, regAccess } from "./registries";
+import { IMMEDIATE_VIOLATIONS, regAccess, OBLAST_EN } from "./registries";
+import type { Msg } from "./i18n";
 
 /* ── детермінований PRNG (mulberry32) ── */
 function rng(seed: number) {
@@ -38,6 +39,25 @@ const OBLASTS = [
   "Донецька", "Полтавська", "Вінницька", "Чернігівська", "Закарпатська", "Івано-Франківська",
 ];
 const OBLAST_W = [12, 20, 9, 14, 10, 16, 18, 7, 6, 8, 5, 5];
+
+/**
+ * Громади (hromada) у межах області — скоуп фахівця ССД.
+ * Для Харківської навмисно задано Chuhuiv та Izium (демо-ізоляція ролей).
+ * Решта областей мають загальну громаду (обласний центр) — для демо достатньо.
+ */
+const HROMADAS: Record<string, string[]> = {
+  "Харківська": ["Chuhuiv", "Izium"],
+};
+function hromadaOf(oblast: string, seed: number): string {
+  const pool = HROMADAS[oblast];
+  if (pool && pool.length) {
+    // окремий PRNG-крок, щоб не зсувати основну послідовність генерації кейсу
+    const r = rng(seed ^ 0x9e3779b9);
+    return pool[Math.floor(r() * pool.length)];
+  }
+  // решта областей: одна номінальна громада (транслітерований обласний центр)
+  return OBLAST_EN[oblast] ?? oblast;
+}
 
 const LAST = ["Коваленко", "Бондаренко", "Ткаченко", "Мельник", "Шевченко", "Кравчук", "Бойко", "Поліщук", "Савченко", "Гнатюк", "Лисенко", "Марченко", "Гончар", "Руденко", "Захарченко", "Петренко"];
 const FIRST_M = ["Олександр", "Михайло", "Данило", "Артем", "Максим", "Назар", "Дмитро", "Богдан", "Андрій", "Іван", "Тимофій", "Владислав"];
@@ -178,7 +198,7 @@ const TIER_DEADLINE = {
 } as const;
 
 /** Подія таймлайну з автоматичною позначкою Рівня-1 за рівнем доступу реєстру. */
-function tev(date: string, registry: RegistryCode, label: string): TimelineEvent {
+function tev(date: string, registry: RegistryCode, label: Msg): TimelineEvent {
   return { date, registry, label, level1: regAccess(registry) === 1 };
 }
 
@@ -269,6 +289,7 @@ function genCase(i: number): FullCase | null {
     registries: registries.toSorted((x, y) => x.localeCompare(y, "uk")),
     contributions: contribs,
     oblast,
+    hromada: hromadaOf(oblast, 1000 + i),
     worker_id: null,
     timeline: deriveTimeline(registries, r, birth_date),
     attendance:
@@ -296,19 +317,19 @@ function deriveTimeline(registries: RegistryCode[], r: () => number, birthDate: 
     return `${y}-${String(mm).padStart(2, "0")}-${String(5 + Math.floor(r() * 22)).padStart(2, "0")}`;
   };
   const has = (c: RegistryCode) => registries.includes(c);
-  ev.push(tev(birthActDate(birthDate, r), "DRACS", "Актовий запис про народження"));
-  if (has("VPO")) ev.push(tev(d(2, 10), "VPO", "Взято на облік ВПО (переміщення)"));
-  if (has("EHEALTH")) ev.push(tev(d(8, 16), "EHEALTH", "Декларацію із сімейним лікарем закрито"));
-  if (has("EDEBO")) ev.push(tev(d(8, 18), "EDEBO", "Вихід зі школи (статус: переведено/відраховано)"));
-  if (has("AIKOM")) ev.push(tev(d(10, 20), "AIKOM", "Різкий стрибок пропусків + падіння оцінок"));
-  if (has("DV")) ev.push(tev(d(12, 22), "DV", "Виклик поліції за фактом домашнього насильства"));
-  if (has("CBI")) ev.push(tev(d(2, 12), "CBI", "Встановлено інвалідність / потреба супроводу"));
-  if (has("DITY")) ev.push(tev(d(12, 22), "DITY", "Взято на облік ССД (складні життєві обставини)"));
-  if (has("CHILDWAR")) ev.push(tev(d(6, 18), "CHILDWAR", "Статус у реєстрі «Діти війни»"));
-  if (has("EDRSR")) ev.push(tev(d(12, 22), "EDRSR", "Судове рішення щодо батьківських прав"));
-  if (has("DRRP")) ev.push(tev(d(6, 20), "DRRP", "Відчуження житла дитини без дозволу опіки"));
-  if (has("HOTLINE")) ev.push(tev(d(8, 22), "HOTLINE", "Звернення на гарячу лінію 116 111"));
-  if (has("ERDR")) ev.push(tev(d(14, 23), "ERDR", "Внесено до ЄРДР досудове розслідування"));
+  ev.push(tev(birthActDate(birthDate, r), "DRACS", { uk: "Актовий запис про народження", en: "Birth registration act" }));
+  if (has("VPO")) ev.push(tev(d(2, 10), "VPO", { uk: "Взято на облік ВПО (переміщення)", en: "Registered as IDP (displacement)" }));
+  if (has("EHEALTH")) ev.push(tev(d(8, 16), "EHEALTH", { uk: "Декларацію із сімейним лікарем закрито", en: "Declaration with family doctor closed" }));
+  if (has("EDEBO")) ev.push(tev(d(8, 18), "EDEBO", { uk: "Вихід зі школи (статус: переведено/відраховано)", en: "Left school (status: transferred/expelled)" }));
+  if (has("AIKOM")) ev.push(tev(d(10, 20), "AIKOM", { uk: "Різкий стрибок пропусків + падіння оцінок", en: "Sharp spike in absences + grade drop" }));
+  if (has("DV")) ev.push(tev(d(12, 22), "DV", { uk: "Виклик поліції за фактом домашнього насильства", en: "Police call over domestic violence" }));
+  if (has("CBI")) ev.push(tev(d(2, 12), "CBI", { uk: "Встановлено інвалідність / потреба супроводу", en: "Disability established / support needed" }));
+  if (has("DITY")) ev.push(tev(d(12, 22), "DITY", { uk: "Взято на облік ССД (складні життєві обставини)", en: "Registered with Child Services (SSD) — difficult life circumstances (SZHO)" }));
+  if (has("CHILDWAR")) ev.push(tev(d(6, 18), "CHILDWAR", { uk: "Статус у реєстрі «Діти війни»", en: "Status in the Children of War registry" }));
+  if (has("EDRSR")) ev.push(tev(d(12, 22), "EDRSR", { uk: "Судове рішення щодо батьківських прав", en: "Court ruling on parental rights" }));
+  if (has("DRRP")) ev.push(tev(d(6, 20), "DRRP", { uk: "Відчуження житла дитини без дозволу опіки", en: "Child's housing alienated without guardianship consent" }));
+  if (has("HOTLINE")) ev.push(tev(d(8, 22), "HOTLINE", { uk: "Звернення на гарячу лінію 116 111", en: "Call to the 116 111 hotline" }));
+  if (has("ERDR")) ev.push(tev(d(14, 23), "ERDR", { uk: "Внесено до ЄРДР досудове розслідування", en: "Pre-trial investigation entered into ERDR" }));
   return ev.sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -335,6 +356,7 @@ function makeHero(
     id: number; pib: string; birth: string; age: number; oblast: string;
     contribs: Contribution[]; registries: RegistryCode[]; immediate?: boolean;
     unzr: string | null; timeline: TimelineEvent[]; attendance?: AttendanceSeries | null;
+    hromada?: string;
   },
 ): FullCase {
   const contribs = [...args.contribs].sort((a, b) => b.value - a.value);
@@ -347,7 +369,8 @@ function makeHero(
     birth_date: args.birth, age: args.age, tier: tierOf(score, immediate) ?? "T2",
     score, immediate, vulnerability: mult, vuln_factors: factors,
     violations: viols, registries: args.registries.toSorted((x, y) => x.localeCompare(y, "uk")), contributions: contribs,
-    oblast: args.oblast, worker_id: null, timeline: args.timeline, attendance: args.attendance ?? null,
+    oblast: args.oblast, hromada: args.hromada ?? hromadaOf(args.oblast, args.id),
+    worker_id: null, timeline: args.timeline, attendance: args.attendance ?? null,
   };
 }
 
@@ -356,7 +379,7 @@ function hero(): FullCase[] {
     // 1 ── Сигнатурний кейс: дитина випала у щілину між системами
     makeHero({
       id: 5001, pib: "Ткаченко Софія Андріївна", birth: "2016-03-12", age: 8, oblast: "Харківська",
-      unzr: "20160312-48217",
+      hromada: "Chuhuiv", unzr: "20160312-48217",
       contribs: [
         mkContribution("W1_displacement", ["VPO", "EDEBO", "EHEALTH"], "acute"),
         mkContribution("W3_out_of_education", ["EDEBO", "AIKOM"], "acute"),
@@ -364,10 +387,10 @@ function hero(): FullCase[] {
       ],
       registries: ["EDDR", "DRACS", "VPO", "EDEBO", "AIKOM", "EHEALTH"],
       timeline: [
-        tev("2023-02-18", "VPO", "Облік ВПО: переміщення Харківська → Львівська обл."),
-        tev("2023-05-20", "EDEBO", "Вихід зі школи (переведено), нову не зафіксовано"),
-        tev("2023-06-15", "AIKOM", "Останній запис відвідуваності — далі тиша"),
-        tev("2023-09-04", "EHEALTH", "Декларацію із сімейним лікарем закрито, нову не відкрито"),
+        tev("2023-02-18", "VPO", { uk: "Облік ВПО: переміщення Харківська → Львівська обл.", en: "IDP registration: displacement Kharkiv → Lviv oblast" }),
+        tev("2023-05-20", "EDEBO", { uk: "Вихід зі школи (переведено), нову не зафіксовано", en: "Left school (transferred), no new enrolment recorded" }),
+        tev("2023-06-15", "AIKOM", { uk: "Останній запис відвідуваності — далі тиша", en: "Last attendance record — silence afterwards" }),
+        tev("2023-09-04", "EHEALTH", { uk: "Декларацію із сімейним лікарем закрито, нову не відкрито", en: "Family-doctor declaration closed, no new one opened" }),
       ],
       attendance: {
         points: [
@@ -391,10 +414,10 @@ function hero(): FullCase[] {
       ],
       registries: ["EDDR", "VPO", "CHILDWAR", "DITY", "ERDR"],
       timeline: [
-        tev("2023-03-10", "VPO", "Облік ВПО: переміщення із Запорізької обл."),
-        tev("2023-05-08", "CHILDWAR", "Статус «Діти війни»: переміщення із зони бойових дій"),
-        tev("2024-01-22", "DITY", "Сигнал ССД: підозра на залучення до експлуатації"),
-        tev("2024-02-05", "ERDR", "Досудове розслідування ст.149 ККУ (торгівля людьми)"),
+        tev("2023-03-10", "VPO", { uk: "Облік ВПО: переміщення із Запорізької обл.", en: "IDP registration: displacement from Zaporizhzhia oblast" }),
+        tev("2023-05-08", "CHILDWAR", { uk: "Статус «Діти війни»: переміщення із зони бойових дій", en: "Children of War status: displacement from a combat zone" }),
+        tev("2024-01-22", "DITY", { uk: "Сигнал ССД: підозра на залучення до експлуатації", en: "Child Services (SSD) signal: suspected exploitation" }),
+        tev("2024-02-05", "ERDR", { uk: "Досудове розслідування ст.149 ККУ (торгівля людьми)", en: "Pre-trial investigation, Art. 149 (human trafficking)" }),
       ],
     }),
 
@@ -405,11 +428,11 @@ function hero(): FullCase[] {
       contribs: [mkContribution("P1_physical_home", ["EHEALTH", "DV", "ERDR", "DITY"], "acute")],
       registries: ["EDDR", "DRACS", "EHEALTH", "DV", "ERDR", "DITY"],
       timeline: [
-        tev("2023-10-03", "EHEALTH", "Звернення: травма (домашня обстановка)"),
-        tev("2023-11-19", "DV", "Виклик поліції за адресою (дитина присутня)"),
-        tev("2024-01-14", "EHEALTH", "Повторна травма + звернення до психолога"),
-        tev("2024-02-02", "ERDR", "Досудове розслідування ст.126-1 ККУ (домашнє насильство)"),
-        tev("2024-02-20", "DITY", "Взято на облік ССД"),
+        tev("2023-10-03", "EHEALTH", { uk: "Звернення: травма (домашня обстановка)", en: "Medical visit: injury (home setting)" }),
+        tev("2023-11-19", "DV", { uk: "Виклик поліції за адресою (дитина присутня)", en: "Police call to the address (child present)" }),
+        tev("2024-01-14", "EHEALTH", { uk: "Повторна травма + звернення до психолога", en: "Repeat injury + visit to a psychologist" }),
+        tev("2024-02-02", "ERDR", { uk: "Досудове розслідування ст.126-1 ККУ (домашнє насильство)", en: "Pre-trial investigation, Art. 126-1 (domestic violence)" }),
+        tev("2024-02-20", "DITY", { uk: "Взято на облік ССД", en: "Registered with Child Services (SSD)" }),
       ],
     }),
 
@@ -420,8 +443,8 @@ function hero(): FullCase[] {
       contribs: [mkContribution("W5_deportation", ["CHILDWAR", "DITY"], "acute")],
       registries: ["EDDR", "CHILDWAR", "DITY"],
       timeline: [
-        tev("2023-07-15", "CHILDWAR", "Статус «Діти війни»: депортовано, розрив звʼязку з опікуном"),
-        tev("2023-08-01", "DITY", "Облік ССД: дитина без супроводу"),
+        tev("2023-07-15", "CHILDWAR", { uk: "Статус «Діти війни»: депортовано, розрив звʼязку з опікуном", en: "Children of War status: deported, contact with guardian lost" }),
+        tev("2023-08-01", "DITY", { uk: "Облік ССД: дитина без супроводу", en: "Child Services (SSD) registration: unaccompanied child" }),
       ],
     }),
 
@@ -431,7 +454,7 @@ function hero(): FullCase[] {
       unzr: "20110930-55218", immediate: true,
       contribs: [mkContribution("F6_sexual_abuse", ["ERDR"], "acute")],
       registries: ["EDDR", "DRACS", "ERDR"],
-      timeline: [tev("2024-03-08", "ERDR", "Досудове розслідування ст.152 ККУ")],
+      timeline: [tev("2024-03-08", "ERDR", { uk: "Досудове розслідування ст.152 ККУ", en: "Pre-trial investigation, Art. 152 (sexual abuse)" })],
     }),
 
     // 6 ── Сирітство / втрата опіки (суд + ССД)
@@ -441,9 +464,9 @@ function hero(): FullCase[] {
       contribs: [mkContribution("W6_orphanhood", ["DRACS", "EDRSR", "DITY"], "active")],
       registries: ["EDDR", "DRACS", "EDRSR", "DITY"],
       timeline: [
-        tev("2023-12-02", "DRACS", "Актовий запис про смерть одного з батьків"),
-        tev("2024-01-10", "EDRSR", "Судове рішення: позбавлення батьківських прав"),
-        tev("2024-01-18", "DITY", "Взято на облік: загроза втрати піклування"),
+        tev("2023-12-02", "DRACS", { uk: "Актовий запис про смерть одного з батьків", en: "Death act for one parent" }),
+        tev("2024-01-10", "EDRSR", { uk: "Судове рішення: позбавлення батьківських прав", en: "Court ruling: deprivation of parental rights" }),
+        tev("2024-01-18", "DITY", { uk: "Взято на облік: загроза втрати піклування", en: "Registered: risk of losing care" }),
       ],
     }),
 
@@ -454,9 +477,9 @@ function hero(): FullCase[] {
       contribs: [mkContribution("F3_neglect", ["EHEALTH", "AIKOM", "DITY"], "active")],
       registries: ["EDDR", "EHEALTH", "AIKOM", "DITY"],
       timeline: [
-        tev("2023-09-10", "AIKOM", "Систематичні пропуски без поважної причини"),
-        tev("2023-10-05", "EHEALTH", "Пропущено планову імунізацію / огляд"),
-        tev("2023-11-20", "DITY", "Облік: малозабезпечена родина"),
+        tev("2023-09-10", "AIKOM", { uk: "Систематичні пропуски без поважної причини", en: "Systematic absences without valid reason" }),
+        tev("2023-10-05", "EHEALTH", { uk: "Пропущено планову імунізацію / огляд", en: "Missed scheduled immunisation / check-up" }),
+        tev("2023-11-20", "DITY", { uk: "Облік: малозабезпечена родина", en: "Registration: low-income family" }),
       ],
       attendance: deriveAttendance(rng(70007), false),
     }),
@@ -468,9 +491,9 @@ function hero(): FullCase[] {
       contribs: [mkContribution("E1_bullying", ["AIKOM", "EHEALTH"], "active")],
       registries: ["EDDR", "AIKOM", "EHEALTH"],
       timeline: [
-        tev("2023-11-02", "AIKOM", "Стрибок пропусків + падіння оцінок"),
-        tev("2023-12-10", "EHEALTH", "Звернення до психолога"),
-        tev("2024-01-15", "AIKOM", "Засідання комісії з протидії булінгу"),
+        tev("2023-11-02", "AIKOM", { uk: "Стрибок пропусків + падіння оцінок", en: "Spike in absences + grade drop" }),
+        tev("2023-12-10", "EHEALTH", { uk: "Звернення до психолога", en: "Visit to a psychologist" }),
+        tev("2024-01-15", "AIKOM", { uk: "Засідання комісії з протидії булінгу", en: "Anti-bullying commission session" }),
       ],
       attendance: deriveAttendance(rng(80008), true),
     }),
@@ -482,8 +505,8 @@ function hero(): FullCase[] {
       contribs: [mkContribution("W2_psych_trauma", ["EHEALTH", "CHILDWAR"], "active")],
       registries: ["EDDR", "EHEALTH", "CHILDWAR"],
       timeline: [
-        tev("2023-05-14", "CHILDWAR", "Статус «Діти війни»: переміщення"),
-        tev("2023-08-30", "EHEALTH", "Повторні звернення до психолога"),
+        tev("2023-05-14", "CHILDWAR", { uk: "Статус «Діти війни»: переміщення", en: "Children of War status: displacement" }),
+        tev("2023-08-30", "EHEALTH", { uk: "Повторні звернення до психолога", en: "Repeated visits to a psychologist" }),
       ],
     }),
 
@@ -494,8 +517,8 @@ function hero(): FullCase[] {
       contribs: [mkContribution("W3_out_of_education", ["EDEBO", "AIKOM"], "active")],
       registries: ["EDDR", "EDEBO", "AIKOM"],
       timeline: [
-        tev("2023-10-01", "AIKOM", "Останній запис відвідуваності"),
-        tev("2023-10-20", "EDEBO", "Відраховано без переведення до іншого закладу"),
+        tev("2023-10-01", "AIKOM", { uk: "Останній запис відвідуваності", en: "Last attendance record" }),
+        tev("2023-10-20", "EDEBO", { uk: "Відраховано без переведення до іншого закладу", en: "Expelled without transfer to another institution" }),
       ],
       attendance: deriveAttendance(rng(100010), false),
     }),
@@ -510,8 +533,8 @@ function hero(): FullCase[] {
       ],
       registries: ["EDDR", "VPO", "EHEALTH"],
       timeline: [
-        tev("2023-04-11", "VPO", "Облік ВПО"),
-        tev("2023-10-22", "EHEALTH", "Декларацію закрито; хронічний діагноз без супроводу"),
+        tev("2023-04-11", "VPO", { uk: "Облік ВПО", en: "IDP registration" }),
+        tev("2023-10-22", "EHEALTH", { uk: "Декларацію закрито; хронічний діагноз без супроводу", en: "Declaration closed; chronic diagnosis without follow-up" }),
       ],
     }),
 
@@ -522,8 +545,8 @@ function hero(): FullCase[] {
       contribs: [mkContribution("E4_inclusion", ["CBI", "EDEBO"], "active")],
       registries: ["EDDR", "CBI", "EDEBO"],
       timeline: [
-        tev("2023-03-05", "CBI", "Встановлено інвалідність; потреба інклюзивного супроводу"),
-        tev("2023-09-01", "EDEBO", "Зараховано без інклюзивного класу / асистента"),
+        tev("2023-03-05", "CBI", { uk: "Встановлено інвалідність; потреба інклюзивного супроводу", en: "Disability established; inclusive support needed" }),
+        tev("2023-09-01", "EDEBO", { uk: "Зараховано без інклюзивного класу / асистента", en: "Enrolled without an inclusive class / assistant" }),
       ],
     }),
 
@@ -533,19 +556,19 @@ function hero(): FullCase[] {
       unzr: "20090314-28557",
       contribs: [mkContribution("F4_child_labor", ["AIKOM"], "active")],
       registries: ["EDDR", "AIKOM"],
-      timeline: [tev("2023-10-08", "AIKOM", "Систематичні денні пропуски без ознак булінгу/хвороби")],
+      timeline: [tev("2023-10-08", "AIKOM", { uk: "Систематичні денні пропуски без ознак булінгу/хвороби", en: "Systematic daytime absences with no signs of bullying/illness" })],
       attendance: deriveAttendance(rng(130013), false),
     }),
 
     // 14 ── Переміщення (спостереження)
     makeHero({
       id: 5014, pib: "Бондаренко Соломія Петрівна", birth: "2008-11-19", age: 16, oblast: "Харківська",
-      unzr: "20081119-67230",
+      hromada: "Izium", unzr: "20081119-67230",
       contribs: [mkContribution("W1_displacement", ["VPO", "EDEBO"], "chronic")],
       registries: ["EDDR", "DRACS", "VPO", "EDEBO"],
       timeline: [
-        tev("2023-03-22", "VPO", "Облік ВПО"),
-        tev("2023-09-01", "EDEBO", "Вихід зі школи (переведено), нову не зафіксовано"),
+        tev("2023-03-22", "VPO", { uk: "Облік ВПО", en: "IDP registration" }),
+        tev("2023-09-01", "EDEBO", { uk: "Вихід зі школи (переведено), нову не зафіксовано", en: "Left school (transferred), no new enrolment recorded" }),
       ],
     }),
   ];
@@ -580,6 +603,7 @@ function toQueueItem(c: FullCase): QueueItem {
     registries: c.registries,
     contributions: c.contributions,
     oblast: c.oblast,
+    hromada: c.hromada,
     worker_id: c.worker_id,
   };
 }
@@ -685,7 +709,8 @@ function build() {
     }
     entities[c.entity_id] = {
       entity_id: c.entity_id, unzr: c.unzr, pib: c.pib, birth_date: c.birth_date,
-      registries: c.registries, n_registries: c.registries.length, records, oblast: c.oblast,
+      registries: c.registries, n_registries: c.registries.length, records,
+      oblast: c.oblast, hromada: c.hromada,
     };
     timelines[c.entity_id] = c.timeline;
     attendance[c.entity_id] = c.attendance;
@@ -738,11 +763,15 @@ export function mockOblastOf(entityId: number): string {
   return DATA.entities[entityId]?.oblast ?? "—";
 }
 
+export function mockHromadaOf(entityId: number): string | null {
+  return DATA.entities[entityId]?.hromada ?? null;
+}
+
 /* ── Фаза 3: персональні черги наглядачів + штат + feedback ── */
 function toWorkerCase(c: FullCase): WorkerCase {
   return {
     rank: c.rank, entity_id: c.entity_id, pib: c.pib, age: c.age, oblast: c.oblast,
-    tier: c.tier, score: c.score, immediate: c.immediate, violations: c.violations,
+    hromada: c.hromada, tier: c.tier, score: c.score, immediate: c.immediate, violations: c.violations,
   };
 }
 

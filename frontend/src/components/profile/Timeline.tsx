@@ -35,7 +35,7 @@ export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
               {regName(e.registry, locale)}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-2">{e.label}</p>
+          <p className="mt-1 text-sm text-ink-2">{t(e.label)}</p>
           {e.level1 && (
             <p className="mt-1 text-[11px] text-lock-ink/80">
               {t({

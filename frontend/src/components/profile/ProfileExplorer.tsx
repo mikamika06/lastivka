@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { QueueItem, Entity, TimelineEvent, AttendanceSeries } from "@/lib/types";
-import { getEntity, getTimeline, getAttendance, oblastOf } from "@/lib/api";
-import { violName } from "@/lib/registries";
+import { getEntity, getTimeline, getAttendance, oblastOf, type DataScope } from "@/lib/api";
+import { violName, oblastLabel } from "@/lib/registries";
 import { formatDate, ageLabel, formatScore } from "@/lib/format";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
 import type { Msg } from "@/lib/i18n";
@@ -21,7 +21,11 @@ interface ProfileData {
   attendance: AttendanceSeries | null;
 }
 
-export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueItem[]; initialId?: number }>) {
+export function ProfileExplorer({
+  items,
+  initialId,
+  scope,
+}: Readonly<{ items: QueueItem[]; initialId?: number; scope: DataScope | null }>) {
   const t = useTx();
   const locale = useLocale();
   const valid = initialId && items.some((i) => i.entity_id === initialId) ? initialId : items[0]?.entity_id;
@@ -30,15 +34,17 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
 
   useEffect(() => {
     let active = true;
-    Promise.all([getEntity(selectedId), getTimeline(selectedId), getAttendance(selectedId)]).then(
-      ([entity, events, attendance]) => {
-        if (active) setData({ id: selectedId, entity, events, attendance });
-      },
-    );
+    Promise.all([
+      getEntity(scope, selectedId),
+      getTimeline(scope, selectedId),
+      getAttendance(scope, selectedId),
+    ]).then(([entity, events, attendance]) => {
+      if (active) setData({ id: selectedId, entity, events, attendance });
+    });
     return () => {
       active = false;
     };
-  }, [selectedId]);
+  }, [selectedId, scope]);
 
   const item = items.find((i) => i.entity_id === selectedId);
   if (!item) {
@@ -82,7 +88,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="h-display text-2xl font-bold">{item.pib}</h2>
-              <p className="mt-1 text-sm text-muted">{ageLabel(item.age, locale)} · {oblast} {t({ uk: "обл.", en: "oblast" })}</p>
+              <p className="mt-1 text-sm text-muted">{ageLabel(item.age, locale)} · {oblastLabel(oblast, locale)}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
@@ -99,7 +105,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
             <Field label={t({ uk: "УНЗР", en: "UNZR" })} value={entity?.unzr ?? item.unzr ?? t({ uk: "— (зіставлено за ПІБ + датою)", en: "— (matched by name + date)" })} mono />
             <Field label={t({ uk: "Дата народження", en: "Date of birth" })} value={formatDate(entity?.birth_date ?? item.birth_date, locale)} />
             <Field label={t({ uk: "Реєстрів об'єднано", en: "Registries merged" })} value={String(entity?.n_registries ?? item.registries.length)} />
-            <Field label={t({ uk: "Регіон", en: "Region" })} value={`${oblast} ${t({ uk: "обл.", en: "oblast" })}`} />
+            <Field label={t({ uk: "Регіон", en: "Region" })} value={oblastLabel(oblast, locale)} />
           </div>
         </div>
 

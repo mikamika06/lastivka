@@ -1,58 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { WorkerCase, WorkerQueue, Tier, TierDeadline, Decision } from "@/lib/types";
 import type { Msg } from "@/lib/i18n";
-import { getWorkers, getWorkerQueue, getCaseload, postFeedback, type WorkerSummary } from "@/lib/api";
-import { violName, TIER_DEADLINE_MSG } from "@/lib/registries";
+import { postFeedback } from "@/lib/api";
+import { violName, TIER_DEADLINE_MSG, oblastLabel } from "@/lib/registries";
 import { ageLabel, formatScore, pluralLoc } from "@/lib/format";
 import { TierBadge, ImmediateBadge } from "@/components/ui/badges";
-import { IconChevronDown, IconCheck, IconClock, IconProfile } from "@/components/ui/icons";
+import { IconCheck, IconClock, IconProfile } from "@/components/ui/icons";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
 
-export function MyQueueExplorer() {
+export function MyQueueExplorer({
+  queue,
+  deadlines,
+  workerName,
+  hromada,
+  oblast,
+}: Readonly<{
+  queue: WorkerQueue;
+  deadlines: Record<Tier, TierDeadline> | null;
+  workerName: string | null;
+  hromada: string | null;
+  oblast: string | null;
+}>) {
   const t = useTx();
   const locale = useLocale();
-  const [workers, setWorkers] = useState<WorkerSummary[]>([]);
-  const [workerId, setWorkerId] = useState<string>("");
-  const [queue, setQueue] = useState<WorkerQueue | null>(null);
-  const [deadlines, setDeadlines] = useState<Record<Tier, TierDeadline> | null>(null);
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
-
-  useEffect(() => {
-    let active = true;
-    Promise.all([getWorkers(), getCaseload()]).then(([ws, cl]) => {
-      if (!active) return;
-      setWorkers(ws);
-      setDeadlines(cl?.deadlines ?? null);
-      if (ws.length) setWorkerId((id) => id || ws[0].worker_id);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!workerId) return;
-    let active = true;
-    getWorkerQueue(workerId).then((q) => {
-      if (active) setQueue(q);
-    });
-    return () => {
-      active = false;
-    };
-  }, [workerId]);
 
   async function decide(entityId: number, decision: Decision) {
     setDecisions((d) => ({ ...d, [entityId]: decision }));
-    await postFeedback({ entity_id: entityId, decision, caseworker: workerId });
+    await postFeedback({ entity_id: entityId, decision, caseworker: queue.worker_id });
   }
 
-  const cases = useMemo(() => queue?.cases ?? [], [queue]);
+  const cases = useMemo(() => queue.cases ?? [], [queue]);
   const t0count = cases.filter((c) => c.tier === "T0").length;
   const t1count = cases.filter((c) => c.tier === "T1").length;
   const doneCount = cases.filter((c) => decisions[c.entity_id]).length;
-  const oblast = workers.find((w) => w.worker_id === workerId)?.oblast ?? "—";
+  const scopeLabel = hromada
+    ? `${hromada}${oblast ? ` · ${oblastLabel(oblast, locale)}` : ""}`
+    : oblastLabel(oblast, locale);
 
   return (
     <div className="space-y-4">
@@ -64,32 +50,10 @@ export function MyQueueExplorer() {
               <IconProfile className="h-7 w-7" />
             </span>
             <div>
-              <h2 className="h-display text-xl font-bold">{workerId ? `${t({ uk: "Робоче місце", en: "Workstation" })} ${workerId}` : t({ uk: "Кабінет фахівця", en: "Specialist workspace" })}</h2>
+              <h2 className="h-display text-xl font-bold">{workerName ?? t({ uk: "Кабінет фахівця", en: "Specialist workspace" })}</h2>
               <p className="mt-0.5 text-sm text-muted">
-                {t({ uk: "Фахівець служби у справах дітей", en: "Children's Services specialist" })} · {oblast} {t({ uk: "обл.", en: "oblast" })}
+                {t({ uk: "Фахівець служби у справах дітей", en: "Children's Services specialist" })} · {scopeLabel}
               </p>
-            </div>
-          </div>
-
-          <div className="relative w-full max-w-xs">
-            <label htmlFor="worker-select" className="mb-1.5 block text-xs font-medium text-muted">
-              {t({ uk: "Робоче місце (демо — оберіть фахівця)", en: "Workstation (demo — choose a specialist)" })}
-            </label>
-            <div className="relative">
-              <select
-                id="worker-select"
-                value={workerId}
-                onChange={(e) => setWorkerId(e.target.value)}
-                className="w-full appearance-none rounded-xl border border-line bg-surface py-2.5 pl-4 pr-10 text-sm font-medium text-ink outline-none focus:border-brand"
-              >
-                {workers.map((w) => (
-                  <option key={w.worker_id} value={w.worker_id}>
-                    {w.worker_id} · {pluralLoc(w.count, { uk: ["дитина", "дитини", "дітей"], en: ["child", "children"] }, locale)}
-                    {w.t0 ? ` · ${w.t0} ${t({ uk: "терміново", en: "urgent" })}` : ""}
-                  </option>
-                ))}
-              </select>
-              <IconChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-faint" />
             </div>
           </div>
         </div>
@@ -135,9 +99,9 @@ export function MyQueueExplorer() {
             onDecide={decide}
           />
         ))}
-        {queue && cases.length === 0 && (
+        {cases.length === 0 && (
           <div className="card grid place-items-center py-16 text-center text-sm text-muted">
-            {t({ uk: "На цього фахівця наразі не призначено жодної дитини.", en: "No children are currently assigned to this specialist." })}
+            {t({ uk: "У вашій громаді наразі немає дітей у черзі.", en: "No children are currently in your hromada's queue." })}
           </div>
         )}
       </div>
@@ -182,7 +146,7 @@ function WorkerCaseRow({
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-display text-sm font-bold tnum text-faint">#{c.rank}</span>
             <span className="font-semibold text-ink">{c.pib}</span>
-            <span className="text-xs text-faint">· {ageLabel(c.age, locale)}{c.oblast ? ` · ${c.oblast} ${t({ uk: "обл.", en: "oblast" })}` : ""}</span>
+            <span className="text-xs text-faint">· {ageLabel(c.age, locale)}{c.oblast ? ` · ${oblastLabel(c.oblast, locale)}` : ""}</span>
             {c.immediate && <ImmediateBadge />}
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">

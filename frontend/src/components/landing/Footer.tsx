@@ -14,7 +14,7 @@ export async function LandingFooter() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-fg">
                 <SwallowMark className="h-5 w-5" />
               </span>
-              <span className="font-display text-lg font-bold text-ink">Ластівка</span>
+              <span className="font-display text-lg font-bold text-ink">{t({ uk: "Ластівка", en: "Lastivka" })}</span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
               {t({

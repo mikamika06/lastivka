@@ -2,6 +2,7 @@
  * Типи даних Ластівки — дзеркало контракту backend
  * (lastivka/scoring.py, matching.py, pipeline.py, app/api.py).
  */
+import type { Msg } from "./i18n";
 
 export type Tier = "T0" | "T1" | "T2";
 export type Acuity = "acute" | "active" | "chronic" | "improving";
@@ -66,6 +67,7 @@ export interface QueueItem {
   registries: RegistryCode[];
   contributions: Contribution[];
   oblast: string | null; // територія (фаза 3)
+  hromada: string | null; // громада (скоуп фахівця ССД)
   worker_id: string | null; // призначений кейсворкер (фаза 3)
 }
 
@@ -79,13 +81,14 @@ export interface Entity {
   n_registries: number;
   records: Partial<Record<RegistryCode, number>>;
   oblast?: string;
+  hromada?: string | null;
 }
 
 /** Подія таймлайну з конкретного реєстру. */
 export interface TimelineEvent {
   date: string;
   registry: RegistryCode;
-  label: string;
+  label: Msg; // двомовний підпис події (uk/en)
   level1?: boolean; // дані Рівня 1 (PSI-булеан)
 }
 
@@ -179,6 +182,7 @@ export interface WorkerCase {
   pib: string;
   age: number | null;
   oblast: string | null;
+  hromada: string | null;
   tier: Tier;
   score: number;
   immediate: boolean;

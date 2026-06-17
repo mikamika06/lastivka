@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { QueueItem } from "@/lib/types";
-import { violName, regName, regAccess, ACUITY_MSG, vulnFactorLabel } from "@/lib/registries";
+import { violName, regName, regAccess, ACUITY_MSG, vulnFactorLabel, oblastLabel } from "@/lib/registries";
 import { ageLabel, formatScore } from "@/lib/format";
 import { oblastOfItem } from "@/lib/api";
 import { TierBadge, ImmediateBadge, AccessLockBadge, AcuityTag } from "@/components/ui/badges";
@@ -54,7 +54,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
               <span className="text-[11px] text-faint">+{item.violations.length - 3}</span>
             )}
             {oblast !== "—" && (
-              <span className="text-[11px] text-faint">· {oblast} {t({ uk: "обл.", en: "oblast" })}</span>
+              <span className="text-[11px] text-faint">· {oblastLabel(oblast, locale)}</span>
             )}
           </div>
         </div>
