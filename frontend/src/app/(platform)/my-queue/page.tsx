@@ -8,8 +8,8 @@ export default function MyQueuePage() {
     <div className="space-y-6">
       <SectionHeading
         index="06"
-        title="Моя черга"
-        subtitle="Персональна черга наглядача: топ кейсів за терміновістю з дедлайнами реагування та фіксацією рішення."
+        title="Кабінет фахівця"
+        subtitle="Особиста черга фахівця: найтерміновіші діти зі строками реагування та фіксацією рішення по кожній."
       />
       <MyQueueExplorer />
     </div>

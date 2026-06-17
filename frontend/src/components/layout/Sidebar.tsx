@@ -61,7 +61,7 @@ export function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => voi
         {NAV.map(renderItem)}
 
         <p className="px-2 pb-2 pt-4 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-faint">
-          Кейсворкінг · фаза 3
+          Робота служби · фаза 3
         </p>
         {CASELOAD_NAV.map(renderItem)}
       </nav>
@@ -69,8 +69,8 @@ export function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => voi
       <div className="mt-auto space-y-3 px-4 pb-5 pt-4">
         <div className="rounded-xl border border-line bg-paper/50 p-3">
           <p className="text-[11px] leading-relaxed text-muted">
-            <span className="font-semibold text-ink-2">Decision support, не вирок.</span> Система
-            пріоритезує й пояснює — рішення ухвалює спеціаліст.
+            <span className="font-semibold text-ink-2">Підтримка рішень, не вирок.</span> Система
+            лише розставляє пріоритети й пояснює — рішення ухвалює фахівець.
           </p>
         </div>
 

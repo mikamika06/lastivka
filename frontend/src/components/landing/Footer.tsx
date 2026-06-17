@@ -15,8 +15,9 @@ export function LandingFooter() {
               <span className="font-display text-lg font-bold text-ink">Ластівка</span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-              Проактивний privacy-preserving захист прав дитини. Виявляємо об&apos;єктивну депривацію
-              прав на перетині держреєстрів — щоб дитина не зникла у щілині між відомствами й країнами.
+              Заздалегідь захищаємо права дитини, із захистом персональних даних. Бачимо, коли дитина
+              реально позбавлена своїх прав, за збігом сигналів з кількох реєстрів — щоб вона не зникла
+              у щілині між відомствами й країнами.
             </p>
           </div>
 
@@ -37,17 +38,18 @@ export function LandingFooter() {
             <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">Контекст</h4>
             <ul className="mt-3 space-y-2 text-sm text-ink-2">
               <li>Українсько-естонське партнерство</li>
-              <li>AI GovTech Hackathon · 16–18.06.2026</li>
-              <li>Сумісність із Trembita / X-Road</li>
+              <li>AI Hackathon · 16–18.06.2026</li>
+              <li>Сумісність із Trembita / X-Road (державна шина обміну даними)</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 border-t border-line pt-6 text-xs leading-relaxed text-faint">
           <p>
-            <span className="font-medium text-muted">Етика:</span> Decision support, не decision making.
-            Виявляємо об&apos;єктивну депривацію прав (дитина записана в школі чи ні), а не
-            «прогнозуємо злочинність». Прозорий адитивний score, людина в циклі.
+            <span className="font-medium text-muted">Етика:</span> Підтримка рішень, не вирок.
+            Бачимо, коли дитина реально позбавлена прав (записана в школі чи ні), а не
+            «прогнозуємо злочинність». Зрозумілий індекс терміновості — система пояснює кожне рішення,
+            а останнє слово завжди за людиною.
           </p>
           <p className="mt-2">
             Демонстрація на <span className="font-medium text-muted">синтетичних</span> даних,

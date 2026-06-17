@@ -64,7 +64,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
           >
             {items.map((i) => (
               <option key={i.entity_id} value={i.entity_id}>
-                {i.pib} · {ageLabel(i.age)} · {i.tier} · score {formatScore(i.score)}
+                {i.pib} · {ageLabel(i.age)} · {i.tier} · індекс терміновості {formatScore(i.score)}
               </option>
             ))}
           </select>
@@ -86,23 +86,23 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
                 <TierBadge tier={item.tier} />
               </div>
               <span className="text-xs text-muted">
-                urgency score <span className="font-semibold tnum text-ink-2">{formatScore(item.score)}</span>
+                індекс терміновості <span className="font-semibold tnum text-ink-2">{formatScore(item.score)}</span>
               </span>
             </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Field label="УНЗР" value={entity?.unzr ?? item.unzr ?? "— (матч по ПІБ+дата)"} mono />
+            <Field label="УНЗР" value={entity?.unzr ?? item.unzr ?? "— (зіставлено за ПІБ + датою)"} mono />
             <Field label="Дата народження" value={formatDate(entity?.birth_date ?? item.birth_date)} />
-            <Field label="Реєстрів інтегровано" value={String(entity?.n_registries ?? item.registries.length)} />
+            <Field label="Реєстрів об'єднано" value={String(entity?.n_registries ?? item.registries.length)} />
             <Field label="Регіон" value={`${oblast} обл.`} />
           </div>
         </div>
 
         {/* силоси */}
         <div className="px-5 py-4 sm:px-6">
-          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint="приватність: дані не зливаються">
-            Силоси, з яких зібрано профіль
+          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint="із захистом персональних даних: реєстри не зливаються в один">
+            Окремі реєстри, з яких зібрано профіль
           </CardTitle>
           <div className="flex flex-wrap gap-2">
             {(entity?.registries ?? item.registries).map((r) => (

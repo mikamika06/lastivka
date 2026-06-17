@@ -10,9 +10,9 @@ export default async function QueuePage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        index="03"
+        index="02"
         title="Черга реагування"
-        subtitle="Ранжований список кейсів кейсворкера. Кожна картка розкривається в пояснення — не чорна скриня."
+        subtitle="Список дітей, упорядкований за терміновістю, для соціального працівника. Кожна картка розкривається в пояснення — система пояснює кожне рішення."
       />
       <QueueExplorer items={items} />
     </div>

@@ -33,8 +33,8 @@ export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
           <p className="mt-1 text-sm text-ink-2">{e.label}</p>
           {e.level1 && (
             <p className="mt-1 text-[11px] text-lock-ink/80">
-              Рівень-1: сигнал отримано як PSI-булеан. Повний доступ — за законним правом
-              (ухвала суду / медична таємниця).
+              Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту.
+              Повний доступ — лише за рішенням суду або в межах лікарської таємниці.
             </p>
           )}
         </li>

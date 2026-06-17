@@ -35,9 +35,9 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
-        index="04"
+        index="01"
         title="Управлінська панель"
-        subtitle="Загальна картина для керівника: масштаб, структура ризиків і знак довіри до моделі."
+        subtitle="Загальна картина для керівника: масштаб, структура ризиків і наскільки точно працює система."
       />
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
         </span>
         <span className="text-faint">·</span>
         <span>
-          {formatNumber(metrics.matching.true_children)} дітей у реєстрах · матчинг зібрав{" "}
+          {formatNumber(metrics.matching.true_children)} дітей у реєстрах · зіставлення зібрало{" "}
           {formatPct(metrics.matching.reconstruction_rate, 0)}
         </span>
       </div>
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
         <KpiCard label="Цей тиждень · T1" value={stats.kpis.t1} tone="t1" hint="Запланувати втручання" />
         <KpiCard label="Спостереження · T2" value={stats.kpis.t2} tone="t2" hint="Тримати в полі зору" />
         <KpiCard
-          label="Негайні [immediate]"
+          label="Негайні"
           value={stats.kpis.immediate}
           tone="t0"
           hint="Торгівля, депортація, насильство"
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       {/* charts row 1 */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
-          <CardTitle hint="кількість кейсів">Розподіл за типами порушень</CardTitle>
+          <CardTitle hint="кількість дітей">Розподіл за типами порушень</CardTitle>
           <HBar data={violData} />
         </Card>
         <Card className="p-5">
@@ -86,18 +86,18 @@ export default async function DashboardPage() {
         </Card>
 
         <Card className="p-5">
-          <CardTitle icon={<IconShield className="h-4 w-4 text-brand" />} hint="ground truth">
+          <CardTitle icon={<IconShield className="h-4 w-4 text-brand" />} hint="заздалегідь відомі випадки">
             Якість моделі
           </CardTitle>
           <div className="grid grid-cols-2 gap-3">
-            <MiniStat label="Precision" value={o.precision.toFixed(2)} tone="brand" />
-            <MiniStat label="Recall" value={o.recall.toFixed(2)} tone="brand" />
-            <MiniStat label="F1" value={o.f1.toFixed(2)} tone="brand" />
-            <MiniStat label="Матчинг" value={formatPct(metrics.matching.reconstruction_rate)} tone="ok" />
+            <MiniStat label="Точність" value={o.precision.toFixed(2)} tone="brand" />
+            <MiniStat label="Повнота" value={o.recall.toFixed(2)} tone="brand" />
+            <MiniStat label="Загальна якість (F1)" value={o.f1.toFixed(2)} tone="brand" />
+            <MiniStat label="Зіставлення" value={formatPct(metrics.matching.reconstruction_rate)} tone="ok" />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted">
-            Метрики як «знак довіри»: precision/recall виміряні на синтетичному ground truth із
-            підсадженими порушеннями.
+            Показники як підтвердження довіри: точність і повнота виміряні на заздалегідь відомих
+            порушеннях, які навмисно додали для перевірки.
           </p>
           <Link
             href="/privacy"
@@ -110,9 +110,9 @@ export default async function DashboardPage() {
       </div>
 
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
-        <span className="font-medium text-ink-2">Decision support, не decision making.</span>{" "}
-        Система пріоритезує й пояснює; остаточне рішення щодо дитини ухвалює відповідальний
-        спеціаліст.
+        <span className="font-medium text-ink-2">Підтримка рішень, не вирок.</span>{" "}
+        Система розставляє пріоритети й пояснює кожне рішення; остаточне рішення щодо дитини ухвалює
+        відповідальний спеціаліст.
       </p>
     </div>
   );
