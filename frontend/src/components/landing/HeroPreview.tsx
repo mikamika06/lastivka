@@ -7,7 +7,7 @@ export function HeroPreview() {
     <div className="card animate-fade-up p-5">
       <div className="mb-4 flex items-center justify-between">
         <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-ink text-white">
+          <span className="grid h-6 w-6 place-items-center rounded-md bg-primary text-primary-fg">
             <SwallowMark className="h-3.5 w-3.5" />
           </span>{" "}
           Черга реагування
