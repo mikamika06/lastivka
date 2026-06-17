@@ -9,7 +9,7 @@ export function LandingFooter() {
         <div className="grid gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink text-white">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-fg">
                 <SwallowMark className="h-5 w-5" />
               </span>
               <span className="font-display text-lg font-bold text-ink">Ластівка</span>

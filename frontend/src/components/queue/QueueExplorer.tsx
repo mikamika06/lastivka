@@ -180,7 +180,7 @@ function FilterChips({
             onClick={() => onToggle(o.value)}
             aria-pressed={on}
             className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition ${
-              on ? "bg-ink text-white ring-ink" : "bg-surface text-muted ring-line hover:text-ink-2"
+              on ? "bg-primary text-primary-fg ring-primary" : "bg-surface text-muted ring-line hover:text-ink-2"
             }`}
           >
             {o.label}

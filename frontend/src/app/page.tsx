@@ -65,7 +65,7 @@ function Hero({ metrics }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetr
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#23232a]"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-fg transition hover:opacity-90"
             >
               Відкрити систему
               <IconArrowRight className="h-4 w-4" />
@@ -335,7 +335,7 @@ function Audience() {
 function CtaBand() {
   return (
     <section className="px-4 py-16 sm:px-6">
-      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-ink px-8 py-14 text-center sm:px-16">
+      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-band px-8 py-14 text-center sm:px-16">
         <div className="relative">
           <h2 className="h-display text-3xl font-bold text-white sm:text-4xl">
             Подивіться, як це працює
@@ -347,7 +347,7 @@ function CtaBand() {
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:bg-paper-2"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-band transition hover:bg-white/90"
             >
               Відкрити систему
               <IconArrowRight className="h-4 w-4" />

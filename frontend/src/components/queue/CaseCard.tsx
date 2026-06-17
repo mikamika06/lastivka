@@ -155,7 +155,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                 className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                   taken
                     ? "bg-ok-soft text-ok-ink ring-1 ring-ok/20"
-                    : "bg-ink text-white hover:bg-[#23232a]"
+                    : "bg-primary text-primary-fg hover:opacity-90"
                 }`}
               >
                 {taken ? <IconCheck className="h-4 w-4" /> : null}
