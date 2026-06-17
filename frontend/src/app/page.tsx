@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getMetrics } from "@/lib/api";
 import { formatPct } from "@/lib/format";
+import { getT } from "@/lib/i18n.server";
+import type { Msg } from "@/lib/i18n";
 import { NAV, CASELOAD_NAV } from "@/components/layout/nav";
 import { LandingHeader } from "@/components/landing/Header";
 import { LandingFooter } from "@/components/landing/Footer";
@@ -20,19 +22,20 @@ import {
 
 export default async function LandingPage() {
   const metrics = await getMetrics();
+  const t = await getT();
 
   return (
     <div className="flex min-h-screen flex-col">
       <LandingHeader />
 
       <main className="flex-1">
-        <Hero metrics={metrics} />
-        <Problem />
-        <MainTask />
-        <HowItWorks />
-        <Screens />
-        <Audience />
-        <CtaBand />
+        <Hero metrics={metrics} t={t} />
+        <Problem t={t} />
+        <MainTask t={t} />
+        <HowItWorks t={t} />
+        <Screens t={t} />
+        <Audience t={t} />
+        <CtaBand t={t} />
       </main>
 
       <LandingFooter />
@@ -40,48 +43,54 @@ export default async function LandingPage() {
   );
 }
 
+type T = (m: Msg) => string;
+
 /* ───────────────────────── HERO ───────────────────────── */
-function Hero({ metrics }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetrics>> }>) {
+function Hero({ metrics, t }: Readonly<{ metrics: Awaited<ReturnType<typeof getMetrics>>; t: T }>) {
   return (
     <section className="relative overflow-hidden border-b border-line bg-surface">
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
         <div className="animate-fade-up">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-line bg-surface px-3 py-1.5 text-xs font-medium text-brand-ink">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-2" />{" "}
-            Українсько-естонське партнерство · 16–18.06.2026
+            {t({ uk: "Українсько-естонське партнерство · 16–18.06.2026", en: "Ukrainian-Estonian partnership · 16–18.06.2026" })}
           </span>
 
           <h1 className="h-display mt-5 text-4xl font-bold leading-[1.05] sm:text-5xl lg:text-[3.4rem]">
-            Побачити дитину, яку <span className="text-brand">не бачить</span> жодна окрема система
+            {t({ uk: "Побачити дитину, яку ", en: "See the child that " })}
+            <span className="text-brand">{t({ uk: "не бачить", en: "no single" })}</span>
+            {t({ uk: " жодна окрема система", en: " system can see" })}
           </h1>
 
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-            Ластівка збирає дитину з розрізнених держреєстрів —{" "}
-            <span className="font-medium text-ink-2">не зливаючи персональні дані</span> — знаходить
-            порушення на перетині сигналів, ранжує за терміновістю і віддає спеціалісту пояснену
-            чергу на реагування.
+            {t({ uk: "Ластівка збирає дитину з розрізнених окремих реєстрів — ", en: "Lastivka assembles a child from disconnected registries — " })}
+            <span className="font-medium text-ink-2">{t({ uk: "із захистом персональних даних", en: "with personal-data protection" })}</span>
+            {t({
+              uk: " — знаходить порушення там, де збігаються сигнали з кількох реєстрів, ранжує за терміновістю і віддає спеціалісту зрозумілу чергу на реагування з поясненням.",
+              en: " — detects violations where signals from several registries align, ranks them by urgency, and hands the specialist a clear response queue with an explanation.",
+            })}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#23232a]"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-fg transition hover:opacity-90"
             >
-              Відкрити систему
+              {t({ uk: "Відкрити систему", en: "Open the system" })}
               <IconArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#how"
               className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-6 py-3 text-sm font-semibold text-ink-2 transition hover:bg-paper-2"
             >
-              Як це працює
+              {t({ uk: "Як це працює", en: "How it works" })}
             </a>
           </div>
 
           <dl className="mt-9 flex flex-wrap gap-x-8 gap-y-4">
-            <Stat value={metrics.detection.overall.f1.toFixed(2)} label="F1 виявлення" />
-            <Stat value={formatPct(metrics.matching.reconstruction_rate)} label="дітей зібрано з силосів" />
-            <Stat value={metrics.privacy.precision.toFixed(2)} label="PPRL precision · без plaintext" />
+            <Stat value={metrics.detection.overall.f1.toFixed(2)} label={t({ uk: "загальна якість виявлення (F1)", en: "overall detection quality (F1)" })} />
+            <Stat value={formatPct(metrics.matching.reconstruction_rate)} label={t({ uk: "дітей зібрано з окремих реєстрів", en: "children assembled from registries" })} />
+            <Stat value={metrics.privacy.precision.toFixed(2)} label={t({ uk: "точність зіставлення · без розкриття імен", en: "matching precision · names never exposed" })} />
           </dl>
         </div>
 
@@ -103,38 +112,47 @@ function Stat({ value, label }: Readonly<{ value: string; label: string }>) {
 }
 
 /* ───────────────────────── ПРОБЛЕМА ───────────────────────── */
-const PROBLEMS = [
+const PROBLEMS: { icon: typeof IconLayers; title: Msg; text: Msg }[] = [
   {
     icon: IconLayers,
-    title: "Фрагментовані дані про дитину",
-    text: "Інформація розпорошена між установами — цивільний стан, здоров'я, освіта, правоохоронні системи — без наскрізної координації.",
+    title: { uk: "Фрагментовані дані про дитину", en: "Fragmented data about the child" },
+    text: {
+      uk: "Інформація розпорошена між установами — цивільний стан, здоров'я, освіта, правоохоронні системи — без наскрізної координації.",
+      en: "Information is scattered across agencies — civil status, health, education, law enforcement — with no end-to-end coordination.",
+    },
   },
   {
     icon: IconClock,
-    title: "Реактивна модель захисту",
-    text: "Держава втручається часто лише після того, як криза вже сталася, а права дитини вже серйозно порушені.",
+    title: { uk: "Реактивна модель захисту", en: "A reactive protection model" },
+    text: {
+      uk: "Держава втручається часто лише після того, як криза вже сталася, а права дитини вже серйозно порушені.",
+      en: "The state often steps in only after the crisis has already happened and the child's rights are already seriously violated.",
+    },
   },
   {
     icon: IconPulse,
-    title: "Немає раннього попередження",
-    text: "Відсутня єдина цифрова система, що рано виявляє ризики й запускає адресну підтримку до того, як ситуація стане критичною.",
+    title: { uk: "Немає раннього попередження", en: "No early warning" },
+    text: {
+      uk: "Відсутня єдина цифрова система, що рано виявляє ризики й запускає адресну підтримку до того, як ситуація стане критичною.",
+      en: "There is no single digital system that detects risks early and triggers targeted support before the situation turns critical.",
+    },
   },
 ];
 
-function Problem() {
+function Problem({ t }: Readonly<{ t: T }>) {
   return (
     <Section id="problem">
-      <SectionLabel index="01" eyebrow="Проблема" title="Дитина зникає у щілині між системами" />
+      <SectionLabel index="01" eyebrow={t({ uk: "Проблема", en: "The problem" })} title={t({ uk: "Дитина зникає у щілині між системами", en: "A child slips through the cracks between systems" })} />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         {PROBLEMS.map((p) => {
           const Icon = p.icon;
           return (
-            <div key={p.title} className="card p-6">
+            <div key={p.title.uk} className="card p-6">
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-t0-soft text-t0">
                 <Icon className="h-5 w-5" />
               </span>
-              <h3 className="h-display mt-4 text-lg font-bold">{p.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{p.text}</p>
+              <h3 className="h-display mt-4 text-lg font-bold">{t(p.title)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{t(p.text)}</p>
             </div>
           );
         })}
@@ -144,38 +162,47 @@ function Problem() {
 }
 
 /* ───────────────────────── ГОЛОВНЕ ЗАВДАННЯ ───────────────────────── */
-const TASKS = [
+const TASKS: { icon: typeof IconGlobe; title: Msg; text: Msg }[] = [
   {
     icon: IconGlobe,
-    title: "Міжвідомча екосистема",
-    text: "Звʼязати дані з державних реєстрів у єдину цифрову траєкторію дитини — від народження до дорослішання.",
+    title: { uk: "Міжвідомча екосистема", en: "An inter-agency ecosystem" },
+    text: {
+      uk: "Звʼязати дані з державних реєстрів у єдину цифрову траєкторію дитини — від народження до дорослішання.",
+      en: "Link data from state registries into a single digital trajectory for the child — from birth to adulthood.",
+    },
   },
   {
     icon: IconShield,
-    title: "Проактивне виявлення ризиків",
-    text: "Алгоритми автоматично виявляють червоні прапорці до того, як виникне критична ситуація.",
+    title: { uk: "Проактивне виявлення ризиків", en: "Proactive risk detection" },
+    text: {
+      uk: "Алгоритми автоматично виявляють червоні прапорці до того, як виникне критична ситуація.",
+      en: "Algorithms automatically flag red flags before a critical situation arises.",
+    },
   },
   {
     icon: IconScale,
-    title: "Підтримка ведення випадків",
-    text: "Інструмент на основі даних для рішень, проактивного втручання та кейс-менеджменту служб захисту.",
+    title: { uk: "Підтримка ведення випадків", en: "Case-management support" },
+    text: {
+      uk: "Інструмент на основі даних: підтримка рішень, не вирок — для раннього втручання та супроводу дітей службами захисту.",
+      en: "A data-driven tool: decision support, not a verdict — for early intervention and support of children by protection services.",
+    },
   },
 ];
 
-function MainTask() {
+function MainTask({ t }: Readonly<{ t: T }>) {
   return (
     <Section tone="alt">
-      <SectionLabel index="02" eyebrow="Головне завдання" title="Від реакції — до проактивного захисту" />
+      <SectionLabel index="02" eyebrow={t({ uk: "Головне завдання", en: "The core mission" })} title={t({ uk: "Від реакції — до проактивного захисту", en: "From reaction to proactive protection" })} />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
-        {TASKS.map((t) => {
-          const Icon = t.icon;
+        {TASKS.map((task) => {
+          const Icon = task.icon;
           return (
-            <div key={t.title} className="card p-6">
+            <div key={task.title.uk} className="card p-6">
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-soft text-brand">
                 <Icon className="h-5 w-5" />
               </span>
-              <h3 className="h-display mt-4 text-lg font-bold">{t.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{t.text}</p>
+              <h3 className="h-display mt-4 text-lg font-bold">{t(task.title)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{t(task.text)}</p>
             </div>
           );
         })}
@@ -185,40 +212,52 @@ function MainTask() {
 }
 
 /* ───────────────────────── ЯК ПРАЦЮЄ ───────────────────────── */
-const STEPS = [
+const STEPS: { n: string; title: Msg; text: Msg }[] = [
   {
     n: "01",
-    title: "Інтеграція даних",
-    text: "Збираємо життєві події та сигнали з держреєстрів (цив. стан, здоров'я, освіта) у електронний профіль дитини.",
+    title: { uk: "Інтеграція даних", en: "Data integration" },
+    text: {
+      uk: "Збираємо життєві події та сигнали з держреєстрів (цив. стан, здоров'я, освіта) у електронний профіль дитини.",
+      en: "We gather life events and signals from state registries (civil status, health, education) into a digital child profile.",
+    },
   },
   {
     n: "02",
-    title: "Виявлення ризиків",
-    text: "Моніторимо червоні прапорці й критичні відхилення в траєкторії дитини до ескалації в кризу.",
+    title: { uk: "Виявлення ризиків", en: "Risk detection" },
+    text: {
+      uk: "Моніторимо червоні прапорці й критичні відхилення в траєкторії дитини до ескалації в кризу.",
+      en: "We monitor red flags and critical deviations in the child's trajectory before they escalate into a crisis.",
+    },
   },
   {
     n: "03",
-    title: "Цілеспрямоване реагування",
-    text: "Надсилаємо ранжований ризик-сигнал відповідальному місцевому спеціалісту для раннього втручання.",
+    title: { uk: "Цілеспрямоване реагування", en: "Targeted response" },
+    text: {
+      uk: "Надсилаємо ранжований ризик-сигнал відповідальному місцевому спеціалісту для раннього втручання.",
+      en: "We send a ranked risk signal to the responsible local specialist for early intervention.",
+    },
   },
   {
     n: "04",
-    title: "Управлінська панель",
-    text: "Єдина панель моніторингу стану захисту прав дитини та підтримки управлінських рішень.",
+    title: { uk: "Управлінська панель", en: "Management dashboard" },
+    text: {
+      uk: "Єдина панель моніторингу стану захисту прав дитини та підтримки управлінських рішень.",
+      en: "A single dashboard to monitor the state of child-rights protection and support management decisions.",
+    },
   },
 ];
 
-function HowItWorks() {
+function HowItWorks({ t }: Readonly<{ t: T }>) {
   return (
     <Section id="how">
-      <SectionLabel index="03" eyebrow="Як це працює" title="Чотири кроки — від сигналу до реагування" />
+      <SectionLabel index="03" eyebrow={t({ uk: "Як це працює", en: "How it works" })} title={t({ uk: "Чотири кроки — від сигналу до реагування", en: "Four steps — from signal to response" })} />
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {STEPS.map((s, i) => (
           <div key={s.n} className="relative">
             <div className="card h-full p-6">
               <span className="section-index text-4xl text-brand/15">{s.n}</span>
-              <h3 className="h-display mt-3 text-base font-bold">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
+              <h3 className="h-display mt-3 text-base font-bold">{t(s.title)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{t(s.text)}</p>
             </div>
             {i < STEPS.length - 1 && (
               <IconArrowRight className="absolute -right-4 top-1/2 hidden h-6 w-6 -translate-y-1/2 text-line lg:block" />
@@ -227,8 +266,10 @@ function HowItWorks() {
         ))}
       </div>
       <p className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-        Метод генерації — темпоральна агентна симуляція: причина (прихований шок) породжує симптом
-        (крос-реєстровий лог-патерн). Детектор бачить лише силоси, не god-view — як у реальних умовах.
+        {t({
+          uk: "Дані готуються через покрокове моделювання життя дитини: прихована причина (раптовий удар по родині) поступово проявляється сигналами в кількох реєстрах. Система бачить лише окремі реєстри, а не повну картину згори — так само, як у реальному житті.",
+          en: "The data is prepared through step-by-step simulation of a child's life: a hidden cause (a sudden blow to the family) gradually surfaces as signals across several registries. The system sees only the separate registries, not the full picture from above — just as in real life.",
+        })}
       </p>
     </Section>
   );
@@ -244,10 +285,10 @@ const SCREEN_ICONS = {
   "/my-queue": IconClock,
 } as const;
 
-function Screens() {
+function Screens({ t }: Readonly<{ t: T }>) {
   return (
     <Section id="screens" tone="alt">
-      <SectionLabel index="04" eyebrow="Система" title="Шість екранів продукту" />
+      <SectionLabel index="04" eyebrow={t({ uk: "Система", en: "The system" })} title={t({ uk: "Шість екранів продукту", en: "Six product screens" })} />
       <div className="mt-10 grid gap-5 sm:grid-cols-2">
         {[...NAV, ...CASELOAD_NAV].map((n) => {
           const Icon = SCREEN_ICONS[n.href as keyof typeof SCREEN_ICONS] ?? IconDashboard;
@@ -263,9 +304,9 @@ function Screens() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="section-index text-sm text-brand/40">{n.pillar}</span>
-                  <h3 className="h-display text-lg font-bold">{n.title}</h3>
+                  <h3 className="h-display text-lg font-bold">{t(n.title)}</h3>
                 </div>
-                <p className="mt-1 text-sm text-muted">{n.desc}</p>
+                <p className="mt-1 text-sm text-muted">{t(n.desc)}</p>
               </div>
               <IconArrowRight className="h-5 w-5 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-brand" />
             </Link>
@@ -277,49 +318,58 @@ function Screens() {
 }
 
 /* ───────────────────────── ДЛЯ КОГО ───────────────────────── */
-const AUDIENCE = [
+const AUDIENCE: { icon: typeof IconDashboard; role: Msg; text: Msg; href: string; cta: Msg }[] = [
   {
     icon: IconDashboard,
-    role: "Керівник служби",
-    text: "Бачить масштаб і структуру ризиків, спирається на дані для управлінських рішень.",
+    role: { uk: "Керівник служби", en: "Service manager" },
+    text: {
+      uk: "Бачить масштаб і структуру ризиків, спирається на дані для управлінських рішень.",
+      en: "Sees the scale and structure of risks and relies on data for management decisions.",
+    },
     href: "/dashboard",
-    cta: "Управлінська панель",
+    cta: { uk: "Управлінська панель", en: "Management dashboard" },
   },
   {
     icon: IconQueue,
-    role: "Кейсворкер / спеціаліст",
-    text: "Отримує пояснену ранжовану чергу: що з ким робити сьогодні й чому саме так.",
+    role: { uk: "Соціальний працівник / спеціаліст", en: "Social worker / specialist" },
+    text: {
+      uk: "Отримує зрозумілу впорядковану за терміновістю чергу: що з ким робити сьогодні й чому саме так.",
+      en: "Gets a clear queue ordered by urgency: what to do, with whom, today — and why exactly so.",
+    },
     href: "/queue",
-    cta: "Черга реагування",
+    cta: { uk: "Черга реагування", en: "Response queue" },
   },
   {
     icon: IconProfile,
-    role: "Дитина та родина",
-    text: "Застосунок «Ластівка»: доступ до допомоги й потрібних сервісів в одному місці — навіть в екстреній ситуації.",
+    role: { uk: "Дитина та родина", en: "Child and family" },
+    text: {
+      uk: "Застосунок «Ластівка»: доступ до допомоги й потрібних сервісів в одному місці — навіть в екстреній ситуації.",
+      en: "The Lastivka app: access to help and the services you need in one place — even in an emergency.",
+    },
     href: "/profile",
-    cta: "Профіль дитини",
+    cta: { uk: "Профіль дитини", en: "Child profile" },
   },
 ];
 
-function Audience() {
+function Audience({ t }: Readonly<{ t: T }>) {
   return (
     <Section id="audience">
-      <SectionLabel eyebrow="Для кого" title="Один продукт — три ролі" />
+      <SectionLabel eyebrow={t({ uk: "Для кого", en: "Who it is for" })} title={t({ uk: "Один продукт — три ролі", en: "One product — three roles" })} />
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         {AUDIENCE.map((a) => {
           const Icon = a.icon;
           return (
-            <div key={a.role} className="card flex flex-col p-6">
+            <div key={a.role.uk} className="card flex flex-col p-6">
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-soft text-brand">
                 <Icon className="h-5 w-5" />
               </span>
-              <h3 className="h-display mt-4 text-lg font-bold">{a.role}</h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{a.text}</p>
+              <h3 className="h-display mt-4 text-lg font-bold">{t(a.role)}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{t(a.text)}</p>
               <Link
                 href={a.href}
                 className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
               >
-                {a.cta}
+                {t(a.cta)}
                 <IconArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -331,31 +381,33 @@ function Audience() {
 }
 
 /* ───────────────────────── CTA ───────────────────────── */
-function CtaBand() {
+function CtaBand({ t }: Readonly<{ t: T }>) {
   return (
     <section className="px-4 py-16 sm:px-6">
-      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-ink px-8 py-14 text-center sm:px-16">
+      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-band px-8 py-14 text-center sm:px-16">
         <div className="relative">
           <h2 className="h-display text-3xl font-bold text-white sm:text-4xl">
-            Подивіться, як це працює
+            {t({ uk: "Подивіться, як це працює", en: "See how it works" })}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-white/70">
-            Жива демонстрація на синтетичних даних: управлінська панель, пояснена черга реагування й
-            крос-реєстровий профіль дитини.
+            {t({
+              uk: "Жива демонстрація на навчальних даних: управлінська панель, зрозуміла черга реагування з поясненням і профіль дитини, зібраний з кількох реєстрів.",
+              en: "A live demo on training data: the management dashboard, a clear response queue with explanations, and a child profile assembled from several registries.",
+            })}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-ink transition hover:bg-paper-2"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-band transition hover:bg-white/90"
             >
-              Відкрити систему
+              {t({ uk: "Відкрити систему", en: "Open the system" })}
               <IconArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/queue"
               className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              Перейти до черги
+              {t({ uk: "Перейти до черги", en: "Go to the queue" })}
             </Link>
           </div>
         </div>
