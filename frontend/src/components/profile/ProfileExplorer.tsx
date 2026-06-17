@@ -5,6 +5,8 @@ import type { QueueItem, Entity, TimelineEvent, AttendanceSeries } from "@/lib/t
 import { getEntity, getTimeline, getAttendance, oblastOf } from "@/lib/api";
 import { violName } from "@/lib/registries";
 import { formatDate, ageLabel, formatScore } from "@/lib/format";
+import { useTx, useLocale } from "@/components/providers/I18nProvider";
+import type { Msg } from "@/lib/i18n";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { RegistryChip } from "@/components/ui/Stat";
 import { TierBadge, ImmediateBadge } from "@/components/ui/badges";
@@ -20,6 +22,8 @@ interface ProfileData {
 }
 
 export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueItem[]; initialId?: number }>) {
+  const t = useTx();
+  const locale = useLocale();
   const valid = initialId && items.some((i) => i.entity_id === initialId) ? initialId : items[0]?.entity_id;
   const [selectedId, setSelectedId] = useState<number>(valid);
   const [data, setData] = useState<ProfileData | null>(null);
@@ -38,7 +42,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
 
   const item = items.find((i) => i.entity_id === selectedId);
   if (!item) {
-    return <div className="card grid place-items-center py-16 text-sm text-muted">Немає дітей у черзі.</div>;
+    return <div className="card grid place-items-center py-16 text-sm text-muted">{t({ uk: "Немає дітей у черзі.", en: "No children in the queue." })}</div>;
   }
 
   const current = data && data.id === selectedId ? data : null;
@@ -53,7 +57,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
       {/* селектор */}
       <div className="relative max-w-xl">
         <label htmlFor="child-select" className="mb-1.5 block text-xs font-medium text-muted">
-          Оберіть дитину з черги
+          {t({ uk: "Оберіть дитину з черги", en: "Select a child from the queue" })}
         </label>
         <div className="relative">
           <select
@@ -64,7 +68,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
           >
             {items.map((i) => (
               <option key={i.entity_id} value={i.entity_id}>
-                {i.pib} · {ageLabel(i.age)} · {i.tier} · індекс терміновості {formatScore(i.score)}
+                {i.pib} · {ageLabel(i.age, locale)} · {i.tier} · {t({ uk: "індекс терміновості", en: "urgency index" })} {formatScore(i.score)}
               </option>
             ))}
           </select>
@@ -78,7 +82,7 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="h-display text-2xl font-bold">{item.pib}</h2>
-              <p className="mt-1 text-sm text-muted">{ageLabel(item.age)} · {oblast} обл.</p>
+              <p className="mt-1 text-sm text-muted">{ageLabel(item.age, locale)} · {oblast} {t({ uk: "обл.", en: "oblast" })}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
@@ -86,23 +90,23 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
                 <TierBadge tier={item.tier} />
               </div>
               <span className="text-xs text-muted">
-                індекс терміновості <span className="font-semibold tnum text-ink-2">{formatScore(item.score)}</span>
+                {t({ uk: "індекс терміновості", en: "urgency index" })} <span className="font-semibold tnum text-ink-2">{formatScore(item.score)}</span>
               </span>
             </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Field label="УНЗР" value={entity?.unzr ?? item.unzr ?? "— (зіставлено за ПІБ + датою)"} mono />
-            <Field label="Дата народження" value={formatDate(entity?.birth_date ?? item.birth_date)} />
-            <Field label="Реєстрів об'єднано" value={String(entity?.n_registries ?? item.registries.length)} />
-            <Field label="Регіон" value={`${oblast} обл.`} />
+            <Field label={t({ uk: "УНЗР", en: "UNZR" })} value={entity?.unzr ?? item.unzr ?? t({ uk: "— (зіставлено за ПІБ + датою)", en: "— (matched by name + date)" })} mono />
+            <Field label={t({ uk: "Дата народження", en: "Date of birth" })} value={formatDate(entity?.birth_date ?? item.birth_date, locale)} />
+            <Field label={t({ uk: "Реєстрів об'єднано", en: "Registries merged" })} value={String(entity?.n_registries ?? item.registries.length)} />
+            <Field label={t({ uk: "Регіон", en: "Region" })} value={`${oblast} ${t({ uk: "обл.", en: "oblast" })}`} />
           </div>
         </div>
 
         {/* силоси */}
         <div className="px-5 py-4 sm:px-6">
-          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint="із захистом персональних даних: реєстри не зливаються в один">
-            Окремі реєстри, з яких зібрано профіль
+          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint={t({ uk: "із захистом персональних даних: реєстри не зливаються в один", en: "with data privacy: registries are not merged into one" })}>
+            {t({ uk: "Окремі реєстри, з яких зібрано профіль", en: "Source registries the profile is built from" })}
           </CardTitle>
           <div className="flex flex-wrap gap-2">
             {(entity?.registries ?? item.registries).map((r) => (
@@ -111,10 +115,10 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
           </div>
           {item.violations.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted">Виявлені порушення:</span>
+              <span className="text-xs text-muted">{t({ uk: "Виявлені порушення:", en: "Detected violations:" })}</span>
               {item.violations.map((v) => (
                 <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
-                  {violName(v)}
+                  {violName(v, locale)}
                 </span>
               ))}
             </div>
@@ -125,30 +129,30 @@ export function ProfileExplorer({ items, initialId }: Readonly<{ items: QueueIte
       {/* таймлайн + графік */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
-          <CardTitle icon={<IconClock className="h-4 w-4 text-brand" />} hint="з різних реєстрів">
-            Хронологія сигналів
+          <CardTitle icon={<IconClock className="h-4 w-4 text-brand" />} hint={t({ uk: "з різних реєстрів", en: "from various registries" })}>
+            {t({ uk: "Хронологія сигналів", en: "Signal timeline" })}
           </CardTitle>
           {loading ? <Loader /> : <Timeline events={events} />}
         </Card>
 
         <Card className="p-5">
           <CardTitle icon={<IconPulse className="h-4 w-4 text-brand" />} hint="ІСУО / AIKOM">
-            Відвідуваність і успішність
+            {t({ uk: "Відвідуваність і успішність", en: "Attendance and performance" })}
           </CardTitle>
-          {loading ? <Loader /> : <AttendanceContent attendance={attendance} />}
+          {loading ? <Loader /> : <AttendanceContent attendance={attendance} t={t} />}
         </Card>
       </div>
     </div>
   );
 }
 
-function AttendanceContent({ attendance }: Readonly<{ attendance: AttendanceSeries | null }>) {
+function AttendanceContent({ attendance, t }: Readonly<{ attendance: AttendanceSeries | null; t: (m: Msg) => string }>) {
   if (!attendance) {
     return (
       <div className="grid place-items-center rounded-xl border border-dashed border-line py-12 text-center text-sm text-muted">
-        Для цієї дитини немає шкільних даних відвідуваності.
+        {t({ uk: "Для цієї дитини немає шкільних даних відвідуваності.", en: "No school attendance data for this child." })}
         <br />
-        <span className="text-xs text-faint">Сигнали зосереджені в інших реєстрах (див. хронологію).</span>
+        <span className="text-xs text-faint">{t({ uk: "Сигнали зосереджені в інших реєстрах (див. хронологію).", en: "Signals are concentrated in other registries (see the timeline)." })}</span>
       </div>
     );
   }

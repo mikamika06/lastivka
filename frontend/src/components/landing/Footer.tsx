@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { SwallowMark } from "@/components/ui/Logo";
 import { NAV } from "@/components/layout/nav";
+import { getT } from "@/lib/i18n.server";
 
-export function LandingFooter() {
+export async function LandingFooter() {
+  const t = await getT();
   return (
     <footer className="border-t border-line bg-surface">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -15,19 +17,20 @@ export function LandingFooter() {
               <span className="font-display text-lg font-bold text-ink">Ластівка</span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-              Заздалегідь захищаємо права дитини, із захистом персональних даних. Бачимо, коли дитина
-              реально позбавлена своїх прав, за збігом сигналів з кількох реєстрів — щоб вона не зникла
-              у щілині між відомствами й країнами.
+              {t({
+                uk: "Заздалегідь захищаємо права дитини, із захистом персональних даних. Бачимо, коли дитина реально позбавлена своїх прав, за збігом сигналів з кількох реєстрів — щоб вона не зникла у щілині між відомствами й країнами.",
+                en: "We protect children's rights proactively, with data privacy built in. We see when a child is actually deprived of their rights, by matching signals across several registries — so they don't fall through the cracks between agencies and countries.",
+              })}
             </p>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">Система</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">{t({ uk: "Система", en: "System" })}</h4>
             <ul className="mt-3 space-y-2">
               {NAV.map((n) => (
                 <li key={n.href}>
                   <Link href={n.href} className="text-sm text-ink-2 transition hover:text-brand">
-                    {n.title}
+                    {t(n.title)}
                   </Link>
                 </li>
               ))}
@@ -35,25 +38,30 @@ export function LandingFooter() {
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">Контекст</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">{t({ uk: "Контекст", en: "Context" })}</h4>
             <ul className="mt-3 space-y-2 text-sm text-ink-2">
-              <li>Українсько-естонське партнерство</li>
-              <li>AI Hackathon · 16–18.06.2026</li>
-              <li>Сумісність із Trembita / X-Road (державна шина обміну даними)</li>
+              <li>{t({ uk: "Українсько-естонське партнерство", en: "Ukrainian-Estonian partnership" })}</li>
+              <li>{t({ uk: "AI Hackathon · 16–18.06.2026", en: "AI Hackathon · 16–18.06.2026" })}</li>
+              <li>{t({ uk: "Сумісність із Trembita / X-Road (державна шина обміну даними)", en: "Compatible with Trembita / X-Road (the state data exchange bus)" })}</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 border-t border-line pt-6 text-xs leading-relaxed text-faint">
           <p>
-            <span className="font-medium text-muted">Етика:</span> Підтримка рішень, не вирок.
-            Бачимо, коли дитина реально позбавлена прав (записана в школі чи ні), а не
-            «прогнозуємо злочинність». Зрозумілий індекс терміновості — система пояснює кожне рішення,
-            а останнє слово завжди за людиною.
+            <span className="font-medium text-muted">{t({ uk: "Етика:", en: "Ethics:" })}</span>{" "}
+            {t({
+              uk: "Підтримка рішень, не вирок. Бачимо, коли дитина реально позбавлена прав (записана в школі чи ні), а не «прогнозуємо злочинність». Зрозумілий індекс терміновості — система пояснює кожне рішення, а останнє слово завжди за людиною.",
+              en: "Decision support, not a verdict. We see when a child is actually deprived of their rights (enrolled in school or not), rather than \"predicting criminality\". A clear urgency index — the system explains every decision, and the final word always belongs to a human.",
+            })}
           </p>
           <p className="mt-2">
-            Демонстрація на <span className="font-medium text-muted">синтетичних</span> даних,
-            структурно ідентичних реальним реєстрам. Жодних справжніх персональних даних.
+            {t({ uk: "Демонстрація на", en: "Demo on" })}{" "}
+            <span className="font-medium text-muted">{t({ uk: "синтетичних", en: "synthetic" })}</span>{" "}
+            {t({
+              uk: "даних, структурно ідентичних реальним реєстрам. Жодних справжніх персональних даних.",
+              en: "data, structurally identical to real registries. No real personal data whatsoever.",
+            })}
           </p>
         </div>
       </div>

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTx } from "@/components/providers/I18nProvider";
 
 export function SwallowMark({ className = "h-7 w-7" }: Readonly<{ className?: string }>) {
   return (
@@ -23,8 +26,9 @@ export function Logo({
   subtitle?: boolean;
   invert?: boolean;
 }>) {
+  const t = useTx();
   return (
-    <Link href={href} className="group inline-flex items-center gap-2.5" aria-label="Ластівка — на головну">
+    <Link href={href} className="group inline-flex items-center gap-2.5" aria-label={t({ uk: "Ластівка — на головну", en: "Lastivka — home" })}>
       <span
         className={`grid h-9 w-9 place-items-center rounded-xl transition-transform group-hover:-translate-y-0.5 ${
           invert ? "bg-white/10 text-white" : "bg-primary text-primary-fg"
@@ -38,7 +42,7 @@ export function Logo({
         </span>
         {subtitle && (
           <span className={`block text-[10.5px] font-medium uppercase tracking-[0.14em] ${invert ? "text-white/55" : "text-faint"}`}>
-            Захист прав дитини
+            {t({ uk: "Захист прав дитини", en: "Child Rights Protection" })}
           </span>
         )}
       </span>
