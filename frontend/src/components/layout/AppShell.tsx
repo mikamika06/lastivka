@@ -6,7 +6,7 @@ import { SidebarContent } from "./Sidebar";
 import { Logo } from "@/components/ui/Logo";
 import { IconMenu, IconClose } from "@/components/ui/icons";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -42,7 +42,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Навігація">
-          <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <button
+            type="button"
+            aria-label="Закрити меню"
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 h-full w-full cursor-default bg-ink/30 backdrop-blur-sm"
+          />
           <div id="mobile-nav" className="absolute left-0 top-0 h-full w-[290px] animate-[fade-in_0.2s_ease] border-r border-line bg-surface shadow-pop">
             <button
               onClick={() => setOpen(false)}

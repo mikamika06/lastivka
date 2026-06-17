@@ -10,9 +10,12 @@ import type {
   AttendanceSeries,
   Metrics,
   Tier,
+  CaseloadOverview,
+  WorkerQueue,
+  FeedbackStats,
+  FeedbackInput,
 } from "./types";
-import { mockData, mockOblastOf } from "./mock";
-import { TIER_META } from "./registries";
+import { mockData, mockOblastOf, mockWorkers, mockWorkerQueue, MOCK_FEEDBACK_STATS } from "./mock";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ?? "";
 const USE_API = API_BASE.length > 0;
@@ -83,6 +86,67 @@ export function oblastOf(entityId: number): string {
   return mockOblastOf(entityId);
 }
 
+/** Область кейсу: реальне поле з /queue (фаза 3) із fallback на мок-довідник. */
+export function oblastOfItem(item: { oblast?: string | null; entity_id: number }): string {
+  return item.oblast ?? mockOblastOf(item.entity_id);
+}
+
+/* ── Фаза 3: навантаження кейсворкерів + feedback ── */
+export async function getCaseload(): Promise<CaseloadOverview | null> {
+  const remote = await tryFetch<CaseloadOverview>("/caseload");
+  return remote ?? mockData.caseload;
+}
+
+export interface WorkerSummary {
+  worker_id: string;
+  oblast: string;
+  count: number;
+  t0: number;
+}
+
+export async function getWorkers(): Promise<WorkerSummary[]> {
+  if (!USE_API) return mockWorkers();
+  // у реальному API окремого списку немає — зводимо з /queue
+  const items = await getQueue();
+  const idx = new Map<string, WorkerSummary>();
+  for (const i of items) {
+    if (!i.worker_id) continue;
+    const w = idx.get(i.worker_id) ?? { worker_id: i.worker_id, oblast: i.oblast ?? "—", count: 0, t0: 0 };
+    w.count += 1;
+    if (i.tier === "T0") w.t0 += 1;
+    idx.set(i.worker_id, w);
+  }
+  return [...idx.values()].sort((a, b) => b.t0 - a.t0 || b.count - a.count);
+}
+
+export async function getWorkerQueue(workerId: string): Promise<WorkerQueue> {
+  const remote = await tryFetch<WorkerQueue>(`/caseload/worker/${encodeURIComponent(workerId)}`);
+  return remote ?? mockWorkerQueue(workerId);
+}
+
+export async function getFeedbackStats(): Promise<FeedbackStats> {
+  const remote = await tryFetch<FeedbackStats>("/feedback/stats");
+  return remote ?? MOCK_FEEDBACK_STATS;
+}
+
+export async function postFeedback(input: FeedbackInput): Promise<boolean> {
+  if (!USE_API) return true; // демо: рішення приймаємо локально (оптимістично)
+  try {
+    const res = await fetch(`${API_BASE}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function tierCount(tier: Tier, counts: Record<Tier, number>): number {
+  return counts[tier];
+}
+
 /* ── агрегати для управлінської панелі ── */
 export interface DashboardStats {
   kpis: { t0: number; t1: number; t2: number; immediate: number; total: number };
@@ -107,7 +171,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const rcount = new Map<string, number>();
   for (const i of items) {
-    const o = oblastOf(i.entity_id);
+    const o = oblastOfItem(i);
     rcount.set(o, (rcount.get(o) ?? 0) + 1);
   }
   const byRegion = [...rcount.entries()]
@@ -116,9 +180,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  const tierCounts: Record<Tier, number> = { T0: t0, T1: t1, T2: t2 };
   const byTier = (["T0", "T1", "T2"] as Tier[]).map((tier) => ({
     tier,
-    count: tier === "T0" ? t0 : tier === "T1" ? t1 : t2,
+    count: tierCount(tier, tierCounts),
   }));
 
   return {
@@ -129,4 +194,4 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-export { TIER_META };
+export { TIER_META } from "./registries";

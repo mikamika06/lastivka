@@ -18,7 +18,11 @@ export type RegistryCode =
   | "DV"
   | "CBI"
   | "EISSS"
-  | "EDRSR";
+  | "EDRSR"
+  | "SKAID"
+  | "PFU"
+  | "DRRP"
+  | "HOTLINE";
 
 /** Внесок одного порушення в urgency-score (scoring.score_entity). */
 export interface Contribution {
@@ -45,6 +49,8 @@ export interface QueueItem {
   violations: string[];
   registries: RegistryCode[];
   contributions: Contribution[];
+  oblast: string | null; // територія (фаза 3)
+  worker_id: string | null; // призначений кейсворкер (фаза 3)
 }
 
 /** Крос-реєстровий профіль дитини (matching.match / GET /entity/{id}). */
@@ -109,4 +115,81 @@ export interface Metrics {
 export interface QueueResponse {
   count: number;
   items: QueueItem[];
+}
+
+/* ── Фаза 3: кейсворкер-навантаження, персональна черга, feedback ── */
+
+/** Статистика навантаження по області (caseload.compute → oblast_stats). */
+export interface OblastStat {
+  oblast: string;
+  workers: number;
+  capacity: number;
+  cases: number;
+  covered: number;
+  overflow: number;
+  t0: number;
+  t1: number;
+  t2: number;
+  utilization: number;
+  urgent_uncovered: number;
+  extra_workers_needed: number;
+}
+
+export interface TierDeadline {
+  label: string;
+  detail: string;
+}
+
+/** GET /caseload — розподіл по кейсворкерах. */
+export interface CaseloadOverview {
+  roster: Record<string, number>;
+  capacity_per_worker: number;
+  total_caseworkers: number;
+  oblast_stats: OblastStat[];
+  deadlines: Record<Tier, TierDeadline>;
+  summary: {
+    total_cases: number;
+    assigned: number;
+    overflow: number;
+    urgent_uncovered: number;
+    extra_workers_needed: number;
+  };
+}
+
+/** Кейс у персональній черзі наглядача (GET /caseload/worker/{id}). */
+export interface WorkerCase {
+  rank: number;
+  entity_id: number;
+  pib: string;
+  age: number | null;
+  oblast: string | null;
+  tier: Tier;
+  score: number;
+  immediate: boolean;
+  violations: string[];
+}
+
+export interface WorkerQueue {
+  worker_id: string;
+  count: number;
+  cases: WorkerCase[];
+}
+
+export type Decision = "confirmed" | "rejected" | "escalated";
+
+export interface FeedbackInput {
+  entity_id: number;
+  decision: Decision;
+  outcome?: string;
+  caseworker?: string;
+  note?: string;
+}
+
+export interface FeedbackStats {
+  total: number;
+  labeled: number;
+  ready_to_train: boolean;
+  note: string;
+  by_decision?: Record<string, number>;
+  by_outcome?: Record<string, number>;
 }

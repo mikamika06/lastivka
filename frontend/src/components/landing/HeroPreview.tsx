@@ -9,7 +9,7 @@ export function HeroPreview() {
         <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
           <span className="grid h-6 w-6 place-items-center rounded-md bg-ink text-white">
             <SwallowMark className="h-3.5 w-3.5" />
-          </span>
+          </span>{" "}
           Черга реагування
         </span>
         <span className="rounded-full bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-muted">демо</span>
@@ -56,7 +56,7 @@ export function HeroPreview() {
   );
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
+function Chip({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-ink">
       {children}

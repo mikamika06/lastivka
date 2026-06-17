@@ -6,9 +6,9 @@ export const metadata = { title: "Профіль дитини — Ластівк
 
 export default async function ProfilePage({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<{ id?: string }>;
-}) {
+}>) {
   const [items, sp] = await Promise.all([getQueue(), searchParams]);
   const initialId = sp.id ? Number(sp.id) : undefined;
 

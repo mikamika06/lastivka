@@ -7,38 +7,35 @@ interface Segment {
 export function Donut({
   segments,
   centerLabel,
-}: {
+}: Readonly<{
   segments: Segment[];
   centerLabel?: string;
-}) {
+}>) {
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   const R = 56;
   const C = 2 * Math.PI * R;
-  let offset = 0;
+  // Довжини сегментів і їх зсуви рахуємо без мутації під час рендеру.
+  const lengths = segments.map((s) => (s.value / total) * C);
+  const offsets = lengths.map((_, i) => lengths.slice(0, i).reduce((a, b) => a + b, 0));
 
   return (
     <div className="flex flex-wrap items-center gap-6">
       <svg viewBox="0 0 140 140" className="h-36 w-36 shrink-0 -rotate-90">
         <circle cx="70" cy="70" r={R} fill="none" stroke="var(--color-paper-2)" strokeWidth="16" />
-        {segments.map((s) => {
-          const len = (s.value / total) * C;
-          const el = (
-            <circle
-              key={s.label}
-              cx="70"
-              cy="70"
-              r={R}
-              fill="none"
-              stroke={s.color}
-              strokeWidth="16"
-              strokeDasharray={`${len} ${C - len}`}
-              strokeDashoffset={-offset}
-              strokeLinecap="butt"
-            />
-          );
-          offset += len;
-          return el;
-        })}
+        {segments.map((s, i) => (
+          <circle
+            key={s.label}
+            cx="70"
+            cy="70"
+            r={R}
+            fill="none"
+            stroke={s.color}
+            strokeWidth="16"
+            strokeDasharray={`${lengths[i]} ${C - lengths[i]}`}
+            strokeDashoffset={-offsets[i]}
+            strokeLinecap="butt"
+          />
+        ))}
         <text
           x="70"
           y="66"
