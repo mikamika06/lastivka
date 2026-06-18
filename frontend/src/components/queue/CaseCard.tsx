@@ -43,6 +43,11 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
             <span className="truncate font-semibold text-ink">{item.pib}</span>
             <span className="text-xs text-faint">· {ageLabel(item.age, locale)}</span>
             {item.immediate && <ImmediateBadge />}
+            {(item.country === "UA+EE" || item.country === "EE") && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-brand-line bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink">
+                {t({ uk: "Естонський слід", en: "Estonia trace" })}
+              </span>
+            )}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {item.violations.slice(0, 3).map((v) => (
@@ -52,6 +57,11 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
             ))}
             {item.violations.length > 3 && (
               <span className="text-[11px] text-faint">+{item.violations.length - 3}</span>
+            )}
+            {item.violations.some((v) => v.startsWith("P_")) && (
+              <span className="rounded-md border border-line px-2 py-0.5 text-[11px] font-medium text-muted">
+                {t({ uk: "сімейний ризик", en: "family risk" })}
+              </span>
             )}
             {oblast !== "—" && (
               <span className="text-[11px] text-faint">· {oblast} {t({ uk: "обл.", en: "oblast" })}</span>

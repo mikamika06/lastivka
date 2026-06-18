@@ -14,7 +14,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lastivka import matching, pipeline  # noqa: E402
-from lastivka.emitters import REGISTRIES  # noqa: E402
+from lastivka.emitters import REGISTRIES, WALLED  # noqa: E402
 
 st.set_page_config(page_title="Ластівка", page_icon="🕊️", layout="wide")
 
@@ -144,10 +144,10 @@ elif page.startswith("③"):
                 st.markdown("**Чому в черзі (пояснення):**")
                 for con in json.loads(r["contributions"]):
                     regs = ", ".join(REG_UA.get(x, x) for x in con["evidence"])
-                    lvl1 = [x for x in con["evidence"] if REG_ACCESS.get(x) == 1]
+                    lvl1 = [x for x in con["evidence"] if x in WALLED]
                     note = ""
                     if lvl1:
-                        note = f" · 🔒 Рівень-1 ({', '.join(lvl1)}) через PSI-булеан; повний доступ за ухвалою суду"
+                        note = f" · 🔒 WALLED ({', '.join(lvl1)}): ЕСОЗ/ЄРДР не передаються навіть сигналом — лише процесуальним/лікарським каналом (КПК ст.222 / медтаємниця)"
                     st.markdown(f"- **{vname(con['violation'])}** · внесок {con['value']:.2f} "
                                 f"(тяжкість {con['severity']}, гострота *{con['acuity']}*)\n"
                                 f"  - перетин реєстрів: {regs}{note}")

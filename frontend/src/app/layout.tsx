@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { eUkraine, eUkraineHead } from "./fonts";
 import "./globals.css";
 import { getLocale } from "@/lib/i18n.server";
+import { getSession } from "@/lib/session.server";
+import { verticalRole } from "@/lib/session";
 import { ThemeProvider, themeInitScript } from "@/components/providers/ThemeProvider";
 import { I18nProvider } from "@/components/providers/I18nProvider";
+import { RoleProvider } from "@/components/providers/RoleProvider";
 
 export const metadata: Metadata = {
   title: "Ластівка — проактивний захист прав дитини",
@@ -20,7 +23,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
+  const [locale, session] = await Promise.all([getLocale(), getSession()]);
+  const role = verticalRole(session); // вертикальний зріз профілю = роль персони (єдина роль)
   return (
     <html
       lang={locale}
@@ -32,7 +36,9 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full antialiased">
         <ThemeProvider>
-          <I18nProvider locale={locale}>{children}</I18nProvider>
+          <I18nProvider locale={locale}>
+            <RoleProvider role={role}>{children}</RoleProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
