@@ -5,11 +5,15 @@ import type { FederatedTrace } from "@/lib/api";
 import { violName } from "@/lib/registries";
 import { useLocale } from "@/components/providers/I18nProvider";
 
-const REG_LABEL: Record<string, string> = {
-  DRACS: "ДРАЦС", EDDR: "ЄДДР", EHEALTH: "ЕСОЗ", EDEBO: "ЄДЕБО", AIKOM: "АІКОМ", VPO: "ВПО",
-  CHILDWAR: "Діти війни", DITY: "ЄІАС «Діти»", ERDR: "ЄРДР", DV: "Реєстр ДН", CBI_DISABILITY: "ЦБІ",
-  EDRSR: "ЄДРСР", DRRP: "ДРРП", PFU: "ПФУ", HOTLINE: "Гар. лінії", SKAID: "СКАЙД", EISSS: "ЄІССС",
-  push: "push-канал", RAHV: "RAHV", EHIS_EE: "EHIS", SKAIS: "SKAIS", TERVIS: "TERVIS",
+const REG_LABEL: Record<string, { uk: string; en: string }> = {
+  DRACS: { uk: "ДРАЦС", en: "DRACS" }, EDDR: { uk: "ЄДДР", en: "EDDR" }, EHEALTH: { uk: "ЕСОЗ", en: "eHealth" },
+  EDEBO: { uk: "ЄДЕБО", en: "EDEBO" }, AIKOM: { uk: "АІКОМ", en: "AIKOM" }, VPO: { uk: "ВПО", en: "IDP" },
+  CHILDWAR: { uk: "Діти війни", en: "War children" }, DITY: { uk: "ЄІАС «Діти»", en: "Child services" },
+  ERDR: { uk: "ЄРДР", en: "ERDR" }, DV: { uk: "Реєстр ДН", en: "DV registry" }, CBI_DISABILITY: { uk: "ЦБІ", en: "Disability" },
+  EDRSR: { uk: "ЄДРСР", en: "Court" }, DRRP: { uk: "ДРРП", en: "Property" }, PFU: { uk: "ПФУ", en: "PFU" },
+  HOTLINE: { uk: "Гар. лінії", en: "Hotlines" }, SKAID: { uk: "СКАЙД", en: "SKAID" }, EISSS: { uk: "ЄІССС", en: "EISSS" },
+  push: { uk: "push-канал", en: "push channel" }, RAHV: { uk: "RAHV", en: "RAHV" }, EHIS_EE: { uk: "EHIS", en: "EHIS" },
+  SKAIS: { uk: "SKAIS", en: "SKAIS" }, TERVIS: { uk: "TERVIS", en: "TERVIS" },
 };
 const WALLED = new Set(["EHEALTH", "ERDR", "TERVIS"]);
 
@@ -22,6 +26,10 @@ const RX = VBW - RW - 8;
 
 export function FederatedGraph({ trace }: Readonly<{ trace: FederatedTrace }>) {
   const locale = useLocale();
+  const regLabel = (code: string) => {
+    const m = REG_LABEL[code];
+    return m ? (locale === "en" ? m.en : m.uk) : code;
+  };
   const [hot, setHot] = useState<string | null>(null);   // hovered violation code
 
   // праві вузли = порушення; ліві = усі реєстри-докази + ті, що емітнули сигнал
@@ -72,7 +80,7 @@ export function FederatedGraph({ trace }: Readonly<{ trace: FederatedTrace }>) {
 
         {/* C1-агрегатор (підпис у центрі) */}
         <text x={VBW / 2} y={14} textAnchor="middle" className="fill-[var(--color-faint)]" style={{ fontSize: 10 }}>
-          C1-агрегатор · {trace.pseudonym.slice(0, 10)}…
+          {locale === "en" ? "C1 aggregator" : "C1-агрегатор"} · {trace.pseudonym.slice(0, 10)}…
         </text>
 
         {/* ліві вузли: реєстри */}
@@ -88,10 +96,14 @@ export function FederatedGraph({ trace }: Readonly<{ trace: FederatedTrace }>) {
                 fill={walled ? "var(--color-lock-soft)" : "var(--color-surface)"}
                 stroke={walled ? "var(--color-lock)" : "var(--color-line)"} strokeOpacity={walled ? 0.4 : 1} />
               <text x={LX + 10} y={y - 2} className="fill-[var(--color-ink)]" style={{ fontSize: 12, fontWeight: 600 }}>
-                {REG_LABEL[code] ?? code}{walled ? " 🔒" : ""}
+                {regLabel(code)}{walled ? " 🔒" : ""}
               </text>
               <text x={LX + 10} y={y + 12} className="fill-[var(--color-faint)]" style={{ fontSize: 9 }}>
-                {env?.blocked ? "push-only (walled)" : `${nSig} сигнал${nSig === 1 ? "" : "и"}`}
+                {env?.blocked
+                  ? "push-only (walled)"
+                  : locale === "en"
+                    ? `${nSig} ${nSig === 1 ? "signal" : "signals"}`
+                    : `${nSig} сигнал${nSig === 1 ? "" : "и"}`}
               </text>
             </g>
           );
@@ -113,15 +125,14 @@ export function FederatedGraph({ trace }: Readonly<{ trace: FederatedTrace }>) {
                 {truncate(violName(d.violation, locale), 26)}
               </text>
               <text x={RX + 10} y={y + 14} className="fill-[var(--color-faint)]" style={{ fontSize: 9 }}>
-                {parental ? "контекст" : `докази: ${d.evidence.length}`}
+                {parental
+                  ? (locale === "en" ? "context" : "контекст")
+                  : `${locale === "en" ? "evidence" : "докази"}: ${d.evidence.length}`}
               </text>
             </g>
           );
         })}
       </svg>
-      <p className="mt-1 text-center text-[11px] text-faint">
-        Наведи на порушення — підсвітяться реєстри-докази, що його довели. Пунктир = walled (через push).
-      </p>
     </div>
   );
 }

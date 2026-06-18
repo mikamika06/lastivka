@@ -60,6 +60,17 @@ export const CASELOAD_NAV: NavItem[] = [
   },
 ];
 
+/** Федеративна детекція: пояснення compute-to-data (граф реєстри→докази→порушення). */
+export const FEDERATED_NAV: NavItem[] = [
+  {
+    href: "/federated",
+    pillar: "07",
+    title: { uk: "Федеративна детекція", en: "Federated detection" },
+    desc: { uk: "Як сигнали стають порушеннями", en: "How signals become violations" },
+    icon: IconLayers,
+  },
+];
+
 /** Інтейк-перші двері: звернення (лінія/школа) відкривають кейс; крос-реєстр = тріаж. */
 export const INTAKE_NAV: NavItem[] = [
   {
@@ -91,19 +102,19 @@ export const ROLE_SCREENS: NavItem[] = [
 ];
 
 const ALL_NAV: NavItem[] = [
-  ...NAV, ...CASELOAD_NAV, ...INTAKE_NAV, ...FAMILY_NAV, ...ROLE_SCREENS,
+  ...NAV, ...CASELOAD_NAV, ...FEDERATED_NAV, ...INTAKE_NAV, ...FAMILY_NAV, ...ROLE_SCREENS,
 ];
 const BY_HREF: Record<string, NavItem> = Object.fromEntries(ALL_NAV.map((n) => [n.href, n]));
 
 /** Які екрани бачить кожна роль (docs/FINAL_ACTOR_MODEL.md §1). Чужий пункт не потрапляє в DOM. */
 export const ROLE_NAV: Record<AppRole, string[]> = {
   // ССД — фронт-лайн: кейси/профілі своєї громади (з ПІБ).
-  ssd: ["/queue", "/profile"],
+  ssd: ["/queue", "/profile", "/federated"],
   // Поліція — той самий пошук/профіль, що ССД, але вищий допуск (бачить ЄРДР, національний скоуп).
-  police: ["/queue", "/profile"],
+  police: ["/queue", "/profile", "/federated"],
   // Регіональний керівник — статистика, якість, агрегати області (без PII).
-  regional: ["/dashboard", "/caseload", "/intake", "/privacy"],
-  supervisor: ["/dashboard", "/caseload", "/intake", "/privacy"],
+  regional: ["/dashboard", "/caseload", "/intake", "/privacy", "/federated"],
+  supervisor: ["/dashboard", "/caseload", "/intake", "/privacy", "/federated"],
   vertical: ["/inbox"],
   parent: ["/child"],
 };
