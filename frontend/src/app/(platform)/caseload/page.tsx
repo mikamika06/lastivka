@@ -1,6 +1,7 @@
-import { getCaseload } from "@/lib/api";
+import { getCaseload, oblastName } from "@/lib/api";
 import { formatNumber, formatPct } from "@/lib/format";
-import { getT, getLocale } from "@/lib/i18n.server";
+import { getT, getLocale, pageTitle } from "@/lib/i18n.server";
+import { getSession } from "@/lib/session.server";
 import { TIER_DEADLINE_MSG } from "@/lib/registries";
 import type { Tier } from "@/lib/types";
 import { Card, CardTitle, SectionHeading } from "@/components/ui/Card";
@@ -8,10 +9,13 @@ import { KpiCard } from "@/components/ui/Stat";
 import { TierBadge } from "@/components/ui/badges";
 import { IconScale } from "@/components/ui/icons";
 
-export const metadata = { title: "Навантаження по службах — Ластівка" };
+export async function generateMetadata() {
+  return { title: await pageTitle({ uk: "Навантаження по службах", en: "Service caseload" }) };
+}
 
 export default async function CaseloadPage() {
-  const cl = await getCaseload();
+  const session = await getSession();
+  const cl = await getCaseload(session);
   const t = await getT();
   const locale = await getLocale();
 
@@ -33,10 +37,6 @@ export default async function CaseloadPage() {
       <SectionHeading
         index="05"
         title={t({ uk: "Навантаження по службах", en: "Service caseload" })}
-        subtitle={t({
-          uk: "Розподіл черги між фахівцями ССД: спрямування за місцем проживання дитини + ємність за нормативом. Де навантаження перевищує ємність — бракує працівників.",
-          en: "Queue distribution among Children's Services specialists: routing by the child's place of residence + capacity per standard. Where the caseload exceeds capacity, specialists are short.",
-        })}
       />
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -56,37 +56,17 @@ export default async function CaseloadPage() {
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
         <KpiCard label={t({ uk: "Дітей у черзі", en: "Children in queue" })} value={s.total_cases} tone="neutral" />
-        <KpiCard
-          label={t({ uk: "Призначено", en: "Assigned" })}
-          value={s.assigned}
-          tone="brand"
-          hint={t({ uk: "у межах ємності", en: "within capacity" })}
-        />
-        <KpiCard
-          label={t({ uk: "Понад ємність", en: "Over capacity" })}
-          value={s.overflow}
-          tone="t1"
-          hint={t({ uk: "більше за норматив", en: "above the standard" })}
-        />
-        <KpiCard
-          label={t({ uk: "Термінові без фахівця", en: "Urgent, unstaffed" })}
-          value={s.urgent_uncovered}
-          tone="t0"
-          hint={t({ uk: "негайні випадки T0/T1", en: "immediate T0/T1 cases" })}
-        />
-        <KpiCard
-          label={t({ uk: "Бракує працівників", en: "Specialists short" })}
-          value={s.extra_workers_needed}
-          tone="t0"
-          hint={t({ uk: "щоб покрити надлишок", en: "to cover the overload" })}
-        />
+        <KpiCard label={t({ uk: "Призначено", en: "Assigned" })} value={s.assigned} tone="brand" />
+        <KpiCard label={t({ uk: "Понад ємність", en: "Over capacity" })} value={s.overflow} tone="t1" />
+        <KpiCard label={t({ uk: "Термінові без фахівця", en: "Urgent, unstaffed" })} value={s.urgent_uncovered} tone="t0" />
+        <KpiCard label={t({ uk: "Бракує працівників", en: "Specialists short" })} value={s.extra_workers_needed} tone="t0" />
       </div>
 
       {/* дедлайни */}
       <Card className="p-5 sm:p-6">
-        <CardTitle hint={t({ uk: "законодавчі строки реагування", en: "statutory response deadlines" })}>
+        <CardTitle>
           {t({ uk: "Дедлайни за рівнем", en: "Deadlines by tier" })}
         </CardTitle>
         <div className="grid gap-3 md:grid-cols-3">
@@ -96,7 +76,6 @@ export default async function CaseloadPage() {
                 <TierBadge tier={tier} withHorizon={false} />
                 <span className="font-display text-sm font-bold text-ink">{t(TIER_DEADLINE_MSG[tier].label)}</span>
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-muted">{t(TIER_DEADLINE_MSG[tier].detail)}</p>
             </div>
           ))}
         </div>
@@ -104,10 +83,7 @@ export default async function CaseloadPage() {
 
       {/* таблиця областей */}
       <Card className="p-5 sm:p-6">
-        <CardTitle
-          icon={<IconScale className="h-4 w-4 text-brand" />}
-          hint={t({ uk: "сортування за напругою", en: "sorted by strain" })}
-        >
+        <CardTitle icon={<IconScale className="h-4 w-4 text-brand" />}>
           {t({ uk: "Напруга по областях", en: "Strain by oblast" })}
         </CardTitle>
         <div className="overflow-x-auto">
@@ -129,9 +105,9 @@ export default async function CaseloadPage() {
               {cl.oblast_stats.map((o) => (
                 <tr key={o.oblast} className="border-b border-line-2 last:border-0">
                   <td className="py-2.5 pr-3 font-medium text-ink">
-                    {o.oblast}
+                    {oblastName(o.oblast, locale)}
                     {o.urgent_uncovered > 0 && (
-                      <span className="ml-2 rounded bg-t0-soft px-1.5 py-0.5 text-[10px] font-semibold text-t0-ink">
+                      <span className="ml-2 rounded bg-t0-soft px-1.5 py-0.5 text-xs font-semibold text-t0-ink">
                         {t({
                           uk: `${o.urgent_uncovered} терм. без фахівця`,
                           en: `${o.urgent_uncovered} urgent, unstaffed`,
@@ -158,12 +134,6 @@ export default async function CaseloadPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-4 text-xs leading-relaxed text-muted">
-          {t({
-            uk: "«Завантаження» = частка зайнятої ємності служби. Понад 100% діти переходять на район/область і з’являється сигнал «потрібні додаткові працівники». Дитину спрямовують за місцем її проживання.",
-            en: "“Utilisation” = the share of a service's capacity in use. Above 100% children spill over to the district/oblast and an “extra specialists needed” signal appears. A child is routed to their place of residence.",
-          })}
-        </p>
       </Card>
     </div>
   );

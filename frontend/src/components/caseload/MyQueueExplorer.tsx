@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type { WorkerCase, WorkerQueue, Tier, TierDeadline, Decision } from "@/lib/types";
 import type { Msg } from "@/lib/i18n";
-import { getWorkers, getWorkerQueue, getCaseload, postFeedback, type WorkerSummary } from "@/lib/api";
+import { getWorkers, getWorkerQueue, getCaseload, postFeedback, oblastName, oblastLabel, type WorkerSummary } from "@/lib/api";
 import { violName, TIER_DEADLINE_MSG } from "@/lib/registries";
 import { ageLabel, formatScore, pluralLoc } from "@/lib/format";
+import { displayName } from "@/lib/translit";
 import { TierBadge, ImmediateBadge } from "@/components/ui/badges";
 import { IconChevronDown, IconCheck, IconClock, IconProfile } from "@/components/ui/icons";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
 
-export function MyQueueExplorer() {
+export function MyQueueExplorer({ oblast: oblastScope = null }: Readonly<{ oblast?: string | null }>) {
   const t = useTx();
   const locale = useLocale();
   const [workers, setWorkers] = useState<WorkerSummary[]>([]);
@@ -18,10 +19,11 @@ export function MyQueueExplorer() {
   const [queue, setQueue] = useState<WorkerQueue | null>(null);
   const [deadlines, setDeadlines] = useState<Record<Tier, TierDeadline> | null>(null);
   const [decisions, setDecisions] = useState<Record<number, Decision>>({});
+  const [sortBy, setSortBy] = useState<"urgency" | "name">("urgency");
 
   useEffect(() => {
     let active = true;
-    Promise.all([getWorkers(), getCaseload()]).then(([ws, cl]) => {
+    Promise.all([getWorkers(oblastScope), getCaseload()]).then(([ws, cl]) => {
       if (!active) return;
       setWorkers(ws);
       setDeadlines(cl?.deadlines ?? null);
@@ -30,7 +32,7 @@ export function MyQueueExplorer() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [oblastScope]);
 
   useEffect(() => {
     if (!workerId) return;
@@ -48,32 +50,52 @@ export function MyQueueExplorer() {
     await postFeedback({ entity_id: entityId, decision, caseworker: workerId });
   }
 
-  const cases = useMemo(() => queue?.cases ?? [], [queue]);
+  const cases = useMemo(() => {
+    const list = [...(queue?.cases ?? [])];
+    const order: Record<Tier, number> = { T0: 0, T1: 1, T2: 2 };
+    if (sortBy === "name") {
+      list.sort((a, b) => displayName(a.pib, locale).localeCompare(displayName(b.pib, locale), locale));
+    } else {
+      list.sort(
+        (a, b) =>
+          order[a.tier] - order[b.tier] ||
+          Number(b.immediate) - Number(a.immediate) ||
+          b.score - a.score,
+      );
+    }
+    return list;
+  }, [queue, sortBy, locale]);
   const t0count = cases.filter((c) => c.tier === "T0").length;
   const t1count = cases.filter((c) => c.tier === "T1").length;
   const doneCount = cases.filter((c) => decisions[c.entity_id]).length;
   const oblast = workers.find((w) => w.worker_id === workerId)?.oblast ?? "—";
+
+  // worker_id = «<область>-<n>»; на показ локалізуємо префікс області (значення лишається UA).
+  const workerLabel = (id: string, obl: string): string => {
+    const suffix = id.startsWith(`${obl}-`) ? id.slice(obl.length) : "";
+    return suffix ? `${oblastName(obl, locale)}${suffix}` : id;
+  };
 
   return (
     <div className="space-y-4">
       {/* шапка кабінету */}
       <div className="card p-5 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-4">
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand">
               <IconProfile className="h-7 w-7" />
             </span>
-            <div>
-              <h2 className="h-display text-xl font-bold">{workerId ? `${t({ uk: "Робоче місце", en: "Workstation" })} ${workerId}` : t({ uk: "Кабінет фахівця", en: "Specialist workspace" })}</h2>
-              <p className="mt-0.5 text-sm text-muted">
-                {t({ uk: "Фахівець служби у справах дітей", en: "Children's Services specialist" })} · {oblast} {t({ uk: "обл.", en: "oblast" })}
+            <div className="min-w-0">
+              <h2 className="h-display truncate text-xl font-bold">{workerId ? `${t({ uk: "Робоче місце", en: "Workstation" })} ${workerLabel(workerId, oblast)}` : t({ uk: "Кабінет фахівця", en: "Specialist workspace" })}</h2>
+              <p className="mt-0.5 truncate text-sm text-muted">
+                {t({ uk: "Фахівець служби у справах дітей", en: "Children's Services specialist" })} · {oblastLabel(oblast, locale)}
               </p>
             </div>
           </div>
 
           <div className="relative w-full max-w-xs">
             <label htmlFor="worker-select" className="mb-1.5 block text-xs font-medium text-muted">
-              {t({ uk: "Робоче місце (демо — оберіть фахівця)", en: "Workstation (demo — choose a specialist)" })}
+              {t({ uk: "Робоче місце — оберіть фахівця", en: "Workstation — choose a specialist" })}
             </label>
             <div className="relative">
               <select
@@ -84,7 +106,7 @@ export function MyQueueExplorer() {
               >
                 {workers.map((w) => (
                   <option key={w.worker_id} value={w.worker_id}>
-                    {w.worker_id} · {pluralLoc(w.count, { uk: ["дитина", "дитини", "дітей"], en: ["child", "children"] }, locale)}
+                    {workerLabel(w.worker_id, w.oblast)} · {pluralLoc(w.count, { uk: ["дитина", "дитини", "дітей"], en: ["child", "children"] }, locale)}
                     {w.t0 ? ` · ${w.t0} ${t({ uk: "терміново", en: "urgent" })}` : ""}
                   </option>
                 ))}
@@ -114,6 +136,30 @@ export function MyQueueExplorer() {
           </div>
         )}
       </div>
+
+      {cases.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 px-1">
+          <span className="mr-0.5 text-xs font-medium text-muted">{t({ uk: "Сортувати", en: "Sort" })}</span>
+          <button
+            onClick={() => setSortBy("urgency")}
+            aria-pressed={sortBy === "urgency"}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
+              sortBy === "urgency" ? "bg-primary text-primary-fg ring-primary" : "bg-surface text-faint ring-line hover:text-ink-2"
+            }`}
+          >
+            {t({ uk: "Терміновість", en: "Urgency" })}
+          </button>
+          <button
+            onClick={() => setSortBy("name")}
+            aria-pressed={sortBy === "name"}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
+              sortBy === "name" ? "bg-primary text-primary-fg ring-primary" : "bg-surface text-faint ring-line hover:text-ink-2"
+            }`}
+          >
+            {t({ uk: "Імʼя", en: "Name" })}
+          </button>
+        </div>
+      )}
 
       {t0count > doneCount && (
         <div className="flex items-start gap-2 rounded-xl border border-t0-line bg-t0-soft px-4 py-3 text-sm text-t0-ink">
@@ -181,13 +227,13 @@ function WorkerCaseRow({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-display text-sm font-bold tnum text-faint">#{c.rank}</span>
-            <span className="font-semibold text-ink">{c.pib}</span>
-            <span className="text-xs text-faint">· {ageLabel(c.age, locale)}{c.oblast ? ` · ${c.oblast} ${t({ uk: "обл.", en: "oblast" })}` : ""}</span>
+            <span className="font-semibold text-ink">{displayName(c.pib, locale)}</span>
+            <span className="text-xs text-faint">· {ageLabel(c.age, locale)}{c.oblast ? ` · ${oblastLabel(c.oblast, locale)}` : ""}</span>
             {c.immediate && <ImmediateBadge />}
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {c.violations.map((v) => (
-              <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
+              <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-xs font-medium text-ink-2">
                 {violName(v, locale)}
               </span>
             ))}
@@ -196,11 +242,11 @@ function WorkerCaseRow({
         <div className="flex flex-col items-end gap-1">
           <TierBadge tier={c.tier} />
           {deadline && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-muted">
+            <span className="inline-flex items-center gap-1 text-xs text-muted">
               <IconClock className="h-3 w-3" /> {t({ uk: "строк", en: "deadline" })}: {t(TIER_DEADLINE_MSG[c.tier].label)}
             </span>
           )}
-          <span className="text-[11px] text-faint">
+          <span className="text-xs text-faint">
             {t({ uk: "індекс терміновості", en: "urgency index" })} <span className="font-semibold tnum text-ink-2">{formatScore(c.score)}</span>
           </span>
         </div>

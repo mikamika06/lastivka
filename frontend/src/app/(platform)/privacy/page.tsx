@@ -1,19 +1,20 @@
 import { getMetrics } from "@/lib/api";
 import { violName } from "@/lib/registries";
 import { formatNumber, formatPct } from "@/lib/format";
-import { getT, getLocale } from "@/lib/i18n.server";
+import { getT, getLocale, pageTitle } from "@/lib/i18n.server";
 import { Card, CardTitle, SectionHeading, Pill } from "@/components/ui/Card";
 import { MiniStat } from "@/components/ui/Stat";
 import { LockIcon } from "@/components/ui/badges";
-import { IconShield, IconCheck, IconLayers } from "@/components/ui/icons";
+import { IconShield, IconLayers } from "@/components/ui/icons";
 
-export const metadata = { title: "Захист даних і якість — Ластівка" };
+export async function generateMetadata() {
+  return { title: await pageTitle({ uk: "Захист даних і якість", en: "Data protection and quality" }) };
+}
 
 export default async function PrivacyPage() {
   const t = await getT();
   const locale = await getLocale();
   const metrics = await getMetrics();
-  const o = metrics.detection.overall;
   const rows = Object.entries(metrics.detection.per_violation)
     .map(([k, m]) => ({ key: k, ...m }))
     .sort((a, b) => b.precision - a.precision);
@@ -23,10 +24,6 @@ export default async function PrivacyPage() {
       <SectionHeading
         index="04"
         title={t({ uk: "Захист даних і якість системи", en: "Data protection and system quality" })}
-        subtitle={t({
-          uk: "Чому системі можна довіряти: вона зіставляє дітей, не розкриваючи персональні дані, і чесно показує, наскільки точно працює.",
-          en: "Why the system is trustworthy: it matches children without revealing personal data, and honestly shows how accurately it works.",
-        })}
       />
 
       {/* приватне зіставлення */}
@@ -39,7 +36,7 @@ export default async function PrivacyPage() {
             <p className="text-sm leading-relaxed text-ink-2">
               {t({
                 uk: "Реєстри порівнюють не самі імена, а їхні зашифровані цифрові відбитки. Тобто система розуміє, що в двох реєстрах — та сама дитина, але не бачить ні імені, ні номерів. Зіставлення стійке до різного написання: «Олександр», «Oleksandr» чи «Alexander» система впізнає як одну людину.",
-                en: "Registries compare not the names themselves, but their encrypted digital fingerprints. The system understands that two registries hold the same child, yet sees neither names nor numbers. Matching is robust to different spellings: it recognises «Олександр», «Oleksandr» or «Alexander» as one person.",
+                en: "Registries compare not the names themselves, but their encrypted digital fingerprints. The system understands that two registries hold the same child, yet sees neither names nor numbers. Matching is robust to different spellings: it recognises «Oleksandr», «Olexandr» or «Alexander» as one person.",
               })}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -68,10 +65,7 @@ export default async function PrivacyPage() {
 
       {/* якість виявлення */}
       <Card className="p-5 sm:p-6">
-        <CardTitle
-          icon={<IconShield className="h-4 w-4 text-brand" />}
-          hint={t({ uk: "звірено з відомими випадками", en: "verified against known cases" })}
-        >
+        <CardTitle icon={<IconShield className="h-4 w-4 text-brand" />}>
           {t({ uk: "Наскільки точно система виявляє кожен тип порушення", en: "How accurately the system detects each type of violation" })}
         </CardTitle>
 
@@ -97,18 +91,11 @@ export default async function PrivacyPage() {
             </tbody>
           </table>
         </div>
-
-        <p className="mt-3 text-xs leading-relaxed text-muted">
-          {t({
-            uk: "Вірно — система правильно вловила випадок; Хибні — марна тривога; Пропущено — реальний випадок не помічено. Рішення завжди ухвалює фахівець.",
-            en: "Correct — the system caught a real case; False — a false alarm; Missed — a real case not flagged. The specialist always makes the decision.",
-          })}
-        </p>
       </Card>
 
       {/* збирання дитини з реєстрів */}
       <Card className="p-5 sm:p-6">
-        <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint={t({ uk: "як дитина збирається з реєстрів", en: "how a child is assembled from registries" })}>
+        <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />}>
           {t({ uk: "Збирання дитини з різних реєстрів", en: "Assembling a child from different registries" })}
         </CardTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -121,24 +108,7 @@ export default async function PrivacyPage() {
           <MiniStat label={t({ uk: "Без помилок зіставлення", en: "Without matching errors" })} value={formatNumber(metrics.matching.pure_clusters, locale)} />
           <MiniStat label={t({ uk: "Знайдено за схожістю імені", en: "Found by name similarity" })} value={formatNumber(metrics.matching.fuzzy_attached, locale)} tone="brand" />
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-muted">
-          {t({
-            uk: "Якщо в дитини є єдиний номер запису (УНЗР) — записи зводяться точно. Якщо номера немає (немовлята, звернення на гарячі лінії) — система знаходить ту саму дитину за збігом імені та дати народження. Вона працює лише з даними реєстрів і ніколи не бачить «повної картини» згори.",
-            en: "If a child has a single record number (UNZR), the records are merged precisely. If there is no number (newborns, hotline reports), the system finds the same child by a match of name and date of birth. It works only with registry data and never sees the «full picture» from above.",
-          })}
-        </p>
       </Card>
-    </div>
-  );
-}
-
-function MetricBar({ value, color }: Readonly<{ value: number; color: string }>) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-paper-2">
-        <div className="h-full rounded-full" style={{ width: `${value * 100}%`, backgroundColor: color }} />
-      </div>
-      <span className="w-9 text-xs font-semibold tnum text-ink-2">{value.toFixed(2)}</span>
     </div>
   );
 }

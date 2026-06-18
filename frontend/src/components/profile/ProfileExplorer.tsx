@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { QueueItem, Entity, TimelineEvent, AttendanceSeries, FamilyGraph, HealthFacts } from "@/lib/types";
-import { getEntity, getTimeline, getAttendance, getFamily, oblastOf } from "@/lib/api";
+import { getEntity, getTimeline, getAttendance, getFamily, oblastOf, oblastLabel } from "@/lib/api";
 import { violName } from "@/lib/registries";
 import { formatDate, ageLabel, formatScore } from "@/lib/format";
+import { displayName } from "@/lib/translit";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
 import { useRole } from "@/components/providers/RoleProvider";
 import { ROLE_LABEL, type Msg } from "@/lib/i18n";
@@ -77,7 +78,7 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
           >
             {items.map((i) => (
               <option key={i.entity_id} value={i.entity_id}>
-                {i.pib} · {ageLabel(i.age, locale)} · {i.tier} · {t({ uk: "індекс терміновості", en: "urgency index" })} {formatScore(i.score)}{(i.country === "UA+EE" || i.country === "EE") ? t({ uk: " · слід EE", en: " · EE trace" }) : ""}
+                {displayName(i.pib, locale)} · {ageLabel(i.age, locale)} · {i.tier} · {t({ uk: "індекс терміновості", en: "urgency index" })} {formatScore(i.score)}{(i.country === "UA+EE" || i.country === "EE") ? t({ uk: " · слід EE", en: " · EE trace" }) : ""}
               </option>
             ))}
           </select>
@@ -89,9 +90,9 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
       <Card className="overflow-hidden">
         <div className="border-b border-line bg-surface px-5 py-5 sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="h-display text-2xl font-bold">{item.pib}</h2>
-              <p className="mt-1 text-sm text-muted">{ageLabel(item.age, locale)} · {oblast} {t({ uk: "обл.", en: "oblast" })}</p>
+            <div className="min-w-0">
+              <h2 className="h-display text-2xl font-bold break-words">{displayName(item.pib, locale)}</h2>
+              <p className="mt-1 text-sm text-muted">{ageLabel(item.age, locale)} · {oblastLabel(oblast, locale)}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
@@ -108,13 +109,13 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
             <Field label={t({ uk: "УНЗР", en: "UNZR" })} value={pii ? (entity?.unzr ?? item.unzr ?? t({ uk: "— (зіставлено за ПІБ + датою)", en: "— (matched by name + date)" })) : t({ uk: "приховано (регіонал)", en: "hidden (regional)" })} mono />
             <Field label={t({ uk: "Дата народження", en: "Date of birth" })} value={pii ? formatDate(entity?.birth_date ?? item.birth_date, locale) : "—"} />
             <Field label={t({ uk: "Реєстрів об'єднано", en: "Registries merged" })} value={String(entity?.n_registries ?? item.registries.length)} />
-            <Field label={t({ uk: "Регіон", en: "Region" })} value={`${oblast} ${t({ uk: "обл.", en: "oblast" })}`} />
+            <Field label={t({ uk: "Регіон", en: "Region" })} value={oblastLabel(oblast, locale)} />
           </div>
         </div>
 
         {/* силоси */}
         <div className="px-5 py-4 sm:px-6">
-          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint={t({ uk: "із захистом персональних даних: реєстри не зливаються в один", en: "with data privacy: registries are not merged into one" })}>
+          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />}>
             {t({ uk: "Окремі реєстри, з яких зібрано профіль", en: "Source registries the profile is built from" })}
           </CardTitle>
           <div className="mb-2 flex items-center gap-2 text-xs">
@@ -123,10 +124,10 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
           </div>
           <div className="flex flex-wrap gap-2">
             {(entity?.registries ?? item.registries).map((r) => (
-              <RegistryChip key={r} code={r} />
+              <RegistryChip key={r} code={r} locale={locale} />
             ))}
             {!!entity?.protected_sources && (
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-line bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-faint">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-line bg-paper-2 px-2 py-0.5 text-xs font-medium text-faint">
                 {entity.protected_sources} {t({ uk: "захищених джерел — обмежений доступ", en: "protected sources — restricted" })}
               </span>
             )}
@@ -135,7 +136,7 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted">{t({ uk: "Виявлені порушення:", en: "Detected violations:" })}</span>
               {item.violations.map((v) => (
-                <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
+                <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-xs font-medium text-ink-2">
                   {violName(v, locale)}
                 </span>
               ))}
@@ -147,8 +148,7 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
       {/* Слід в Естонії — інтегровано у профіль (PPRL UA↔EE), лише якщо є зв'язок */}
       {entity?.crossborder && (
         <Card className="p-5">
-          <CardTitle icon={<IconGlobe className="h-4 w-4 text-brand" />}
-            hint={t({ uk: "крос-кордонний зв'язок UA↔EE (PPRL)", en: "cross-border link UA↔EE (PPRL)" })}>
+          <CardTitle icon={<IconGlobe className="h-4 w-4 text-brand" />}>
             {t({ uk: "Слід в Естонії", en: "Trace in Estonia" })}
           </CardTitle>
           {loading ? <Loader /> : <CrossBorderContent cb={entity.crossborder} t={t} />}
@@ -158,8 +158,7 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
       {/* Здоров'я — медичні факт-сигнали (ССД/поліція): факт, не зміст (медтаємниця) */}
       {entity?.health && (
         <Card className="p-5">
-          <CardTitle icon={<LockIcon className="h-4 w-4 text-lock" />}
-            hint={t({ uk: "факт-сигнали · зміст за медтаємницею", en: "fact signals · content under medical secrecy" })}>
+          <CardTitle icon={<LockIcon className="h-4 w-4 text-lock" />}>
             {t({ uk: "Здоров'я дитини", en: "Child health" })}
           </CardTitle>
           {loading ? <Loader /> : <HealthContent health={entity.health} t={t} />}
@@ -169,14 +168,14 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
       {/* таймлайн + графік */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
-          <CardTitle icon={<IconClock className="h-4 w-4 text-brand" />} hint={t({ uk: "з різних реєстрів", en: "from various registries" })}>
+          <CardTitle icon={<IconClock className="h-4 w-4 text-brand" />}>
             {t({ uk: "Хронологія сигналів", en: "Signal timeline" })}
           </CardTitle>
           {loading ? <Loader /> : <Timeline events={events} />}
         </Card>
 
         <Card className="p-5">
-          <CardTitle icon={<IconPulse className="h-4 w-4 text-brand" />} hint="ІСУО / AIKOM">
+          <CardTitle icon={<IconPulse className="h-4 w-4 text-brand" />}>
             {t({ uk: "Відвідуваність і успішність", en: "Attendance and performance" })}
           </CardTitle>
           {loading ? <Loader /> : <AttendanceContent attendance={attendance} t={t} />}
@@ -186,10 +185,10 @@ export function ProfileExplorer({ items, initialId, pii = true, canSeeFamily = f
       {/* Сімейний граф — у профілі кожної дитини (лише ССД / незалежний нагляд) */}
       {canSeeFamily && (
         <Card className="p-5">
-          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />} hint={t({ uk: "стан сімʼї", en: "family state" })}>
+          <CardTitle icon={<IconLayers className="h-4 w-4 text-brand" />}>
             {t({ uk: "Сімейний граф (стан сімʼї)", en: "Family graph (family state)" })}
           </CardTitle>
-          {loading ? <Loader /> : <FamilyContent family={family} canSee={canSeeFamily} t={t} />}
+          {loading ? <Loader /> : <FamilyContent family={family} canSee={canSeeFamily} t={t} locale={locale} />}
         </Card>
       )}
     </div>
@@ -272,7 +271,7 @@ function CrossBorderContent({ cb, t }: Readonly<{ cb: NonNullable<Entity["crossb
           {present.map(([reg, ok]) => (
             <div key={reg} className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 ${ok ? "border-line bg-surface" : "border-dashed border-line bg-paper-2"}`}>
               <span className={ok ? "text-ink-2" : "text-faint"}>{t(EE_REG[reg] ?? { uk: reg, en: reg })}</span>
-              <span className={`text-[11px] font-medium ${ok ? "text-brand-ink" : "text-faint"}`}>
+              <span className={`text-xs font-medium ${ok ? "text-brand-ink" : "text-faint"}`}>
                 {ok ? t({ uk: "є запис", en: "record present" }) : t({ uk: "немає", en: "absent" })}
               </span>
             </div>
@@ -296,12 +295,12 @@ function CrossBorderContent({ cb, t }: Readonly<{ cb: NonNullable<Entity["crossb
       })}
 
       {cb.ee_presence.TERVIS && (
-        <div className="rounded-lg border border-lock/30 bg-lock-soft/50 px-2.5 py-2 text-[11px] leading-relaxed text-lock-ink">
+        <div className="rounded-lg border border-lock/30 bg-lock-soft/50 px-2.5 py-2 text-xs leading-relaxed text-lock-ink">
           {t({ uk: "TERVIS (медичні дані EE) — лише сигнал присутності; зміст не передається через кордон (медтаємниця).", en: "TERVIS (EE health data) — presence signal only; content does not cross the border (medical secrecy)." })}
         </div>
       )}
 
-      <p className="border-t border-line pt-3 text-[11px] leading-relaxed text-faint">
+      <p className="border-t border-line pt-3 text-xs leading-relaxed text-faint">
         {t({ uk: "GDPR гл. V: між Україною та Естонією передається лише результат приватного зіставлення (PPRL), а не сирі записи. Україна не має рішення про адекватність, тож зміст реєстрів залишається в юрисдикції-джерелі.", en: "GDPR Ch. V: only the private-matching result (PPRL) crosses between Ukraine and Estonia, not raw records. Ukraine has no adequacy decision, so registry content stays in the source jurisdiction." })}
       </p>
     </div>
@@ -326,7 +325,7 @@ function HealthContent({ health, t }: Readonly<{ health: HealthFacts; t: (m: Msg
             <span key={k} className="inline-flex items-center gap-1.5 rounded-md border border-lock/30 bg-lock-soft/50 px-2 py-1 text-[12px]">
               <LockIcon className="h-3 w-3 text-lock" />
               <span className="font-medium text-lock-ink">{t(HEALTH_FACT[k])}</span>
-              <span className="text-[10px] text-faint">· {t({ uk: "факт", en: "fact" })}</span>
+              <span className="text-xs text-faint">· {t({ uk: "факт", en: "fact" })}</span>
             </span>
           ))}
         </div>
@@ -335,7 +334,7 @@ function HealthContent({ health, t }: Readonly<{ health: HealthFacts; t: (m: Msg
           {t({ uk: "Медичних факт-сигналів не виявлено.", en: "No medical fact signals found." })}
         </p>
       )}
-      <div className="rounded-lg border border-lock/20 bg-lock-soft/40 px-3 py-2 text-[11px] leading-relaxed text-lock-ink">
+      <div className="rounded-lg border border-lock/20 bg-lock-soft/40 px-3 py-2 text-xs leading-relaxed text-lock-ink">
         {t({
           uk: "Видно лише факт наявності стану — для оцінки потреб дитини. Діагноз, історія та зміст лишаються за лікарською таємницею (Основи 2801-XII, ст.39-1/40). Розкриття змісту — за згодою законного представника, рішенням суду або у невідкладному випадку через лікаря.",
           en: "Only the fact of a condition is shown — for the child's needs assessment. Diagnosis, history and content stay under medical secrecy. Content disclosure requires consent, a court order, or an emergency via a physician.",
@@ -355,7 +354,7 @@ function ObsChip({ kind }: Readonly<{ kind: string }>) {
       : k.includes("content")
         ? "border-line bg-paper-2 text-ink-2"
         : "border-brand/20 bg-brand-soft text-brand-ink"; // signal-only
-  return <span className={`rounded px-1.5 py-px text-[10px] font-medium ${tone}`}>{kind}</span>;
+  return <span className={`rounded px-1.5 py-px text-xs font-medium ${tone}`}>{kind}</span>;
 }
 
 function FamRow({ label, value, obs, note }: Readonly<{ label: string; value: ReactNode; obs?: string; note?: string }>) {
@@ -363,7 +362,7 @@ function FamRow({ label, value, obs, note }: Readonly<{ label: string; value: Re
     <div className="flex items-start justify-between gap-3 py-1">
       <div className="min-w-0">
         <span className="text-ink-2">{label}</span>
-        {note && <span className="ml-2 text-[11px] text-faint">{note}</span>}
+        {note && <span className="ml-2 text-xs text-faint">{note}</span>}
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         <span className="font-medium text-ink">{value}</span>
@@ -398,12 +397,23 @@ function RiskChip({ label, tag, lock }: Readonly<{ label: string; tag: string; l
     <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[12px] ${lock ? "border-lock/30 bg-lock-soft/50" : "border-brand-line bg-brand-soft"}`}>
       {lock && <LockIcon className="h-3 w-3 text-lock" />}
       <span className={`font-medium ${lock ? "text-lock-ink" : "text-brand-ink"}`}>{label}</span>
-      <span className="text-[10px] text-faint">· {tag}</span>
+      <span className="text-xs text-faint">· {tag}</span>
     </span>
   );
 }
 
-function FamilyContent({ family, canSee, t }: Readonly<{ family: FamilyGraph | null; canSee: boolean; t: (m: Msg) => string }>) {
+/** Сімейна структура — обчислюється з прапорців (локалізовано, без сирого тексту з дата-шару). */
+function familyStructureLabel(par: NonNullable<FamilyGraph["parents"]>): Msg {
+  if (par.both_parents) return { uk: "Обоє батьків", en: "Both parents" };
+  if (par.single_parent) {
+    if (par.mother_present && !par.father_present) return { uk: "Одинока мати", en: "Single mother" };
+    if (par.father_present && !par.mother_present) return { uk: "Одинокий батько", en: "Single father" };
+    return { uk: "Один з батьків", en: "Single parent" };
+  }
+  return { uk: "Не визначено", en: "Not specified" };
+}
+
+function FamilyContent({ family, canSee, t, locale }: Readonly<{ family: FamilyGraph | null; canSee: boolean; t: (m: Msg) => string; locale: import("@/lib/i18n").Locale }>) {
   if (!canSee || family?.available === false) {
     return (
       <div className="grid place-items-center rounded-xl border border-dashed border-line py-10 text-center text-sm text-muted">
@@ -428,14 +438,14 @@ function FamilyContent({ family, canSee, t }: Readonly<{ family: FamilyGraph | n
   // Шапка: структура + склад + (захисна) родинна опіка — завжди один рядок
   const header = (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span className="font-medium text-ink">{par?.structure ?? "—"}</span>
+      <span className="font-medium text-ink">{par ? t(familyStructureLabel(par)) : "—"}</span>
       <span className="text-faint">·</span>
       <span className="text-muted">
         {hh?.size ?? 1} {t({ uk: "осіб", en: "members" })}
         {!!(hh?.n_siblings) && <> · {hh.n_siblings} {t({ uk: "сиблінг(и)", en: "sibling(s)" })}</>}
       </span>
       {kinship && (
-        <span className="ml-1 inline-flex items-center gap-1 rounded-md border border-line bg-paper-2 px-2 py-0.5 text-[11px] text-ink-2">
+        <span className="ml-1 inline-flex items-center gap-1 rounded-md border border-line bg-paper-2 px-2 py-0.5 text-xs text-ink-2">
           {t({ uk: "родинна опіка", en: "kinship care" })} · <span className="text-faint">{t({ uk: "захисна", en: "protective" })}</span>
         </span>
       )}
@@ -461,10 +471,10 @@ function FamilyContent({ family, canSee, t }: Readonly<{ family: FamilyGraph | n
       {(walledPresent.length > 0 || par?.rights_deprived || par?.parent_death) && (
         <div className="flex flex-wrap gap-1.5">
           {par?.parent_death && (
-            <RiskChip label={t(par.w6_cause === "death" ? { uk: "Втрата батька (смерть)", en: "Parent loss (death)" } : { uk: "Втрата батька", en: "Parent loss" })} tag="ДРАЦС" />
+            <RiskChip label={t(par.w6_cause === "death" ? { uk: "Втрата батька (смерть)", en: "Parent loss (death)" } : { uk: "Втрата батька", en: "Parent loss" })} tag={t({ uk: "ДРАЦС", en: "DRATS" })} />
           )}
           {par?.rights_deprived && (
-            <RiskChip label={t({ uk: "Позбавлення батьківських прав", en: "Parental rights deprivation" })} tag="ЄДРСР" />
+            <RiskChip label={t({ uk: "Позбавлення батьківських прав", en: "Parental rights deprivation" })} tag={t({ uk: "ЄДРСР", en: "USRCD" })} />
           )}
           {walledPresent.map((w) => (
             <RiskChip key={w.topic} lock label={t(WALLED_SHORT[w.topic].label)} tag={t(WALLED_SHORT[w.topic].tag)} />
@@ -480,11 +490,11 @@ function FamilyContent({ family, canSee, t }: Readonly<{ family: FamilyGraph | n
             {siblings.map((m) => (
               <div key={m.entity_id} className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${m.in_care ? "bg-brand" : "bg-line"}`} />
-                <span className="text-ink-2">{m.pib}</span>
+                <span className="text-ink-2">{displayName(m.pib, locale)}</span>
                 <span className="text-xs text-faint">{m.birth_date}</span>
-                {m.in_care && <span className="rounded bg-brand-soft px-1.5 text-[10px] text-brand-ink">{t({ uk: "у догляді", en: "in care" })}</span>}
+                {m.in_care && <span className="rounded bg-brand-soft px-1.5 text-xs text-brand-ink">{t({ uk: "у догляді", en: "in care" })}</span>}
                 {m.risk_marks.filter((r) => r !== "in_care").map((r) => (
-                  <span key={r} className="rounded border border-line px-1.5 text-[10px] text-muted">{r}</span>
+                  <span key={r} className="rounded border border-line px-1.5 text-xs text-muted">{r}</span>
                 ))}
               </div>
             ))}
@@ -501,10 +511,10 @@ function FamilyContent({ family, canSee, t }: Readonly<{ family: FamilyGraph | n
               <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(density * 100, 100)}%` }} />
             </div>
             <span className="tnum text-sm font-semibold text-ink">{density.toFixed(2)}</span>
-            {hh?.escalated && <span className="rounded bg-brand-soft px-1.5 py-px text-[10px] font-medium text-brand-ink">{t({ uk: "ескальовано", en: "escalated" })}</span>}
+            {hh?.escalated && <span className="rounded bg-brand-soft px-1.5 py-px text-xs font-medium text-brand-ink">{t({ uk: "ескальовано", en: "escalated" })}</span>}
           </div>
           {hh?.density_breakdown && (
-            <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-faint">
+            <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-faint">
               {Object.entries(hh.density_breakdown).filter(([, v]) => v > 0).map(([k, v]) => (
                 <span key={k}>{DENS_LABEL(k, t)}: <span className="tnum text-muted">{v.toFixed(2)}</span></span>
               ))}
@@ -529,7 +539,7 @@ function FamilyContent({ family, canSee, t }: Readonly<{ family: FamilyGraph | n
         </div>
       )}
 
-      <p className="text-[11px] leading-relaxed text-faint">
+      <p className="text-xs leading-relaxed text-faint">
         {t({
           uk: "Батьківські фактори — контекст (≤0.55, нижче за дитячі тяжкості). Найчутливіше (медицина, кримінал) видно лише як факт без змісту — зміст за стіною (медтаємниця, КПК ст.222). Рішення ухвалює Комісія.",
           en: "Parental factors are context (≤0.55, below child severities). The most sensitive (medical, criminal) is shown only as a content-free fact — content stays behind the wall (medical secrecy, CPC art.222). The Commission decides.",

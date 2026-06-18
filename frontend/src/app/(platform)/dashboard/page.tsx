@@ -1,7 +1,8 @@
-import { getDashboardStats, getMetrics } from "@/lib/api";
-import { violName, TIER_META, TIER_COLOR, CHART_PALETTE } from "@/lib/registries";
+import { getDashboardStats, getMetrics, oblastLabel, oblastName } from "@/lib/api";
+import { violName, TIER_HORIZON, TIER_COLOR, chartScale } from "@/lib/registries";
 import { formatPct, formatNumber, pluralLoc } from "@/lib/format";
-import { getT, getLocale } from "@/lib/i18n.server";
+import { getT, getLocale, pageTitle } from "@/lib/i18n.server";
+import { getSession } from "@/lib/session.server";
 import { Card, CardTitle, SectionHeading } from "@/components/ui/Card";
 import { KpiCard, MiniStat } from "@/components/ui/Stat";
 import { HBar } from "@/components/charts/HBar";
@@ -9,30 +10,36 @@ import { Donut } from "@/components/charts/Donut";
 import { IconArrowRight, IconShield } from "@/components/ui/icons";
 import Link from "next/link";
 
-export const metadata = { title: "Управлінська панель — Ластівка" };
+export async function generateMetadata() {
+  return { title: await pageTitle({ uk: "Управлінська панель", en: "Management dashboard" }) };
+}
 
 export default async function DashboardPage() {
-  const [stats, metrics] = await Promise.all([getDashboardStats(), getMetrics()]);
+  const session = await getSession();
+  const [stats, metrics] = await Promise.all([getDashboardStats(session), getMetrics()]);
   const t = await getT();
   const locale = await getLocale();
-  const o = metrics.detection.overall;
 
+  const violColors = chartScale(stats.byViolation.length);
   const violData = stats.byViolation.map((v, i) => ({
     label: violName(v.key, locale),
     value: v.count,
-    color: CHART_PALETTE[i % CHART_PALETTE.length],
+    color: violColors[i],
   }));
 
-  const regionData = stats.byRegion.map((r) => ({
-    label: locale === "en" ? `${r.key} oblast` : `${r.key} обл.`,
+  // Коли скоуп звужено до області (регіонал/ССД) — географія по громадах, інакше по областях.
+  const geoStats = stats.scopedToOblast ? stats.byCommunity : stats.byRegion;
+  const geoData = geoStats.map((r) => ({
+    label: stats.scopedToOblast ? communityLabel(r.key, locale) : oblastLabel(r.key, locale),
     value: r.count,
     color: "var(--color-brand-2)",
   }));
+  const scopeOblast = session?.oblast ? oblastName(session.oblast, locale) : null;
 
-  const tierData = stats.byTier.map((t) => ({
-    label: `${t.tier} · ${TIER_META[t.tier].horizon}`,
-    value: t.count,
-    color: TIER_COLOR[t.tier],
+  const tierData = stats.byTier.map((row) => ({
+    label: `${row.tier} · ${t(TIER_HORIZON[row.tier])}`,
+    value: row.count,
+    color: TIER_COLOR[row.tier],
   }));
 
   return (
@@ -40,13 +47,18 @@ export default async function DashboardPage() {
       <SectionHeading
         index="01"
         title={t({ uk: "Управлінська панель", en: "Management dashboard" })}
-        subtitle={t({
-          uk: "Загальна картина для керівника: масштаб, структура ризиків і наскільки точно працює система.",
-          en: "The big picture for managers: scale, risk structure, and how accurately the system works.",
-        })}
       />
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+        {scopeOblast && (
+          <>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-brand-line bg-surface px-2.5 py-1 text-xs font-semibold text-brand">
+              <IconShield className="h-3.5 w-3.5" />
+              {t({ uk: `${scopeOblast} область`, en: `${scopeOblast} oblast` })}
+            </span>
+            <span className="text-faint">·</span>
+          </>
+        )}
         <span className="font-medium text-ink">
           {pluralLoc(
             stats.kpis.total,
@@ -64,43 +76,23 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard
-          label={t({ uk: "Сьогодні · T0", en: "Today · T0" })}
-          value={stats.kpis.t0}
-          tone="t0"
-          hint={t({ uk: "Реагувати негайно", en: "Respond immediately" })}
-        />
-        <KpiCard
-          label={t({ uk: "Цей тиждень · T1", en: "This week · T1" })}
-          value={stats.kpis.t1}
-          tone="t1"
-          hint={t({ uk: "Запланувати втручання", en: "Plan intervention" })}
-        />
-        <KpiCard
-          label={t({ uk: "Спостереження · T2", en: "Watch · T2" })}
-          value={stats.kpis.t2}
-          tone="t2"
-          hint={t({ uk: "Тримати в полі зору", en: "Keep monitoring" })}
-        />
-        <KpiCard
-          label={t({ uk: "Негайні", en: "Immediate" })}
-          value={stats.kpis.immediate}
-          tone="t0"
-          hint={t({ uk: "Торгівля, депортація, насильство", en: "Trafficking, deportation, violence" })}
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <KpiCard label={t({ uk: "Сьогодні · T0", en: "Today · T0" })} value={stats.kpis.t0} tone="t0" />
+        <KpiCard label={t({ uk: "Цей тиждень · T1", en: "This week · T1" })} value={stats.kpis.t1} tone="t1" />
+        <KpiCard label={t({ uk: "Спостереження · T2", en: "Watch · T2" })} value={stats.kpis.t2} tone="t2" />
+        <KpiCard label={t({ uk: "Негайні", en: "Immediate" })} value={stats.kpis.immediate} tone="t0" />
       </div>
 
       {/* charts row 1 */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
-          <CardTitle hint={t({ uk: "кількість дітей", en: "number of children" })}>
+          <CardTitle>
             {t({ uk: "Розподіл за типами порушень", en: "Distribution by violation type" })}
           </CardTitle>
           <HBar data={violData} />
         </Card>
         <Card className="p-5">
-          <CardTitle hint={t({ uk: "за терміновістю", en: "by urgency" })}>
+          <CardTitle>
             {t({ uk: "Рівні черги", en: "Queue tiers" })}
           </CardTitle>
           <div className="pt-2">
@@ -112,17 +104,16 @@ export default async function DashboardPage() {
       {/* charts row 2 */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
-          <CardTitle hint={t({ uk: "топ-10", en: "top 10" })}>
-            {t({ uk: "Географія сигналів за регіонами", en: "Signal geography by region" })}
+          <CardTitle>
+            {stats.scopedToOblast
+              ? t({ uk: "Географія сигналів за громадами", en: "Signal geography by community" })
+              : t({ uk: "Географія сигналів за регіонами", en: "Signal geography by region" })}
           </CardTitle>
-          <HBar data={regionData} />
+          <HBar data={geoData} />
         </Card>
 
         <Card className="p-5">
-          <CardTitle
-            icon={<IconShield className="h-4 w-4 text-brand" />}
-            hint={t({ uk: "приватність за дизайном", en: "privacy by design" })}
-          >
+          <CardTitle icon={<IconShield className="h-4 w-4 text-brand" />}>
             {t({ uk: "Повнота зібраних даних", en: "Data completeness" })}
           </CardTitle>
           <div className="grid grid-cols-2 gap-3">
@@ -137,12 +128,6 @@ export default async function DashboardPage() {
               tone="ok"
             />
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-muted">
-            {t({
-              uk: "Реєстри не зливаються в одну базу — профіль збирається лише за потреби, із захистом персональних даних.",
-              en: "Registries are not merged into one database — a profile is assembled only when needed, with data protection.",
-            })}
-          </p>
           <Link
             href="/privacy"
             className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
@@ -152,16 +137,12 @@ export default async function DashboardPage() {
           </Link>
         </Card>
       </div>
-
-      <p className="rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
-        <span className="font-medium text-ink-2">
-          {t({ uk: "Підтримка рішень, не вирок.", en: "Decision support, not a verdict." })}
-        </span>{" "}
-        {t({
-          uk: "Система розставляє пріоритети й пояснює кожне рішення; остаточне рішення щодо дитини ухвалює відповідальний спеціаліст.",
-          en: "The system prioritises and explains every decision; the final decision about a child is made by the responsible specialist.",
-        })}
-      </p>
     </div>
   );
+}
+
+/** worker_id «Харківська-3» → «Громада 3» / «Community 3» (без розкриття назви області). */
+function communityLabel(workerId: string, locale: "uk" | "en"): string {
+  const n = workerId.split("-").pop() ?? workerId;
+  return locale === "en" ? `Community ${n}` : `Громада ${n}`;
 }

@@ -22,6 +22,8 @@ import type { Role } from "./i18n";
 import type { Persona } from "./session";
 import { mockData, mockOblastOf, mockWorkers, mockWorkerQueue, MOCK_FEEDBACK_STATS } from "./mock";
 
+export { oblastName, oblastLabel } from "./mock";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ?? "";
 const USE_API = API_BASE.length > 0;
 
@@ -69,7 +71,7 @@ export async function getQueueItem(entityId: number): Promise<QueueItem | null> 
 
 /* ── Сегрегація за персоною (docs/FINAL_ACTOR_MODEL.md) — у ДАТА-шарі, не в JSX ──
    Скоуп БЕРЕТЬСЯ ІЗ СЕСІЇ (не з параметра виклику) → крос-скоупні id не витікають (IDOR). */
-export function scopeAndRedact(items: QueueItem[], persona: Persona | null): QueueItem[] {
+export function scopeAndRedact(items: QueueItem[], persona: Persona | null, locale: "uk" | "en" = "en"): QueueItem[] {
   if (!persona) return items;
   const ds = persona.dataScope;
   let scoped: QueueItem[];
@@ -93,7 +95,8 @@ export function scopeAndRedact(items: QueueItem[], persona: Persona | null): Que
   }
   if (!persona.pii) {
     // вирізання ПІБ у ДАТА-шарі (регіонал/наглядач): payload фізично без ідентифікаторів
-    scoped = scoped.map((i) => ({ ...i, pib: `Дитина №${i.entity_id}`, unzr: null, birth_date: null }));
+    const childWord = locale === "en" ? "Child" : "Дитина";
+    scoped = scoped.map((i) => ({ ...i, pib: `${childWord} №${i.entity_id}`, unzr: null, birth_date: null }));
   }
   return scoped;
 }
@@ -153,9 +156,27 @@ export function oblastOfItem(item: { oblast?: string | null; entity_id: number }
 }
 
 /* ── Фаза 3: навантаження кейсворкерів + feedback ── */
-export async function getCaseload(): Promise<CaseloadOverview | null> {
+export async function getCaseload(persona: Persona | null = null): Promise<CaseloadOverview | null> {
   const remote = await tryFetch<CaseloadOverview>("/caseload");
-  return remote ?? mockData.caseload;
+  const cl = remote ?? mockData.caseload;
+  if (!cl) return cl;
+  // Територіальна ізоляція у ДАТА-шарі: регіонал/ССД бачать навантаження лише своєї області.
+  if (!persona?.oblast) return cl;
+  return scopeCaseloadToOblast(cl, persona.oblast);
+}
+
+/** Зводить навантаження до однієї області й перераховує підсумок (ізоляція в дата-шарі). */
+function scopeCaseloadToOblast(cl: CaseloadOverview, oblast: string): CaseloadOverview {
+  const oblast_stats = cl.oblast_stats.filter((o) => o.oblast === oblast);
+  const summary = {
+    total_cases: oblast_stats.reduce((s, o) => s + o.cases, 0),
+    assigned: oblast_stats.reduce((s, o) => s + o.covered, 0),
+    overflow: oblast_stats.reduce((s, o) => s + o.overflow, 0),
+    urgent_uncovered: oblast_stats.reduce((s, o) => s + o.urgent_uncovered, 0),
+    extra_workers_needed: oblast_stats.reduce((s, o) => s + o.extra_workers_needed, 0),
+  };
+  const total_caseworkers = oblast_stats.reduce((s, o) => s + o.workers, 0);
+  return { ...cl, oblast_stats, summary, total_caseworkers };
 }
 
 export interface WorkerSummary {
@@ -165,8 +186,10 @@ export interface WorkerSummary {
   t0: number;
 }
 
-export async function getWorkers(): Promise<WorkerSummary[]> {
-  if (!USE_API) return mockWorkers();
+export async function getWorkers(oblast?: string | null): Promise<WorkerSummary[]> {
+  // Територіальна ізоляція: кабінет фахівця показує фахівців лише своєї області.
+  const scope = (ws: WorkerSummary[]) => (oblast ? ws.filter((w) => w.oblast === oblast) : ws);
+  if (!USE_API) return scope(mockWorkers());
   // у реальному API окремого списку немає — зводимо з /queue
   const items = await getQueue();
   const idx = new Map<string, WorkerSummary>();
@@ -177,7 +200,7 @@ export async function getWorkers(): Promise<WorkerSummary[]> {
     if (i.tier === "T0") w.t0 += 1;
     idx.set(i.worker_id, w);
   }
-  return [...idx.values()].sort((a, b) => b.t0 - a.t0 || b.count - a.count);
+  return scope([...idx.values()].sort((a, b) => b.t0 - a.t0 || b.count - a.count));
 }
 
 export async function getWorkerQueue(workerId: string): Promise<WorkerQueue> {
@@ -193,18 +216,18 @@ export async function getFeedbackStats(): Promise<FeedbackStats> {
 
 const MOCK_INTAKE: IntakeData = {
   channels: {
-    "116111": "Нацдитяча лінія (ГО «Ла Страда», цілодобово)",
-    "1545": "Урядовий контактний центр (роутер)",
-    "1547": "Лінія ДН / торгівля людьми (цілодобово)",
-    school_duty: "Обовʼязок закладу освіти (ПКМУ №684)",
-    medical_duty: "Медзаклад (≤1 доба; ≤3 год)",
+    "116111": { uk: "Нацдитяча лінія (ГО «Ла Страда», цілодобово)", en: "National Child Helpline (La Strada NGO, 24/7)" },
+    "1545": { uk: "Урядовий контактний центр (роутер)", en: "Government Contact Centre (router)" },
+    "1547": { uk: "Лінія ДН / торгівля людьми (цілодобово)", en: "Domestic violence / trafficking line (24/7)" },
+    school_duty: { uk: "Обовʼязок закладу освіти (ПКМУ №684)", en: "Education institution duty (CMU Reg. No. 684)" },
+    medical_duty: { uk: "Медзаклад (≤1 доба; ≤3 год)", en: "Medical institution (≤1 day; ≤3 h)" },
   },
   n_reports: 788,
   household: { n_households: 654, children_in_multichild: 1704, multichild_share: 0.3, n_with_sibling_in_care: 41 },
   cases: [
-    { child_pseudonym: "px-04417290", entity_id: 70, channels: ["1547"], n_reports: 2, corroborated: true, malicious_suspected: false, matched_violations: ["P1_physical_home"], reaction_deadline: "невідкладно / ≤3 год (загроза життю; ПКМУ №1513/2025)", urgent: true },
-    { child_pseudonym: "px-01882233", entity_id: 142, channels: ["school_duty"], n_reports: 1, corroborated: true, malicious_suspected: false, matched_violations: ["W3_out_of_education"], reaction_deadline: "реєстрація негайно; оцінка безпеки ≤1 доба (ПКМУ №585/2020)", urgent: false },
-    { child_pseudonym: "px-09913004", entity_id: null, channels: ["neighbor"], n_reports: 1, corroborated: false, malicious_suspected: true, matched_violations: [], reaction_deadline: "реєстрація негайно; розгляд ≤14 кал. днів (ПКМУ №585/2020)", urgent: false },
+    { child_pseudonym: "px-04417290", entity_id: 70, channels: ["1547"], n_reports: 2, corroborated: true, malicious_suspected: false, matched_violations: ["P1_physical_home"], reaction_deadline: { uk: "невідкладно / ≤3 год (загроза життю; ПКМУ №1513/2025)", en: "immediate / ≤3 h (threat to life; CMU Reg. No. 1513/2025)" }, urgent: true },
+    { child_pseudonym: "px-01882233", entity_id: 142, channels: ["school_duty"], n_reports: 1, corroborated: true, malicious_suspected: false, matched_violations: ["W3_out_of_education"], reaction_deadline: { uk: "реєстрація негайно; оцінка безпеки ≤1 доба (ПКМУ №585/2020)", en: "register immediately; safety assessment ≤1 day (CMU Reg. No. 585/2020)" }, urgent: false },
+    { child_pseudonym: "px-09913004", entity_id: null, channels: ["neighbor"], n_reports: 1, corroborated: false, malicious_suspected: true, matched_violations: [], reaction_deadline: { uk: "реєстрація негайно; розгляд ≤14 кал. днів (ПКМУ №585/2020)", en: "register immediately; review ≤14 calendar days (CMU Reg. No. 585/2020)" }, urgent: false },
   ],
 };
 
@@ -226,8 +249,8 @@ function MOCK_FAMILY(entityId: number, role: Role): FamilyGraph {
     household: { household_id: 10, size: 2, n_siblings: 1, churn_count: 1, risk_density: 0.55,
       density_breakdown: { sibling_marks: 0.27, sibling_in_care: 0.3, single_parent_unemployed: 0.2, n_siblings: 0.033 }, escalated: true },
     members: [
-      { entity_id: entityId, pib: "Демо Дитина Індекс", birth_date: "2015-04-12", is_index: true, n_registries: 4, risk_marks: [], in_care: false },
-      { entity_id: entityId + 1, pib: "Демо Сиблінг Один", birth_date: "2012-09-03", is_index: false, n_registries: 3, risk_marks: ["ssd", "in_care"], in_care: true },
+      { entity_id: entityId, pib: "Ткаченко Софія Андріївна", birth_date: "2015-04-12", is_index: true, n_registries: 4, risk_marks: [], in_care: false },
+      { entity_id: entityId + 1, pib: "Ткаченко Максим Андрійович", birth_date: "2012-09-03", is_index: false, n_registries: 3, risk_marks: ["ssd", "in_care"], in_care: true },
     ],
     parents: { structure: "Одинока мати / один з батьків", single_parent: true, both_parents: false, mother_present: true, father_present: false,
       parent_death: false, w6_cause: null, rights_deprived: false, deprivation_scope: null, parent_unemployed: true,
@@ -267,10 +290,19 @@ export interface DashboardStats {
   byViolation: { key: string; count: number }[];
   byRegion: { key: string; count: number }[];
   byTier: { tier: Tier; count: number }[];
+  /** Розріз за громадами/дільницями (заповнюється, коли скоуп звужено до однієї області). */
+  byCommunity: { key: string; count: number }[];
+  /** true → дашборд зведено до однієї області (регіонал/ССД): географію показуємо по громадах. */
+  scopedToOblast: boolean;
 }
 
-export async function getDashboardStats(): Promise<DashboardStats> {
-  const items = await getQueue();
+export async function getDashboardStats(persona: Persona | null = null): Promise<DashboardStats> {
+  const all = await getQueue();
+  // Територіальна ізоляція агрегатів у ДАТА-шарі: регіонал/ССД бачать лише свою область,
+  // наглядач/омбудсман — усю країну. Агрегати не містять ПІБ за визначенням.
+  const items = persona?.oblast
+    ? all.filter((i) => (i.oblast ?? "—") === persona.oblast)
+    : all;
   const t0 = items.filter((i) => i.tier === "T0").length;
   const t1 = items.filter((i) => i.tier === "T1").length;
   const t2 = items.filter((i) => i.tier === "T2").length;
@@ -300,11 +332,27 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     count: tierCount(tier, tierCounts),
   }));
 
+  // Коли скоуп звужено до однієї області — географію зводимо до громад/дільниць (worker_id).
+  const scopedToOblast = !!persona?.oblast;
+  const ccount = new Map<string, number>();
+  if (scopedToOblast) {
+    for (const i of items) {
+      if (!i.worker_id) continue;
+      ccount.set(i.worker_id, (ccount.get(i.worker_id) ?? 0) + 1);
+    }
+  }
+  const byCommunity = [...ccount.entries()]
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
   return {
     kpis: { t0, t1, t2, immediate, total: items.length },
     byViolation,
     byRegion,
     byTier,
+    byCommunity,
+    scopedToOblast,
   };
 }
 

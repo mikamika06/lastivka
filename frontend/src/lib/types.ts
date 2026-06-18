@@ -3,6 +3,8 @@
  * (lastivka/scoring.py, matching.py, pipeline.py, app/api.py).
  */
 
+import type { Msg } from "@/lib/i18n";
+
 export type Tier = "T0" | "T1" | "T2";
 export type Acuity = "acute" | "active" | "chronic" | "improving";
 export type RegistryCode =
@@ -215,12 +217,12 @@ export interface IntakeCase {
   corroborated: boolean;
   malicious_suspected: boolean;
   matched_violations: string[];
-  reaction_deadline: string;
+  reaction_deadline: Msg;
   urgent: boolean;
 }
 
 export interface IntakeData {
-  channels: Record<string, string>;
+  channels: Record<string, Msg>;
   n_reports: number;
   household: {
     n_households?: number;

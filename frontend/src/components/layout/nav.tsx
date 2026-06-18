@@ -65,7 +65,7 @@ export const INTAKE_NAV: NavItem[] = [
   {
     href: "/intake",
     pillar: "08",
-    title: { uk: "Інтейк (передні двері)", en: "Intake (front door)" },
+    title: { uk: "Інтейк звернень", en: "Reports intake" },
     desc: { uk: "Звернення → кейс → тріаж", en: "Reports → case → triage" },
     icon: IconPulse,
   },

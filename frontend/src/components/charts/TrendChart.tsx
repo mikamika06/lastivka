@@ -96,7 +96,7 @@ export function TrendChart({ data }: Readonly<{ data: AttendanceSeries }>) {
             <line x1={cpX} x2={cpX} y1={padT - 6} y2={padT + plotH} stroke="var(--color-t0)" strokeWidth="1.6" strokeDasharray="4 4" />
             <g transform={`translate(${Math.min(cpX, W - padR - 90)}, ${padT - 6})`}>
               <rect x="2" y="-14" width="86" height="18" rx="9" fill="var(--color-t0-soft)" stroke="var(--color-t0-line)" />
-              <text x="45" y="-1" textAnchor="middle" className="fill-t0-ink text-[10px] font-semibold">
+              <text x="45" y="-1" textAnchor="middle" className="fill-t0-ink text-[12px] font-semibold">
                 {t({ uk: "злам тренду", en: "trend break" })}
               </text>
             </g>
@@ -106,7 +106,7 @@ export function TrendChart({ data }: Readonly<{ data: AttendanceSeries }>) {
         {/* підписи осі X */}
         {pts.map((p, i) =>
           i % labelEvery === 0 ? (
-            <text key={`${p.period}-${i}`} x={x(i)} y={H - 14} textAnchor="middle" className="fill-faint text-[10px]">
+            <text key={`${p.period}-${i}`} x={x(i)} y={H - 14} textAnchor="middle" className="fill-faint text-[12px]">
               {formatPeriod(p.period, locale)}
             </text>
           ) : null,

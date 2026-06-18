@@ -51,7 +51,7 @@ export function Donut({
             y="84"
             textAnchor="middle"
             transform="rotate(90 70 70)"
-            className="fill-faint text-[10px]"
+            className="fill-faint text-[12px]"
           >
             {centerLabel}
           </text>
