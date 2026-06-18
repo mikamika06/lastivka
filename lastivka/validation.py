@@ -46,7 +46,8 @@ def eval_detection(detections) -> dict:
     detected = defaultdict(set)
     for d in detections:
         u = d["unzr"]
-        pred = {x["violation"] for x in d["detections"]}
+        # parental-вісь — ризик-контекст, НЕ ground-truth порушення: не входить у F1-оцінку
+        pred = {x["violation"] for x in d["detections"] if x.get("dimension") != "parental"}
         detected[u] |= pred
         truth = set(all_true.get(u, {}).keys()) if u else set()
         for v in pred:

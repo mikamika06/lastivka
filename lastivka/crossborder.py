@@ -12,7 +12,7 @@ from datetime import date
 from .transliteration import translit_official
 from . import privacy
 
-LINK_THRESHOLD = 0.80           # Dice на Bloom-фільтрах (0..1)
+LINK_THRESHOLD = 0.75           # Dice на Bloom-фільтрах; аудит: P=0.997 константа, R 0.948→0.983 @0.75
 _XB_KEY = b"lastivka-crossborder-psi"
 _X_SEVERITY_ACUITY = "acute"    # крос-кордонні ризики — щойно після прибуття
 
@@ -64,7 +64,7 @@ def _x_risks(ua: dict, ee: dict) -> list[dict]:
     ee_health = "TERVIS" in R_ee
     ee_registered = "RAHV" in R_ee
     ua_had_school = "EDEBO" in R_ua
-    ua_had_chronic = "CBI" in R_ua or any(
+    ua_had_chronic = "CBI_DISABILITY" in R_ua or any(
         r.get("condition_code") == "chronic" for r in R_ua.get("EHEALTH", []))
     uasc = any("lastekaitse" in str(r.get("huvitis_tyyp", "")) for r in R_ee.get("SKAIS", [])) or \
         any(r.get("hooldusoigus") == "eestkostja määramata" for r in R_ee.get("RAHV", []))
@@ -80,7 +80,7 @@ def _x_risks(ua: dict, ee: dict) -> list[dict]:
     if ee_registered and school_age and not ee_school and not ee_health:
         add("X1_gap", ["RAHV", "EDEBO"])
     if ua_had_chronic and not ee_health:
-        add("X3_med_rupture", (["CBI"] if "CBI" in R_ua else ["EHEALTH"]) + ["RAHV"])
+        add("X3_med_rupture", (["CBI_DISABILITY"] if "CBI_DISABILITY" in R_ua else ["EHEALTH"]) + ["RAHV"])
     if uasc:
         add("X2_uasc", ["RAHV", "SKAIS"])
     return out
@@ -97,7 +97,14 @@ def apply(entities: list[dict], detections: list[dict], cfg: dict | None = None)
         ua, ee = lk["ua"], lk["ee"]
         merged_ee_ids.add(ee["entity_id"])
         # обʼєднати профіль (для відображення крос-кордонної стрічки)
-        ua["rows_by_reg"] = {**ua["rows_by_reg"], **ee["rows_by_reg"]}
+        # ПРИВАТНІСТЬ: TERVIS (EE-медицина, walled) перетинає кордон ЛИШЕ як сигнал присутності —
+        # сирий зміст (diagnoos_RHK10) не зливається (медтаємниця; GDPR гл.V). X-ризики рахуються
+        # нижче з ОРИГІНАЛЬНОГО ee, тож редакція копії профілю їх не зачіпає.
+        ee_rows = dict(ee["rows_by_reg"])
+        if ee_rows.get("TERVIS"):
+            ee_rows["TERVIS"] = [{"present": True, "redacted": True,
+                                  "note": "EE медичні дані — лише сигнал присутності (медтаємниця)"}]
+        ua["rows_by_reg"] = {**ua["rows_by_reg"], **ee_rows}
         ua["registries"] = sorted(set(ua["registries"]) | set(ee["registries"]))
         ua["n_registries"] = len(ua["registries"])
         ua["country"] = "UA+EE"

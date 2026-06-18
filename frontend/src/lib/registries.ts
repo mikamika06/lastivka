@@ -27,14 +27,26 @@ export const REGISTRIES: RegistryMeta[] = [
   { code: "DITY", ua: "ЄІАС «Діти» / ССД", uaEn: "Children services registry", short: "ССД", shortEn: "Child svc", owner: "Нацсоцслужба", subsystem: "85_OISSS_DITY_prod", access: 2 },
   { code: "ERDR", ua: "ЄРДР — досудові розслідування", uaEn: "ERDR — criminal investigations", short: "ЄРДР", shortEn: "ERDR", owner: "Офіс Генпрокурора", subsystem: "ERDR_prod", access: 1 },
   { code: "DV", ua: "Реєстр домашнього насильства", uaEn: "Domestic violence registry", short: "Насильство", shortEn: "DV", owner: "МВС / Мінсоц", subsystem: "20_MVS_DN_prod", access: 2 },
-  { code: "CBI", ua: "Банк даних з інвалідності", uaEn: "Disability data bank", short: "Інвалідність", shortEn: "Disability", owner: "Мінсоцполітики", subsystem: "CBI_prod", access: 2 },
+  { code: "CBI_DISABILITY", ua: "Банк даних з інвалідності", uaEn: "Disability data bank", short: "Інвалідність", shortEn: "Disability", owner: "Мінсоцполітики", subsystem: "CBI_prod", access: 2 },
   { code: "EISSS", ua: "ЄІССС — соціальні допомоги", uaEn: "EISSS — social benefits", short: "ЄІССС", shortEn: "Benefits", owner: "Мінсоцполітики", subsystem: "EISSS_prod", access: 2 },
   { code: "EDRSR", ua: "ЄДРСР — судові рішення", uaEn: "EDRSR — court rulings", short: "ЄДРСР", shortEn: "Court", owner: "ДСА", subsystem: "EDRSR_prod", access: 3 },
   { code: "SKAID", ua: "ІКС «СКАЙД» — ювенальна превенція", uaEn: "SKAID — juvenile prevention", short: "СКАЙД", shortEn: "SKAID", owner: "Нацполіція", subsystem: "20_NP_SKAID_prod", access: 2 },
   { code: "PFU", ua: "Реєстр застрахованих осіб (ПФУ)", uaEn: "Pension fund insured persons", short: "ПФУ", shortEn: "PFU", owner: "ПФУ", subsystem: "PFU_RZO_prod", access: 2 },
   { code: "DRRP", ua: "ДРРП — речові права (житло)", uaEn: "DRRP — property rights (housing)", short: "ДРРП", shortEn: "Property", owner: "Мінʼюст", subsystem: "3_MJU_DRRP_prod", access: 2 },
-  { code: "HOTLINE", ua: "Гарячі лінії 116 111 / 1545", uaEn: "Hotlines 116 111 / 1545", short: "Гар. лінія", shortEn: "Hotline", owner: "Ла Страда / УКЦ", subsystem: "HOTLINE_prod", access: 2 },
+  { code: "HOTLINE", ua: "Гарячі лінії 116 111 / 1547", uaEn: "Hotlines 116 111 / 1547", short: "Гар. лінія", shortEn: "Hotline", owner: "Ла Страда / УКЦ", subsystem: "HOTLINE_prod", access: 2 },
+  // ── Естонія (крос-кордон): для імен чіпів EE-дітей ──
+  { code: "RAHV", ua: "Rahvastikuregister (народонаселення, EE)", uaEn: "Rahvastikuregister (population, EE)", short: "RAHV", shortEn: "RAHV", owner: "Siseministeerium", subsystem: "RR_prod", access: 2 },
+  { code: "EHIS_EE", ua: "EHIS (освіта, EE)", uaEn: "EHIS (education, EE)", short: "EHIS", shortEn: "EHIS", owner: "HTM", subsystem: "EHIS_prod", access: 2 },
+  { code: "TERVIS", ua: "TERVIS (здоровʼя, EE)", uaEn: "TERVIS (health, EE)", short: "TERVIS", shortEn: "TERVIS", owner: "TEHIK", subsystem: "TIS_prod", access: 1 },
+  { code: "SKAIS", ua: "SKAIS (соцзахист, EE)", uaEn: "SKAIS (social, EE)", short: "SKAIS", shortEn: "SKAIS", owner: "SKA", subsystem: "SKAIS_prod", access: 2 },
 ];
+
+/** WALLED-реєстри (стіни): зміст не перетинає межу навіть як сигнал (ЕСОЗ/ЄРДР/TERVIS). */
+export const WALLED_REGISTRIES = new Set<RegistryCode>(["EHEALTH", "ERDR", "TERVIS"]);
+
+export function isWalled(code: RegistryCode): boolean {
+  return WALLED_REGISTRIES.has(code);
+}
 
 export const REG_BY_CODE: Record<RegistryCode, RegistryMeta> = Object.fromEntries(
   REGISTRIES.map((r) => [r.code, r]),
@@ -64,6 +76,9 @@ export const VIOLATION_LABELS: Record<string, Msg> = {
   W2_psych_trauma: { uk: "Психотравма", en: "Psychological trauma" },
   W6_orphanhood: { uk: "Сирітство / втрата опіки", en: "Orphanhood / loss of care" },
   W5_deportation: { uk: "Депортація", en: "Deportation" },
+  W10_militarization: { uk: "Мілітаризація / залучення до бойових дій", en: "Militarization / use in hostilities" },
+  W4_death_injury: { uk: "Загибель / поранення (бойові дії)", en: "Death / injury (hostilities)" },
+  F5_dv_witness: { uk: "Свідок домашнього насильства", en: "Witness of domestic violence" },
   W7_trafficking: { uk: "Торгівля людьми", en: "Human trafficking" },
   F3_neglect: { uk: "Нехтування потребами", en: "Neglect" },
   P1_physical_home: { uk: "Фізичне насильство вдома", en: "Domestic physical abuse" },
@@ -73,7 +88,24 @@ export const VIOLATION_LABELS: Record<string, Msg> = {
   E4_inclusion: { uk: "Доступ до інклюзії", en: "Inclusive-education access" },
   W9_identity: { uk: "Право на ідентичність", en: "Right to identity" },
   F1_psych_violence: { uk: "Психологічне насильство (сім'я)", en: "Psychological abuse (family)" },
+  // крос-кордон UA↔EE (X-вісь)
+  X1_gap: { uk: "Щілина між системами (EE)", en: "Cross-system gap (EE)" },
+  X2_uasc: { uk: "Без супроводу (UASC)", en: "Unaccompanied minor (UASC)" },
+  X3_med_rupture: { uk: "Розрив медичного супроводу (EE)", en: "Medical rupture (EE)" },
+  X4_edu_rupture: { uk: "Розрив освіти (EE)", en: "Education rupture (EE)" },
+  // батьківсько-сімейна вісь (dimension=parental)
+  P_parent_criminal: { uk: "Судимість батька (ризик)", en: "Parent conviction (risk)" },
+  P_parent_rights: { uk: "Позбавлення батьківських прав", en: "Parental rights deprivation" },
+  P_parent_addiction: { uk: "Залежність батька (ризик)", en: "Parent addiction (risk)" },
+  P_parent_mh: { uk: "Психічне здоров'я батька (ризик)", en: "Parent mental health (risk)" },
+  P_sibling_violation: { uk: "Порушення в сиблінга", en: "Sibling prior violation" },
+  P_sibling_in_care: { uk: "Сиблінг у догляді", en: "Sibling in care" },
 };
+
+/** Чи є код батьківсько-сімейним сигналом (для UI-чипа «сімейний ризик»). */
+export function isParentalCode(v: string): boolean {
+  return v.startsWith("P_");
+}
 
 export function violMsg(v: string): Msg {
   return VIOLATION_LABELS[v] ?? { uk: v, en: v };

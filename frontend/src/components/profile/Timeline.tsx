@@ -16,8 +16,8 @@ export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
   return (
     <ol className="relative space-y-5 pl-6">
       <span className="absolute left-[7px] top-1.5 bottom-1.5 w-px bg-line" aria-hidden="true" />
-      {events.map((e) => (
-        <li key={`${e.date}-${e.registry}`} className="relative">
+      {events.map((e, i) => (
+        <li key={`${e.date}-${e.registry}-${i}`} className="relative">
           <span
             className={`absolute -left-[23px] top-1 grid h-4 w-4 place-items-center rounded-full ring-4 ring-surface ${
               e.level1 ? "bg-lock" : "bg-brand"

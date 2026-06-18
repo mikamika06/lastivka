@@ -5,10 +5,12 @@ import type { ReactNode } from "react";
 import { SidebarContent } from "./Sidebar";
 import { Logo } from "@/components/ui/Logo";
 import { Controls } from "@/components/providers/Controls";
+import { SessionBadge } from "@/components/providers/SessionBadge";
 import { IconMenu, IconClose } from "@/components/ui/icons";
 import { useTx } from "@/components/providers/I18nProvider";
+import type { Persona } from "@/lib/session";
 
-export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
+export function AppShell({ children, session = null }: Readonly<{ children: ReactNode; session?: Persona | null }>) {
   const t = useTx();
   const [open, setOpen] = useState(false);
 
@@ -25,7 +27,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
     <div className="min-h-screen lg:grid lg:grid-cols-[290px_1fr]">
       {/* desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen border-r border-line bg-surface lg:block">
-        <SidebarContent />
+        <SidebarContent role={session?.role} />
       </aside>
 
       {/* mobile top bar */}
@@ -62,7 +64,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
             >
               <IconClose className="h-5 w-5" />
             </button>
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent onNavigate={() => setOpen(false)} role={session?.role} />
           </div>
         </div>
       )}
@@ -70,7 +72,8 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
       <main className="min-w-0">
         {/* desktop top bar з керуванням (мова/тема) */}
         <div className="sticky top-0 z-20 hidden border-b border-line bg-paper/80 backdrop-blur lg:block">
-          <div className="mx-auto flex max-w-[1280px] items-center justify-end gap-2 px-8 py-2.5">
+          <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-2 px-8 py-2.5">
+            <SessionBadge session={session} />
             <Controls />
           </div>
         </div>

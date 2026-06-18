@@ -121,28 +121,26 @@ export default async function DashboardPage() {
         <Card className="p-5">
           <CardTitle
             icon={<IconShield className="h-4 w-4 text-brand" />}
-            hint={t({ uk: "заздалегідь відомі випадки", en: "known cases" })}
+            hint={t({ uk: "приватність за дизайном", en: "privacy by design" })}
           >
-            {t({ uk: "Якість моделі", en: "Model quality" })}
+            {t({ uk: "Повнота зібраних даних", en: "Data completeness" })}
           </CardTitle>
           <div className="grid grid-cols-2 gap-3">
-            <MiniStat label={t({ uk: "Точність", en: "Precision" })} value={o.precision.toFixed(2)} tone="brand" />
-            <MiniStat label={t({ uk: "Повнота", en: "Recall" })} value={o.recall.toFixed(2)} tone="brand" />
             <MiniStat
-              label={t({ uk: "Загальна якість (F1)", en: "Overall quality (F1)" })}
-              value={o.f1.toFixed(2)}
-              tone="brand"
+              label={t({ uk: "Профілів зібрано", en: "Profiles assembled" })}
+              value={formatNumber(metrics.matching.entities, locale)}
+              tone="neutral"
             />
             <MiniStat
-              label={t({ uk: "Зіставлення", en: "Matching" })}
+              label={t({ uk: "Зібрано в один профіль", en: "Merged into one profile" })}
               value={formatPct(metrics.matching.reconstruction_rate)}
               tone="ok"
             />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted">
             {t({
-              uk: "Показники як підтвердження довіри: точність і повнота виміряні на заздалегідь відомих порушеннях, які навмисно додали для перевірки.",
-              en: "Metrics as proof of trust: precision and recall are measured on known violations that were deliberately added for validation.",
+              uk: "Реєстри не зливаються в одну базу — профіль збирається лише за потреби, із захистом персональних даних.",
+              en: "Registries are not merged into one database — a profile is assembled only when needed, with data protection.",
             })}
           </p>
           <Link

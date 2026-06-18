@@ -69,7 +69,7 @@ export function TrendChart({ data }: Readonly<{ data: AttendanceSeries }>) {
           const after = cp !== null && i >= cp;
           return (
             <rect
-              key={p.period}
+              key={`${p.period}-${i}`}
               x={x(i) - barW / 2}
               y={yA(p.absences)}
               width={barW}
@@ -85,7 +85,7 @@ export function TrendChart({ data }: Readonly<{ data: AttendanceSeries }>) {
         {/* лінія GPA */}
         <path d={gpaLine} fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
         {pts.map((p, i) => (
-          <circle key={p.period} cx={x(i)} cy={yG(p.gpa)} r="3" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="2">
+          <circle key={`${p.period}-${i}`} cx={x(i)} cy={yG(p.gpa)} r="3" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="2">
             <title>{`${formatPeriod(p.period, locale)}: GPA ${p.gpa}`}</title>
           </circle>
         ))}
@@ -106,7 +106,7 @@ export function TrendChart({ data }: Readonly<{ data: AttendanceSeries }>) {
         {/* підписи осі X */}
         {pts.map((p, i) =>
           i % labelEvery === 0 ? (
-            <text key={p.period} x={x(i)} y={H - 14} textAnchor="middle" className="fill-faint text-[10px]">
+            <text key={`${p.period}-${i}`} x={x(i)} y={H - 14} textAnchor="middle" className="fill-faint text-[10px]">
               {formatPeriod(p.period, locale)}
             </text>
           ) : null,
