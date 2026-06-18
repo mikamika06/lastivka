@@ -15,7 +15,7 @@ from .storage import OUT
 
 
 def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.yaml",
-                 log_to_mlflow=True) -> dict:
+                 log_to_mlflow=True, federated=False) -> dict:
     cfg = yaml.safe_load(open(config_path, encoding="utf-8"))
     epi_path = os.path.join(os.path.dirname(config_path), "epidemiology.yaml")
     epi = yaml.safe_load(open(epi_path, encoding="utf-8"))
@@ -23,7 +23,12 @@ def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.
 
     entities = matching.match()
     entities = familygraph.rollup(entities, cfg)   # C1-rollup: household/сиблінги (до детекції)
-    detections = detection.detect_all(entities, cfg)
+    if federated:
+        # ПРОД-режим: детекція через федеративні LRA-вузли (compute-to-data, стіни push-only)
+        from . import federated as _fed
+        detections = _fed.federated_detect_all(entities, cfg, push_walled=True)
+    else:
+        detections = detection.detect_all(entities, cfg)
     # крос-кордон UA↔EE: лінк PPRL, узгодження W3/W8, X-ризики
     entities, detections, cb_stats = crossborder.apply(entities, detections, cfg)
     entities_by_id = {e["entity_id"]: e for e in entities}
