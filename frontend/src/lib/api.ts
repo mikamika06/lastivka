@@ -250,9 +250,10 @@ export interface FederatedStats {
   mode: string; equivalence_sample: string;
 }
 export interface FederatedEnvelope { registry: string; blocked: boolean; signals: string[]; note?: string | null; }
+export interface FederatedDetection { violation: string; evidence: string[]; dimension: string; }
 export interface FederatedTrace {
   entity_id: number; active_lra_nodes: number; aggregators: number; pseudonym: string;
-  envelopes: FederatedEnvelope[]; detections: string[]; note: string;
+  envelopes: FederatedEnvelope[]; detections: FederatedDetection[]; note: string;
 }
 export async function getFederatedStats(): Promise<FederatedStats | null> {
   return tryFetch<FederatedStats>("/federated/stats");

@@ -252,12 +252,15 @@ def federated_trace(entity_id: int):
     if not e:
         raise HTTPException(404, "Не знайдено")
     _s, envs, n = federated.assemble(e, _CFG, push_walled=True)
+    dets = federated.federated_detect_entity(e, _CFG)
     return {"entity_id": entity_id, "active_lra_nodes": n, "aggregators": 1,
             "pseudonym": federated.pseudonym(e.get("unzr")),
             "envelopes": [{"registry": en["registry"], "blocked": en["blocked"],
                            "signals": sorted(en["signals"].keys()) if not en["blocked"] else [],
                            "note": en.get("note")} for en in envs],
-            "detections": [d["violation"] for d in federated.federated_detect_entity(e, _CFG)],
+            # порушення з ДОКАЗАМИ (які реєстри його довели) — для графа зв'язків
+            "detections": [{"violation": d["violation"], "evidence": d.get("evidence", []),
+                            "dimension": d.get("dimension", "child")} for d in dets],
             "note": "Сирі рядки силосів не залишали реєстр — через межу пройшли лише ці envelope-сигнали."}
 
 
