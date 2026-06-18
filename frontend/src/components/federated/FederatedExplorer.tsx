@@ -3,37 +3,45 @@
 import { useEffect, useState } from "react";
 import type { QueueItem } from "@/lib/types";
 import { getFederatedTrace, type FederatedStats, type FederatedTrace } from "@/lib/api";
-import { violName } from "@/lib/registries";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
+import { displayName } from "@/lib/translit";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { IconChevronDown } from "@/components/ui/icons";
 import { FederatedGraph } from "./FederatedGraph";
 
-const REG_LABEL: Record<string, string> = {
-  DRACS: "ДРАЦС", EDDR: "ЄДДР", EHEALTH: "ЕСОЗ", EDEBO: "ЄДЕБО", AIKOM: "АІКОМ/ІСУО",
-  VPO: "ВПО", CHILDWAR: "Діти війни", DITY: "ЄІАС «Діти»", ERDR: "ЄРДР", DV: "Реєстр ДН",
-  CBI_DISABILITY: "ЦБІ (інвалідність)", EDRSR: "ЄДРСР (суди)", DRRP: "ДРРП (житло)",
-  PFU: "ПФУ", HOTLINE: "Гарячі лінії", SKAID: "СКАЙД", EISSS: "ЄІССС",
-  RAHV: "RAHV (EE)", EHIS_EE: "EHIS (EE)", SKAIS: "SKAIS (EE)", TERVIS: "TERVIS (EE)",
+const REG_LABEL: Record<string, { uk: string; en: string }> = {
+  DRACS: { uk: "ДРАЦС", en: "DRACS" }, EDDR: { uk: "ЄДДР", en: "EDDR" }, EHEALTH: { uk: "ЕСОЗ", en: "eHealth" },
+  EDEBO: { uk: "ЄДЕБО", en: "EDEBO" }, AIKOM: { uk: "АІКОМ/ІСУО", en: "AIKOM/ISUO" },
+  VPO: { uk: "ВПО", en: "IDP" }, CHILDWAR: { uk: "Діти війни", en: "War children" },
+  DITY: { uk: "ЄІАС «Діти»", en: "Child services" }, ERDR: { uk: "ЄРДР", en: "ERDR" }, DV: { uk: "Реєстр ДН", en: "DV registry" },
+  CBI_DISABILITY: { uk: "ЦБІ (інвалідність)", en: "Disability (CBI)" }, EDRSR: { uk: "ЄДРСР (суди)", en: "Court (USRCD)" },
+  DRRP: { uk: "ДРРП (житло)", en: "Property (DRRP)" }, PFU: { uk: "ПФУ", en: "PFU" }, HOTLINE: { uk: "Гарячі лінії", en: "Hotlines" },
+  SKAID: { uk: "СКАЙД", en: "SKAID" }, EISSS: { uk: "ЄІССС", en: "EISSS" },
+  RAHV: { uk: "RAHV (EE)", en: "RAHV (EE)" }, EHIS_EE: { uk: "EHIS (EE)", en: "EHIS (EE)" },
+  SKAIS: { uk: "SKAIS (EE)", en: "SKAIS (EE)" }, TERVIS: { uk: "TERVIS (EE)", en: "TERVIS (EE)" },
 };
-const WALLED = new Set(["EHEALTH", "ERDR", "TERVIS"]);
 
 export function FederatedExplorer({ items, stats }: Readonly<{ items: QueueItem[]; stats: FederatedStats | null }>) {
   const t = useTx();
   const locale = useLocale();
+  const regLabel = (code: string) => {
+    const m = REG_LABEL[code];
+    return m ? (locale === "en" ? m.en : m.uk) : code;
+  };
   // спершу діти з порушеннями (цікавіша траса)
   const sorted = [...items].sort((a, b) => (b.violations?.length ?? 0) - (a.violations?.length ?? 0));
   const [selectedId, setSelectedId] = useState<number>(sorted[0]?.entity_id);
-  const [trace, setTrace] = useState<FederatedTrace | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<{ id: number; trace: FederatedTrace | null } | null>(null);
 
   useEffect(() => {
     if (selectedId === undefined) return;
     let active = true;
-    setLoading(true);
-    getFederatedTrace(selectedId).then((tr) => { if (active) { setTrace(tr); setLoading(false); } });
+    getFederatedTrace(selectedId).then((tr) => { if (active) setData({ id: selectedId, trace: tr }); });
     return () => { active = false; };
   }, [selectedId]);
+
+  const trace = data && data.id === selectedId ? data.trace : null;
+  const loading = !(data && data.id === selectedId);
 
   const emitted = trace?.envelopes.filter((e) => !e.blocked && e.signals.length > 0) ?? [];
   const silent = trace?.envelopes.filter((e) => !e.blocked && e.signals.length === 0) ?? [];
@@ -70,7 +78,7 @@ export function FederatedExplorer({ items, stats }: Readonly<{ items: QueueItem[
             className="w-full appearance-none rounded-xl border border-line bg-surface py-3 pl-4 pr-10 text-sm font-medium text-ink outline-none focus:border-brand">
             {sorted.map((i) => (
               <option key={i.entity_id} value={i.entity_id}>
-                {i.pib} · {i.tier} · {(i.violations?.length ?? 0)} {t({ uk: "порушень", en: "violations" })}
+                {displayName(i.pib, locale)} · {i.tier} · {(i.violations?.length ?? 0)} {t({ uk: "порушень", en: "violations" })}
               </option>
             ))}
           </select>
@@ -97,7 +105,7 @@ export function FederatedExplorer({ items, stats }: Readonly<{ items: QueueItem[
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {emitted.map((e) => (
               <div key={e.registry} className="rounded-lg border border-line bg-surface p-2.5">
-                <div className="mb-1 text-xs font-semibold text-ink">{REG_LABEL[e.registry] ?? e.registry}</div>
+                <div className="mb-1 text-xs font-semibold text-ink">{regLabel(e.registry)}</div>
                 <div className="flex flex-wrap gap-1">
                   {e.signals.map((s) => (
                     <span key={s} className="rounded bg-brand-soft px-1.5 py-px font-mono text-[10px] text-brand-ink">{s}</span>
@@ -107,13 +115,13 @@ export function FederatedExplorer({ items, stats }: Readonly<{ items: QueueItem[
             ))}
             {blocked.map((e) => (
               <div key={e.registry} className="rounded-lg border border-lock/30 bg-lock-soft/50 p-2.5">
-                <div className="text-xs font-semibold text-lock-ink">{REG_LABEL[e.registry] ?? e.registry} · WALLED</div>
+                <div className="text-xs font-semibold text-lock-ink">{regLabel(e.registry)} · WALLED</div>
                 <div className="mt-0.5 text-[10px] leading-tight text-faint">{t({ uk: "pull заборонено — лише push", en: "pull blocked — push only" })}</div>
               </div>
             ))}
           </div>
           {silent.length > 0 && (
-            <p className="mt-2 text-[11px] text-faint">{t({ uk: "Без сигналів: ", en: "No signals: " })}{silent.map((e) => REG_LABEL[e.registry] ?? e.registry).join(", ")}</p>
+            <p className="mt-2 text-[11px] text-faint">{t({ uk: "Без сигналів: ", en: "No signals: " })}{silent.map((e) => regLabel(e.registry)).join(", ")}</p>
           )}
         </Card>
       )}
