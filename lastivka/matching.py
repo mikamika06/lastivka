@@ -16,7 +16,7 @@ from rapidfuzz import fuzz
 from .emitters import REGISTRIES
 from .storage import REG_DIR
 
-FUZZY_THRESHOLD = 86
+FUZZY_THRESHOLD = 82   # аудит: sweep 78–90 показав 82 = вища реконструкція (0.889 vs 0.879@86), 0 impure
 _COUNTRY = {r["code"]: r.get("country", "UA") for r in REGISTRIES}
 
 

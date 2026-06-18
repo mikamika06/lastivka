@@ -103,8 +103,12 @@ def assign_violations(child: Child, epi: dict, sim_start: date, T: int, rng: ran
     for vid in ("W3_out_of_education", "W8_medical_access", "W2_psych_trauma",
                 "W6_orphanhood", "W5_deportation", "W7_trafficking",
                 "F3_neglect", "P1_physical_home", "F6_sexual_abuse", "F4_child_labor",
-                "W9_identity", "F1_psych_violence"):
+                "W9_identity", "F1_psych_violence",
+                "W10_militarization", "W4_death_injury", "F5_dv_witness"):   # в КІНЦІ — rng-потік незмінний
         maybe(vid, school_age_only=(vid in ("W3_out_of_education", "F4_child_labor")))
+    # F5 — свідок ДН, НЕ пряма жертва: якщо дитина сама потерпіла (P1/F1) — це не «свідок»
+    if "F5_dv_witness" in child.labels and (child.labels.keys() & {"P1_physical_home", "F1_psych_violence"}):
+        child.labels.pop("F5_dv_witness", None)
 
     # E4 інклюзія — лише для дітей з інвалідністю
     if child.has_disability and 6 <= child.age_at(sim_start, T - 1) <= 17:
@@ -117,8 +121,12 @@ def assign_violations(child: Child, epi: dict, sim_start: date, T: int, rng: ran
         child.labels["W1_displacement"] = min(child.labels.get("W3_out_of_education", T),
                                               child.labels.get("W8_medical_access", T))
 
-    # статус «Діти війни»
-    if "W5_deportation" in child.labels:
+    # статус «Діти війни» (загибель/поранення — найтяжче, потім мілітаризація)
+    if "W4_death_injury" in child.labels:
+        child.war_status = "injured"
+    elif "W10_militarization" in child.labels:
+        child.war_status = "militarized"
+    elif "W5_deportation" in child.labels:
         child.war_status = "deported"
     elif "W6_orphanhood" in child.labels and flags["war_exposure"]:
         child.war_status = "lost_parents"
@@ -232,6 +240,85 @@ def sample_crossborder(child: Child, epi: dict, sim_start: date, T: int, rng: ra
     _set_from(child.states, m, school="dropped", health="lapsed", residence="abroad")
 
 
+def build_family_graph(children: list[Child], epi: dict, T: int, rng: random.Random) -> None:
+    """
+    Пост-прохід: формує сімейний граф (домогосподарства/сиблінги) ПІСЛЯ призначення
+    ризиків, тому НЕ зсуває жодного per-child розіграшу — F1 інваріантний, циркулярності
+    нема (сімейний сигнал іде в тріаж/корроборацію, не в ground-truth генерацію).
+
+    Кластеризує частку дітей у домогосподарства зі СПІЛЬНИМ батьківським РНОКПП
+    (реальний ключ зв'язування, як ДРАЦС/ЄДДР у житті), + латенти household.
+    """
+    hh = epi.get("context", {}).get("household", {})
+    share = hh.get("multi_child_household_share", 0.34)
+    size_dist = hh.get("sibling_cluster_size_dist", {"2": 0.55, "3": 0.30, "4": 0.15})
+    cohab_rate = hh.get("new_cohabitant_recent_rate", 0.06)
+
+    # 1) латенти household (незалежні від кластеризації)
+    for c in children:
+        c.kinship_care = c.family_type in ("guardianship", "no_parental_care")
+        c.single_parent_unemployed = c.par_unemployment and c.family_type == "single_parent"
+        if c.family_type == "single_parent" and rng.random() < cohab_rate:
+            c.new_cohabitant_recent = True
+            c.cohabitant_entry_month = rng.randint(2, max(3, T - 5))
+
+    # 2) кластеризація сиблінгів у межах області (спільний батьківський РНОКПП)
+    by_oblast: dict[str, list[Child]] = {}
+    for c in children:
+        by_oblast.setdefault(c.oblast, []).append(c)
+
+    hid = 0
+    for obl, kids in by_oblast.items():
+        pool = kids[:]
+        rng.shuffle(pool)
+        obl_target = int(len(pool) * share)   # бюджет НА КОЖНУ ОБЛАСТЬ (інакше перші області зʼїдали весь)
+        placed = 0
+        i = 0
+        while i < len(pool) and placed < obl_target:
+            size = int(weighted_choice(size_dist, rng))
+            cluster = pool[i:i + size]
+            i += size
+            if len(cluster) < 2:
+                break
+            head = cluster[0]
+            sib_ids = [c.internal_id for c in cluster]
+            for c in cluster:
+                c.household_id = hid
+                c.sibling_internal_ids = [s for s in sib_ids if s != c.internal_id]
+                c.mother_rnokpp = head.mother_rnokpp          # спільний ключ зв'язування (мати завжди є)
+                # father: копіюємо лише якщо НЕ перевертає None-стан (інакше дрейф emit_dracs rng → F1)
+                if (c.father_rnokpp is None) == (head.father_rnokpp is None):
+                    c.father_rnokpp = head.father_rnokpp
+            placed += len(cluster)
+            hid += 1
+
+
+def inject_illness_confounders(children: list, T: int, rng: random.Random) -> None:
+    """ГЕНЕРАТОР-ФІКС: хвороба-driven пропуски школи для хронічних/інвалідних дітей БЕЗ
+    міток порушень. Моделює госпіталізації/загострення (benign) — виглядають як absence_spike,
+    але це НЕ дитяча праця/нехтування. Створює реалістичний FP-конфаундер у god-view, тож
+    систему можна валідувати на «хвора дитина ≠ ризик» (інакше has_chronic ⟂ мітки → конфаундер
+    не відтворюється). Окремий rng — основний потік емітерів/matching недоторканий."""
+    SKIP = {"F4_child_labor", "F3_neglect", "W3_out_of_education", "W8_medical_access",
+            "W1_displacement", "E1_bullying", "W2_psych_trauma"}
+    for c in children:
+        if not (getattr(c, "has_chronic", False) or getattr(c, "has_disability", False)):
+            continue
+        if c.labels.keys() & SKIP:
+            continue
+        enrolled = [t for t, s in enumerate(c.states) if s.school == "enrolled"]
+        if len(enrolled) < 8:
+            continue
+        if rng.random() >= 0.5:          # ~половина хворих/інвалідних має illness-flare епізод
+            continue
+        # 4 поспіль місяці загострення (госпіталізація) — пропуски, БЕЗ health-lapse і БЕЗ мітки
+        start = enrolled[len(enrolled) // 3]
+        for t in range(start, min(start + 4, T)):
+            if c.states[t].school == "enrolled":
+                c.states[t].school = "at_risk"
+        c.illness_absence = True         # маркер для аналізу (не реєстр)
+
+
 def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:
     pop = cfg["population"]
     sim_start = date(pop["start_year"], 1, 1)
@@ -254,4 +341,8 @@ def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:
         sample_crossborder(child, epi, sim_start, T, rng)
         _clamp_school_by_age(child, sim_start)  # дошкільнят не «виключають зі школи»
         children.append(child)
+    # окремий детермінований rng — не чіпаємо основний потік (емітери/matching ідентичні → F1 інваріант)
+    build_family_graph(children, epi, T, random.Random(cfg.get("seed", 0) + 777))
+    # ГЕНЕРАТОР-ФІКС: illness-driven пропуски (benign конфаундер) — окремий rng
+    inject_illness_confounders(children, T, random.Random(cfg.get("seed", 0) + 888))
     return children

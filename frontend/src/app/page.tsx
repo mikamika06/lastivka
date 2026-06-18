@@ -88,9 +88,8 @@ function Hero({ metrics, t }: Readonly<{ metrics: Awaited<ReturnType<typeof getM
           </div>
 
           <dl className="mt-9 flex flex-wrap gap-x-8 gap-y-4">
-            <Stat value={metrics.detection.overall.f1.toFixed(2)} label={t({ uk: "загальна якість виявлення (F1)", en: "overall detection quality (F1)" })} />
             <Stat value={formatPct(metrics.matching.reconstruction_rate)} label={t({ uk: "дітей зібрано з окремих реєстрів", en: "children assembled from registries" })} />
-            <Stat value={metrics.privacy.precision.toFixed(2)} label={t({ uk: "точність зіставлення · без розкриття імен", en: "matching precision · names never exposed" })} />
+            <Stat value="17 + 4" label={t({ uk: "реєстрів України та Естонії", en: "registries of Ukraine and Estonia" })} />
           </dl>
         </div>
 

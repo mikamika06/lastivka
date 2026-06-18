@@ -60,14 +60,8 @@ export default async function PrivacyPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 self-start sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 self-start">
             <MiniStat label={t({ uk: "Перевірено пар записів", en: "Record pairs checked" })} value={formatNumber(metrics.privacy.n_pairs, locale)} tone="neutral" />
-            <MiniStat
-              label={t({ uk: "Точність зіставлення", en: "Matching precision" })}
-              value={metrics.privacy.precision.toFixed(2)}
-              tone="ok"
-            />
-            <MiniStat label={t({ uk: "Повнота", en: "Recall" })} value={metrics.privacy.recall.toFixed(2)} tone="brand" />
           </div>
         </div>
       </Card>
@@ -89,8 +83,6 @@ export default async function PrivacyPage() {
                 <th className="px-2 py-2 text-center font-medium">{t({ uk: "Вірно", en: "Correct" })}</th>
                 <th className="px-2 py-2 text-center font-medium">{t({ uk: "Хибні", en: "False" })}</th>
                 <th className="px-2 py-2 text-center font-medium">{t({ uk: "Пропущено", en: "Missed" })}</th>
-                <th className="px-3 py-2 font-medium">{t({ uk: "Точність", en: "Precision" })}</th>
-                <th className="px-3 py-2 font-medium">{t({ uk: "Повнота", en: "Recall" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -100,12 +92,6 @@ export default async function PrivacyPage() {
                   <td className="px-2 text-center tnum text-ink-2">{r.tp}</td>
                   <td className="px-2 text-center tnum text-muted">{r.fp}</td>
                   <td className="px-2 text-center tnum text-muted">{r.fn}</td>
-                  <td className="px-3 py-2">
-                    <MetricBar value={r.precision} color="var(--color-brand)" />
-                  </td>
-                  <td className="px-3 py-2">
-                    <MetricBar value={r.recall} color="var(--color-brand-2)" />
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -114,22 +100,10 @@ export default async function PrivacyPage() {
 
         <p className="mt-3 text-xs leading-relaxed text-muted">
           {t({
-            uk: "Точність — яка частка тривог справдилась (менше марних тривог). Повнота — яку частку реальних випадків система вловила (менше пропусків).",
-            en: "Precision is the share of alerts that proved true (fewer false alarms). Recall is the share of real cases the system caught (fewer misses).",
+            uk: "Вірно — система правильно вловила випадок; Хибні — марна тривога; Пропущено — реальний випадок не помічено. Рішення завжди ухвалює фахівець.",
+            en: "Correct — the system caught a real case; False — a false alarm; Missed — a real case not flagged. The specialist always makes the decision.",
           })}
         </p>
-
-        <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-ok/20 bg-ok-soft/60 px-4 py-3">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-ok text-white">
-            <IconCheck className="h-4 w-4" />
-          </span>
-          <p className="text-sm text-ok-ink">
-            {t({ uk: "Загалом:", en: "Overall:" })} <span className="font-bold">{t({ uk: "точність", en: "precision" })} {o.precision.toFixed(2)}</span> ·{" "}
-            <span className="font-bold">{t({ uk: "повнота", en: "recall" })} {o.recall.toFixed(2)}</span> ·{" "}
-            <span className="font-bold">{t({ uk: "загальна якість", en: "overall quality" })} {o.f1.toFixed(2)}</span> — {t({ uk: "перевірено на", en: "verified on" })}{" "}
-            {formatNumber(metrics.matching.true_children, locale)} {t({ uk: "синтетичних дітях із заздалегідь відомими порушеннями.", en: "synthetic children with violations known in advance." })}
-          </p>
-        </div>
       </Card>
 
       {/* збирання дитини з реєстрів */}

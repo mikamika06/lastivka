@@ -21,7 +21,7 @@ REGISTRIES = [
      "id_map": {"last": "surname", "first": "given_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
     {"code": "EHEALTH", "ua": "eHealth / ЕСОЗ", "member": "42032422",
-     "subsystem": "50_ESOZ_prod_ME_EHR", "owner": "НСЗУ", "db": "ehealth.db", "access": 1,
+     "subsystem": "50_ESOZ_prod_ME_EHR", "owner": "НСЗУ", "db": "ehealth.db", "access": 3,
      "id_map": {"last": "last_name", "first": "first_name", "second": "second_name",
                 "unzr": "unzr", "rnokpp": "tax_id", "dob": "birth_date"}},
     {"code": "EDEBO", "ua": "ЄДЕБО — освіта", "member": "38621185",
@@ -45,14 +45,14 @@ REGISTRIES = [
      "id_map": {"last": "surname", "first": "given_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
     {"code": "ERDR", "ua": "ЄРДР — досудові розслідування", "member": "00034051",
-     "subsystem": "ERDR_prod", "owner": "Офіс Генпрокурора", "db": "erdr.db", "access": 1,
+     "subsystem": "ERDR_prod", "owner": "Офіс Генпрокурора", "db": "erdr.db", "access": 3,
      "id_map": {"last": "victim_last_name", "first": "victim_first_name", "second": "victim_patronymic",
                 "unzr": "victim_unzr", "rnokpp": "victim_rnokpp", "dob": "victim_date_of_birth"}},
     {"code": "DV", "ua": "Реєстр випадків домашнього насильства", "member": "00032684",
      "subsystem": "20_MVS_DN_prod", "owner": "МВС/Мінсоц", "db": "dv.db", "access": 2,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "child_unzr", "rnokpp": "child_rnokpp", "dob": "child_date_of_birth"}},
-    {"code": "CBI", "ua": "Центр. банк даних з інвалідності", "member": "37567866",
+    {"code": "CBI_DISABILITY", "ua": "ЦБІ_DISABILITY — центр. банк даних з інвалідності", "member": "37567866",
      "subsystem": "CBI_prod", "owner": "Мінсоцполітики", "db": "cbi.db", "access": 2,
      "id_map": {"last": "last_name", "first": "first_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
@@ -61,7 +61,7 @@ REGISTRIES = [
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp_child", "dob": "birth_date_child"}},
     {"code": "EDRSR", "ua": "ЄДРСР — судові рішення", "member": "00018090",
-     "subsystem": "EDRSR_prod", "owner": "ДСА", "db": "edrsr.db", "access": 3,
+     "subsystem": "EDRSR_prod", "owner": "ДСА", "db": "edrsr.db", "access": 1,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "child_birth_date"}},
     {"code": "SKAID", "ua": "ІКС «СКАЙД» — ювенальна превенція", "member": "00032684",
@@ -92,7 +92,7 @@ REGISTRIES = [
      "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
                 "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
     {"code": "TERVIS", "ua": "Tervise infosüsteem (здоровʼя, EE)", "member": "EE/GOV/70009770",
-     "subsystem": "TIS_prod", "owner": "TEHIK / Sotsiaalministeerium", "db": "ee_tervis.db", "access": 1,
+     "subsystem": "TIS_prod", "owner": "TEHIK / Sotsiaalministeerium", "db": "ee_tervis.db", "access": 3,
      "country": "EE",
      "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
                 "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
@@ -103,6 +103,27 @@ REGISTRIES = [
                 "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
 ]
 REG_BY_CODE = {r["code"]: r for r in REGISTRIES}
+
+# ── LRA-кластери + клас доступу (docs/LRA_DESIGN.md, docs/ROLE_ACCESS_MATRIX.md §3).
+# Канон рівнів (поле "access"): 1=публічне … 3=особливо чутливе/таємниця/медтаємниця.
+# access_class — семантичний клас для логіки (НЕ функція int): WALLED не віддає навіть сигнал.
+_CLUSTER = {
+    "DRACS": "C0", "EDDR": "C0", "EHEALTH": "C4", "EDEBO": "C3", "AIKOM": "C3",
+    "VPO": "C2", "CHILDWAR": "C1", "DITY": "C1", "ERDR": "C5", "DV": "C5",
+    "CBI_DISABILITY": "C1", "EISSS": "C2", "EDRSR": "C5", "SKAID": "C5", "PFU": "C2",
+    "DRRP": "C7", "HOTLINE": "C6",
+    "RAHV": "EE", "EHIS_EE": "EE", "TERVIS": "EE", "SKAIS": "EE",
+}
+# WALLED — pull/emit заборонено (КПК ст.222 для ЄРДР; медтаємниця для ЕСОЗ/TERVIS).
+# OPEN — публічно-відкрите (ЄДРСР знеособлене; ДРРП ідентифіковане платне). Решта — GATED-L2.
+_ACCESS_CLASS = {"EHEALTH": "WALLED", "ERDR": "WALLED", "TERVIS": "WALLED",
+                 "EDRSR": "OPEN", "DRRP": "OPEN"}
+for _r in REGISTRIES:
+    _r["cluster"] = _CLUSTER.get(_r["code"], "?")
+    _r["access_class"] = _ACCESS_CLASS.get(_r["code"], "GATED-L2")
+ACCESS_CLASS = {r["code"]: r["access_class"] for r in REGISTRIES}
+CLUSTER = {r["code"]: r["cluster"] for r in REGISTRIES}
+WALLED = {code for code, ac in ACCESS_CLASS.items() if ac == "WALLED"}
 
 
 # ── helpers ──
@@ -349,10 +370,16 @@ def emit_childwar(child, cfg, rng):
         return []
     ln, fn, sn, unzr = _nm(child, cfg, rng)
     status_map = {"deported": "депортована/примусово переміщена", "displaced": "переміщена",
-                  "lost_parents": "втратила батьків"}
-    m = (child.labels.get("W5_deportation") or child.labels.get("W6_orphanhood")
+                  "lost_parents": "втратила батьків",
+                  "militarized": "залучена до збройних формувань / у зоні бойових дій",
+                  "injured": "постраждала від бойових дій (поранення/контузія)"}
+    m = (child.labels.get("W4_death_injury") or child.labels.get("W10_militarization")
+         or child.labels.get("W5_deportation") or child.labels.get("W6_orphanhood")
          or getattr(child, "idp_month", 3))
-    harm = "депортація" if child.war_status == "deported" else ("психологічна травма" if child.war_status == "displaced" else "втрата піклування")
+    harm = ("поранення внаслідок бойових дій" if child.war_status == "injured"
+            else "залучення до бойових дій" if child.war_status == "militarized"
+            else "депортація" if child.war_status == "deported"
+            else "психологічна травма" if child.war_status == "displaced" else "втрата піклування")
     return [{
         "last_name": ln, "first_name": fn, "patronymic": sn, "birth_date": child.birth_date.isoformat(),
         "age_at_incident": str(child.age_at(sim_start(cfg), m)), "gender": "ж" if child.gender == "FEMALE" else "ч",
@@ -425,11 +452,12 @@ def emit_erdr(child, cfg, rng):
 def emit_dv(child, cfg, rng):
     physical = "P1_physical_home" in child.labels
     psych = "F1_psych_violence" in child.labels
-    if not (physical or psych):  # запис у реєстр ДН — лише за зафіксованим насильством
+    witness = "F5_dv_witness" in child.labels and not (physical or psych)  # свідок ДН між дорослими
+    if not (physical or psych or witness):  # запис у реєстр ДН — лише за зафіксованим насильством
         return []
     ln, fn, sn, unzr = _nm(child, cfg, rng)
-    m = child.labels.get("P1_physical_home") or child.labels.get("F1_psych_violence") \
-        or getattr(child, "idp_month", rng.randint(3, 18))
+    m = (child.labels.get("P1_physical_home") or child.labels.get("F1_psych_violence")
+         or child.labels.get("F5_dv_witness") or getattr(child, "idp_month", rng.randint(3, 18)))
     child_victim = physical or psych
     rows = []
     for k in range(rng.randint(1, 3)):
@@ -441,10 +469,11 @@ def emit_dv(child, cfg, rng):
             "child_date_of_birth": child.birth_date.isoformat(), "child_unzr": unzr, "child_rnokpp": child.rnokpp,
             "child_sex": "ж" if child.gender == "FEMALE" else "ч",
             "child_witnessed_violence": "так", "presence_of_children_flag": "так",
-            "parents_are_abusers_flag": "так" if child_victim else "ні",
+            "child_role": "потерпілий" if child_victim else "свідок",
+            "parents_are_abusers_flag": "так",
             "abuser_full_name": "член родини", "incident_datetime": month_date(cfg, dm).isoformat(),
             "incident_place": f"{child.oblast} обл., {child.settlement}",
-            "form_of_violence": "фізичне" if physical else "психологічне",
+            "form_of_violence": "фізичне" if (physical or witness) else "психологічне",
             "primary_recurrent_flag": "повторний" if (physical and k > 0) else "первинний",
             "police_call": "так", "emergency_restraining_order": "так" if physical else "ні",
             "child_services_notification": "так",
@@ -729,7 +758,7 @@ def emit_skais(child, cfg, rng):
 EMITTERS = {
     "DRACS": emit_dracs, "EDDR": emit_eddr, "EHEALTH": emit_ehealth, "EDEBO": emit_edebo,
     "AIKOM": emit_aikom, "VPO": emit_vpo, "CHILDWAR": emit_childwar, "DITY": emit_dity,
-    "ERDR": emit_erdr, "DV": emit_dv, "CBI": emit_cbi, "EISSS": emit_eisss, "EDRSR": emit_edrsr,
+    "ERDR": emit_erdr, "DV": emit_dv, "CBI_DISABILITY": emit_cbi, "EISSS": emit_eisss, "EDRSR": emit_edrsr,
     "SKAID": emit_skaid, "PFU": emit_pfu, "DRRP": emit_drrp, "HOTLINE": emit_hotline,
     "RAHV": emit_rahv, "EHIS_EE": emit_ehis_ee, "TERVIS": emit_tervis, "SKAIS": emit_skais,
 }
