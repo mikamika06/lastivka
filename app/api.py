@@ -227,6 +227,40 @@ def lra_demo():
     return edge_agent.demo(list(entities().values()), _CFG)
 
 
+@app.get("/federated/stats")
+def federated_stats():
+    """Прод-режим (compute-to-data): скільки LRA-вузлів реально працює + доказ
+    еквівалентності централі (детекції ідентичні, але дані силосів не перетинають межу)."""
+    from lastivka import federated
+    ents = list(entities().values())
+    st = federated.node_stats(ents, _CFG, push_walled=True)
+    # доказ еквівалентності на вибірці
+    sample = ents[:300]
+    match = sum(1 for e in sample
+                if sorted(d["violation"] for d in detection.detect_entity(e, _CFG))
+                == sorted(d["violation"] for d in federated.federated_detect_entity(e, _CFG)))
+    st["equivalence_sample"] = f"{match}/{len(sample)} детекцій ідентичні централі"
+    return st
+
+
+@app.get("/federated/{entity_id}")
+def federated_trace(entity_id: int):
+    """Траса федеративної детекції однієї дитини: що ВІДДАВ кожен LRA-вузол (envelope),
+    де walled заблоковано, як зведено на C1. Доказ «дані не виходять — лише сигнали»."""
+    from lastivka import federated
+    e = entities().get(entity_id)
+    if not e:
+        raise HTTPException(404, "Не знайдено")
+    _s, envs, n = federated.assemble(e, _CFG, push_walled=True)
+    return {"entity_id": entity_id, "active_lra_nodes": n, "aggregators": 1,
+            "pseudonym": federated.pseudonym(e.get("unzr")),
+            "envelopes": [{"registry": en["registry"], "blocked": en["blocked"],
+                           "signals": sorted(en["signals"].keys()) if not en["blocked"] else [],
+                           "note": en.get("note")} for en in envs],
+            "detections": [d["violation"] for d in federated.federated_detect_entity(e, _CFG)],
+            "note": "Сирі рядки силосів не залишали реєстр — через межу пройшли лише ці envelope-сигнали."}
+
+
 @app.get("/roles")
 def roles_list():
     """Перелік рольових кодів кабінету (для перемикача у фронтенді)."""
