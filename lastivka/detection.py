@@ -71,6 +71,10 @@ def _erdr_article(text):
 
 def _childwar_status(text):
     t = str(text or "")
+    if any(k in t for k in ("поранен", "контуз", "загибел")):
+        return "injured"
+    if any(k in t for k in ("залуч", "збройн")):
+        return "militarized"
     if "депорт" in t:
         return "deported"
     if "втрат" in t:
@@ -155,8 +159,9 @@ def _signals(ent, cfg) -> dict:
 
     # ── ДН-реєстр + суд + інвалідність
     s["police_calls"] = len(R.get("DV", []))
+    s["dv_witness"] = any(r.get("child_role") == "свідок" for r in R.get("DV", []))
     s["court_deprivation"] = any("батьк" in str(r.get("case_category", "")) for r in R.get("EDRSR", []))
-    s["has_disability"] = bool(R.get("CBI"))
+    s["has_disability"] = bool(R.get("CBI_DISABILITY"))
 
     # ── нові реєстри: ДРРП (житло), гарячі лінії, ПФУ, СКАЙД
     s["housing_alienation"] = any(r.get("child_residence_alienation") == "так" for r in R.get("DRRP", []))
@@ -166,6 +171,19 @@ def _signals(ent, cfg) -> dict:
     s["pfu_unemployed"] = any(r.get("employment_status_indicator") == "безробітний" for r in R.get("PFU", []))
     s["skaid_present"] = bool(R.get("SKAID"))
     s["dv_psych"] = any(r.get("form_of_violence") == "психологічне" for r in R.get("DV", []))
+
+    # ── сімейний граф (C1-rollup із familygraph.rollup; інертні дефолти, якщо rollup не запущено)
+    s["sibling_in_care"] = bool(ent.get("sibling_in_care"))
+    s["sibling_prior_violation"] = set(ent.get("sibling_prior_violation") or [])
+    s["parent_incarcerated"] = bool(ent.get("parent_incarcerated", False))  # push-only, НІКОЛИ з ЄРДР
+    s["parent_criminal"] = bool(ent.get("parent_criminal", False))          # факт-судимості, push/post-conviction
+    s["parent_addiction"] = bool(ent.get("parent_addiction", False))        # медтаємниця: факт не зміст, push/consent
+    s["parent_mental_health"] = bool(ent.get("parent_mental_health", False))  # медтаємниця: факт не зміст, push/consent
+    s["new_cohabitant_recent"] = bool(ent.get("new_cohabitant_recent"))
+    s["kinship_care"] = bool(ent.get("kinship_care"))
+    s["household_churn"] = int(ent.get("household_churn", 0))
+    s["single_parent_unemployed"] = bool(ent.get("single_parent_unemployed"))
+    s["household_risk_density"] = float(ent.get("household_risk_density", 0.0))
 
     bd = ent.get("birth_date")
     s["age_end"] = None
@@ -212,7 +230,12 @@ def detect_entity(ent, cfg) -> list[dict]:
         add("W3_out_of_education", ev or ["EDEBO"], _earliest(s["exit_month"]))
 
     # W8 Обмеження доступу до медицини (хронік + обрив декларації + переміщення, не нехтування)
-    if w8_sig and s["decl_terminated"] and s["has_idp"] and not s["ssd_low_income"]:
+    # Guard: догляд поновлено в новому місці (зміна лікаря) і немає корроборації → не відмова в доступі
+    w8_care_back = s["reatt_doctor"] and not (
+        s["sibling_prior_violation"] or s["police_calls"] or s["dv_psych"]
+        or s["parent_incarcerated"] or s["parent_criminal"]
+        or s["parent_addiction"] or s["parent_mental_health"])
+    if w8_sig and s["decl_terminated"] and s["has_idp"] and not s["ssd_low_income"] and not w8_care_back:
         ev = ["EHEALTH"] + (["VPO"] if not s["reatt_doctor"] else [])
         add("W8_medical_access", ev, s["decl_end_month"])
 
@@ -225,6 +248,16 @@ def detect_entity(ent, cfg) -> list[dict]:
     if s["childwar_status"] == "deported":
         ev = ["CHILDWAR"] + (["DITY"] if s["ssd_present"] else [])
         add("W5_deportation", ev, s["ssd_open_month"])
+
+    # W10 Мілітаризація [immediate] — дитина залучена до збройних формувань / у зоні бойових дій
+    if s["childwar_status"] == "militarized":
+        ev = ["CHILDWAR"] + (["DITY"] if s["ssd_present"] else [])
+        add("W10_militarization", ev, s["ssd_open_month"])
+
+    # W4 Загибель / поранення [immediate] — дитина постраждала від бойових дій
+    if s["childwar_status"] == "injured":
+        ev = ["CHILDWAR"] + (["DITY"] if s["ssd_present"] else [])
+        add("W4_death_injury", ev, s["ssd_open_month"])
 
     # W7 Торгівля людьми [immediate] — за провадженням ЄРДР ст.149
     if s["erdr_article"] == "149":
@@ -242,18 +275,28 @@ def detect_entity(ent, cfg) -> list[dict]:
         add("P1_physical_home", ev, s["erdr_month"])
 
     # E1 Булінг
-    if s["absence_spike"] and s["gpa_drop"] and (s["psych_present"] or s["anti_bullying"]):
+    # psych сам по собі (генералізована тривога) НЕ корроборує булінг — benign-двійник.
+    # Потрібна комісія (anti_bullying) АБО psych + незалежна household-корроборація ризику.
+    e1_corrob = (s["police_calls"] > 0 or s["dv_psych"] or bool(s["sibling_prior_violation"])
+                 or s["parent_criminal"] or s["parent_incarcerated"]
+                 or s["parent_addiction"] or s["parent_mental_health"])
+    if s["absence_spike"] and s["gpa_drop"] and (s["anti_bullying"] or (s["psych_present"] and e1_corrob)):
         ev = ["AIKOM"] + (["EHEALTH"] if s["psych_present"] else [])
         add("E1_bullying", ev, None)
 
     # F4 Дитяча праця (систематичні невиправдані пропуски без ознак булінгу/нехтування/відсіву)
+    # АУДИТ-ВИСНОВОК: illness-absence нерозрізнювана від labor-absence на рівні реєстрів. Генератор
+    # тепер моделює illness-driven пропуски (realmodel.inject_illness_confounders) — і гейт довів, що
+    # БУДЬ-ЯКЕ придушення F4 за has_chronic/disability ріже recall (−5.7%), тобто ПРОПУСКАЄ справжню
+    # дитячу працю хворих дітей (FN). Тож НЕ придушуємо: краще FP+людина, ніж FN. Конфаундер
+    # пом'якшується інтейк-корроборацією (гаряча лінія/школа) та рішенням Комісії. Див. out/audit/report.md.
     if (s["absence_spike"] and not w3_sig and not s["missed_checkup"]
             and not s["psych_present"] and not s["anti_bullying"]):
         add("F4_child_labor", ["AIKOM"], None)
 
     # E4 Обмеження доступу до інклюзивної освіти (інвалідність + немає інклюзивного супроводу)
     if s["has_disability"] and school_age and not s["edebo_inclusive"]:
-        ev = ["CBI"] + (["EDEBO"] if s["enrolled_ever"] else [])
+        ev = ["CBI_DISABILITY"] + (["EDEBO"] if s["enrolled_ever"] else [])
         add("E4_inclusion", ev, None)
 
     # F6 Сексуальне насильство [immediate] — за провадженням ЄРДР ст.152
@@ -272,12 +315,74 @@ def detect_entity(ent, cfg) -> list[dict]:
              (["EHEALTH"] if s["psych_present"] else []) + (["DITY"] if s["ssd_present"] else [])
         add("F1_psych_violence", ev, None)
 
+    # F5 Свідок домашнього насильства — дитина у домогосподарстві з ДН, але НЕ пряма жертва
+    found_ids = {f["violation"] for f in found}
+    if s["dv_witness"] and not (found_ids & {"P1_physical_home", "F1_psych_violence", "F6_sexual_abuse"}):
+        ev = ["DV"] + (["DITY"] if s["ssd_present"] else [])
+        add("F5_dv_witness", ev, None)
+
     # W2 Психотравма — в кінці, ЛИШЕ якщо немає іншого пояснення (насильство/булінг/F1)
     found_ids = {f["violation"] for f in found}
     abuse_related = {"P1_physical_home", "F6_sexual_abuse", "W7_trafficking", "E1_bullying", "F1_psych_violence"}
     if s["psych_present"] and not (found_ids & abuse_related):
         ev = ["EHEALTH"] + (["CHILDWAR"] if s["childwar_status"] else [])
         add("W2_psych_trauma", ev, None)
+
+    # ── сімейний граф: КОРРОБОРАЦІЯ + ЕСКАЛАЦІЯ (набір порушень НЕ змінюється) ──
+    dens = s.get("household_risk_density", 0.0)
+    fam_targets = {"W6_orphanhood", "F3_neglect", "P1_physical_home", "F1_psych_violence"}
+    for f in found:
+        if f["violation"] not in fam_targets:
+            continue
+        corr = []
+        if s.get("sibling_in_care"):
+            corr.append("sibling_in_care")
+        if f["violation"] == "F3_neglect" and s.get("sibling_prior_violation"):
+            corr.append("sibling_prior_violation")     # рецидив household: evidenced, не лише бідність
+        if f["violation"] in ("P1_physical_home", "F1_psych_violence") and s.get("new_cohabitant_recent"):
+            corr.append("new_cohabitant_recent")       # role=context, не sole-trigger
+        if corr:
+            f["household_corroboration"] = corr
+        if dens >= 0.5:
+            f["escalated"] = True
+
+    # ── батьківсько-сімейна вісь ризику (dimension=parental): превентивні кейси ──
+    # Закриває §7: дитина з сімейним ризиком, але БЕЗ власного порушення, тепер досяжна.
+    # Лише СПОСТЕРЕЖУВАНІ сигнали; батьківське завжди нижче за дитячі тяжкості (→ «спостереження»).
+    found_ids = {f["violation"] for f in found}
+
+    def add_parental(code, evidence):
+        found.append({"violation": code, "evidence": sorted(set(evidence)),
+                      "onset_month": None, "acuity": "active", "dimension": "parental"})
+
+    if s.get("sibling_in_care"):
+        add_parental("P_sibling_in_care", ["DITY"])
+    if s.get("sibling_prior_violation"):
+        add_parental("P_sibling_violation", ["DITY"])
+    # позбавлення прав батька без сирітства дитини = ризик-контекст (не дублюємо W6)
+    if s.get("court_deprivation") and "W6_orphanhood" not in found_ids:
+        add_parental("P_parent_rights", ["EDRSR"])
+    # кримінал батька — лише факт-судимості (push/post-conviction); ЄРДР НІКОЛИ не traverse-иться
+    if s.get("parent_criminal") or s.get("parent_incarcerated"):
+        add_parental("P_parent_criminal", ["push"])
+    # залежність / психічне здоровʼя — медтаємниця: факт не зміст (push/consent булеан), не діагноз
+    if s.get("parent_addiction"):
+        add_parental("P_parent_addiction", ["push"])
+    if s.get("parent_mental_health"):
+        add_parental("P_parent_mh", ["push"])
+
+    # ── КОМПАУНДНИЙ household-watch: дифузний ризик у СУМІ факторів без жодного тригера ──
+    # Закриває FN, виявлений аудитом: дитина з кількома слабкими факторами (щільність ризику
+    # сім'ї ≥0.5, АБО одинокий-безробітний + новий-співмешканець/churn), де жоден сигнал
+    # поодинці не дає порушення і немає сиблінг/parent-сигналу — раніше зникала з черги повністю.
+    # Тепер досяжна як «спостереження» (T2). dimension=parental → виключено з F1.
+    child_found = any(f.get("dimension") != "parental" for f in found)
+    other_parental = any(f.get("dimension") == "parental" for f in found)
+    compound = (dens >= 0.5
+                or (s.get("single_parent_unemployed")
+                    and (s.get("new_cohabitant_recent") or s.get("household_churn", 0) >= 1)))
+    if compound and not child_found and not other_parental:
+        add_parental("P_household_watch", ["DITY", "PFU"])
 
     return found
 

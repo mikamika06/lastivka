@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 import type { Msg } from "@/lib/i18n";
-import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock, IconGlobe } from "@/components/ui/icons";
+import type { AppRole } from "@/lib/session";
+import { IconDashboard, IconQueue, IconProfile, IconShield, IconScale, IconClock, IconPulse, IconLayers, IconCheck } from "@/components/ui/icons";
 
 export interface NavItem {
   href: string;
@@ -59,13 +60,55 @@ export const CASELOAD_NAV: NavItem[] = [
   },
 ];
 
-/** Крос-кордон Україна ↔ Естонія: privacy-preserving звʼязок реєстрів і нові ризики. */
-export const CROSSBORDER_NAV: NavItem[] = [
+/** Інтейк-перші двері: звернення (лінія/школа) відкривають кейс; крос-реєстр = тріаж. */
+export const INTAKE_NAV: NavItem[] = [
   {
-    href: "/cross-border",
-    pillar: "07",
-    title: { uk: "Крос-кордон UA↔EE", en: "Cross-border UA↔EE" },
-    desc: { uk: "Естонія: звʼязок і ризики", en: "Estonia: linkage & risks" },
-    icon: IconGlobe,
+    href: "/intake",
+    pillar: "08",
+    title: { uk: "Інтейк (передні двері)", en: "Intake (front door)" },
+    desc: { uk: "Звернення → кейс → тріаж", en: "Reports → case → triage" },
+    icon: IconPulse,
   },
 ];
+
+/** Сімейний граф: household/сиблінги — стан сімʼї для контексту ризику (ССД-рівень). */
+export const FAMILY_NAV: NavItem[] = [
+  {
+    href: "/family",
+    pillar: "09",
+    title: { uk: "Сімейний граф", en: "Family graph" },
+    desc: { uk: "Стан сімʼї та сиблінги", en: "Family state & siblings" },
+    icon: IconLayers,
+  },
+];
+
+/** Екрани окремих ролей (наглядові/вертикальні/батьківські). */
+export const ROLE_SCREENS: NavItem[] = [
+  { href: "/oversight", pillar: "10", title: { uk: "Наглядова панель", en: "Oversight" }, desc: { uk: "Зведена картина + захищені сигнали", en: "Unified view + protected signals" }, icon: IconShield },
+  { href: "/inbox", pillar: "11", title: { uk: "Вхідні сигнали", en: "Inbox" }, desc: { uk: "Адресні сигнали вашої вертикалі", en: "Targeted signals for your vertical" }, icon: IconPulse },
+  { href: "/child", pillar: "12", title: { uk: "Моя дитина", en: "My child" }, desc: { uk: "Статуси, нагадування, поради", en: "Statuses, reminders, advice" }, icon: IconProfile },
+  { href: "/audit", pillar: "13", title: { uk: "Журнал доступу", en: "Access log" }, desc: { uk: "Хто, коли, до чого звертався", en: "Who accessed what, when" }, icon: IconCheck },
+];
+
+const ALL_NAV: NavItem[] = [
+  ...NAV, ...CASELOAD_NAV, ...INTAKE_NAV, ...FAMILY_NAV, ...ROLE_SCREENS,
+];
+const BY_HREF: Record<string, NavItem> = Object.fromEntries(ALL_NAV.map((n) => [n.href, n]));
+
+/** Які екрани бачить кожна роль (docs/FINAL_ACTOR_MODEL.md §1). Чужий пункт не потрапляє в DOM. */
+export const ROLE_NAV: Record<AppRole, string[]> = {
+  // ССД — фронт-лайн: кейси/профілі своєї громади (з ПІБ).
+  ssd: ["/queue", "/profile"],
+  // Поліція — той самий пошук/профіль, що ССД, але вищий допуск (бачить ЄРДР, національний скоуп).
+  police: ["/queue", "/profile"],
+  // Регіональний керівник — статистика, якість, агрегати області (без PII).
+  regional: ["/dashboard", "/caseload", "/intake", "/privacy"],
+  supervisor: ["/dashboard", "/caseload", "/intake", "/privacy"],
+  vertical: ["/inbox"],
+  parent: ["/child"],
+};
+
+export function navForRole(role: AppRole | undefined): NavItem[] {
+  const hrefs = ROLE_NAV[role ?? "ssd"] ?? ROLE_NAV.ssd;
+  return hrefs.map((h) => BY_HREF[h]).filter(Boolean);
+}

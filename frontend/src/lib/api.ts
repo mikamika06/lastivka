@@ -14,8 +14,12 @@ import type {
   WorkerQueue,
   FeedbackStats,
   FeedbackInput,
-  CrossBorderStats,
+  FamilyGraph,
+  IntakeData,
+  MonitoringData,
 } from "./types";
+import type { Role } from "./i18n";
+import type { Persona } from "./session";
 import { mockData, mockOblastOf, mockWorkers, mockWorkerQueue, MOCK_FEEDBACK_STATS } from "./mock";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ?? "";
@@ -63,14 +67,70 @@ export async function getQueueItem(entityId: number): Promise<QueueItem | null> 
   return all.find((i) => i.entity_id === entityId) ?? null;
 }
 
-export async function getEntity(entityId: number): Promise<Entity | null> {
-  const remote = await tryFetch<Entity>(`/entity/${entityId}`);
+/* ── Сегрегація за персоною (docs/FINAL_ACTOR_MODEL.md) — у ДАТА-шарі, не в JSX ──
+   Скоуп БЕРЕТЬСЯ ІЗ СЕСІЇ (не з параметра виклику) → крос-скоупні id не витікають (IDOR). */
+export function scopeAndRedact(items: QueueItem[], persona: Persona | null): QueueItem[] {
+  if (!persona) return items;
+  const ds = persona.dataScope;
+  let scoped: QueueItem[];
+  switch (ds) {
+    case "territory": // ССД — власна громада/область
+    case "oblast_agg": // регіонал — область (далі стрипимо PII)
+      scoped = items.filter((i) => (i.oblast ?? "—") === persona.oblast);
+      break;
+    case "case": { // ЦНСП — лише власні відкриті кейси (один фахівець у своїй області)
+      const inObl = items.filter((i) => (i.oblast ?? "—") === persona.oblast && i.worker_id);
+      const w = persona.workerId ?? inObl[0]?.worker_id ?? null;
+      scoped = inObl.filter((i) => i.worker_id === w).slice(0, 15);
+      break;
+    }
+    case "national_pii": // омбудсман — вся країна, per-record
+    case "national_agg": // наглядач — вся країна, агрегати
+      scoped = items;
+      break;
+    default: // own_vertical / own_child — не мають доступу до загальної черги
+      scoped = [];
+  }
+  if (!persona.pii) {
+    // вирізання ПІБ у ДАТА-шарі (регіонал/наглядач): payload фізично без ідентифікаторів
+    scoped = scoped.map((i) => ({ ...i, pib: `Дитина №${i.entity_id}`, unzr: null, birth_date: null }));
+  }
+  return scoped;
+}
+
+export function inScope(item: QueueItem | null | undefined, persona: Persona | null): boolean {
+  if (!persona || !item) return !!item;
+  return scopeAndRedact([item], persona).length > 0;
+}
+
+export async function getEntity(entityId: number, role?: Role): Promise<Entity | null> {
+  const q = role ? `?role=${role}` : "";
+  const remote = await tryFetch<Entity>(`/entity/${entityId}${q}`);
   return remote ?? mockData.entities[entityId] ?? null;
 }
 
-export async function getTimeline(entityId: number): Promise<TimelineEvent[]> {
-  const remote = await tryFetch<{ events: TimelineEvent[] }>(`/entity/${entityId}/timeline`);
+export async function getTimeline(entityId: number, role?: Role): Promise<TimelineEvent[]> {
+  const q = role ? `?role=${role}` : "";
+  const remote = await tryFetch<{ events: TimelineEvent[] }>(`/entity/${entityId}/timeline${q}`);
   return remote?.events ?? mockData.timelines[entityId] ?? [];
+}
+
+/** Сімейний граф (household/сиблінги) — крос-sibling зведення лише на рівні ССД. */
+export async function getFamily(entityId: number, role: Role = "ssd"): Promise<FamilyGraph | null> {
+  const remote = await tryFetch<FamilyGraph>(`/entity/${entityId}/family?role=${role}`);
+  return remote ?? MOCK_FAMILY(entityId, role);
+}
+
+/** Інтейк — попередні кейси зі звернень + тріаж. */
+export async function getIntake(): Promise<IntakeData> {
+  const remote = await tryFetch<IntakeData>("/intake");
+  return remote ?? MOCK_INTAKE;
+}
+
+/** Режим моніторингу — вже-постраждалі діти + план реінтеграції. */
+export async function getMonitoring(): Promise<MonitoringData> {
+  const remote = await tryFetch<MonitoringData>("/monitoring");
+  return remote ?? MOCK_MONITORING;
 }
 
 export async function getAttendance(entityId: number): Promise<AttendanceSeries | null> {
@@ -130,22 +190,57 @@ export async function getFeedbackStats(): Promise<FeedbackStats> {
   return remote ?? MOCK_FEEDBACK_STATS;
 }
 
-const MOCK_CROSSBORDER: CrossBorderStats = {
-  ee_entities: 563,
-  linked: 533,
-  ee_unmatched: 30,
-  link_rate: 0.947,
+
+const MOCK_INTAKE: IntakeData = {
+  channels: {
+    "116111": "Нацдитяча лінія (ГО «Ла Страда», цілодобово)",
+    "1545": "Урядовий контактний центр (роутер)",
+    "1547": "Лінія ДН / торгівля людьми (цілодобово)",
+    school_duty: "Обовʼязок закладу освіти (ПКМУ №684)",
+    medical_duty: "Медзаклад (≤1 доба; ≤3 год)",
+  },
+  n_reports: 788,
+  household: { n_households: 654, children_in_multichild: 1704, multichild_share: 0.3, n_with_sibling_in_care: 41 },
+  cases: [
+    { child_pseudonym: "px-04417290", entity_id: 70, channels: ["1547"], n_reports: 2, corroborated: true, malicious_suspected: false, matched_violations: ["P1_physical_home"], reaction_deadline: "невідкладно / ≤3 год (загроза життю; ПКМУ №1513/2025)", urgent: true },
+    { child_pseudonym: "px-01882233", entity_id: 142, channels: ["school_duty"], n_reports: 1, corroborated: true, malicious_suspected: false, matched_violations: ["W3_out_of_education"], reaction_deadline: "реєстрація негайно; оцінка безпеки ≤1 доба (ПКМУ №585/2020)", urgent: false },
+    { child_pseudonym: "px-09913004", entity_id: null, channels: ["neighbor"], n_reports: 1, corroborated: false, malicious_suspected: true, matched_violations: [], reaction_deadline: "реєстрація негайно; розгляд ≤14 кал. днів (ПКМУ №585/2020)", urgent: false },
+  ],
 };
 
-export async function getCrossBorder(): Promise<CrossBorderStats> {
-  const remote = await tryFetch<CrossBorderStats>("/crossborder");
-  return remote ?? MOCK_CROSSBORDER;
-}
+const MOCK_MONITORING: MonitoringData = {
+  summary: { total: 383, by_cohort: { "Постраждалі внаслідок воєнних дій": 307, "Сироти / ПБП під опікою": 52, "Без супроводу (UASC)": 11, "Депортовані / примусово переміщені": 13 }, deteriorating: 194, avg_progress: 0.55 },
+  cohorts: { deported: "Депортовані / примусово переміщені", uasc: "Без супроводу (UASC)", orphan_care: "Сироти / ПБП під опікою", war_affected: "Постраждалі внаслідок воєнних дій" },
+  children: [
+    { entity_id: 4182, pib: "Дитина №4182", oblast: "Харківська", cohort: "deported", cohort_ua: "Депортовані / примусово переміщені", plan_progress: 0.17, milestones: { "Оцінка потреб": true, "Форма влаштування": false, "Відновлення освіти": false, "Медичний супровід": false, "Психологічна реабілітація": false, "Документи / статус": false }, deterioration: true },
+    { entity_id: 3771, pib: "Дитина №3771", oblast: "Львівська", cohort: "orphan_care", cohort_ua: "Сироти / ПБП під опікою", plan_progress: 0.67, milestones: { "Оцінка потреб": true, "Форма влаштування": true, "Відновлення освіти": true, "Медичний супровід": false, "Психологічна реабілітація": true, "Документи / статус": false }, deterioration: false },
+  ],
+};
 
-/** Крос-кордонні кейси (country = EE або UA+EE) з черги. */
-export async function getCrossBorderCases(): Promise<QueueItem[]> {
-  const items = await getQueue();
-  return items.filter((i) => i.country === "UA+EE" || i.country === "EE");
+function MOCK_FAMILY(entityId: number, role: Role): FamilyGraph {
+  if (role !== "ssd") {
+    return { role, available: false, note: "Сімейний граф доступний лише на рівні ССД" };
+  }
+  return {
+    role, available: true, entity_id: entityId,
+    household: { household_id: 10, size: 2, n_siblings: 1, churn_count: 1, risk_density: 0.55,
+      density_breakdown: { sibling_marks: 0.27, sibling_in_care: 0.3, single_parent_unemployed: 0.2, n_siblings: 0.033 }, escalated: true },
+    members: [
+      { entity_id: entityId, pib: "Демо Дитина Індекс", birth_date: "2015-04-12", is_index: true, n_registries: 4, risk_marks: [], in_care: false },
+      { entity_id: entityId + 1, pib: "Демо Сиблінг Один", birth_date: "2012-09-03", is_index: false, n_registries: 3, risk_marks: ["ssd", "in_care"], in_care: true },
+    ],
+    parents: { structure: "Одинока мати / один з батьків", single_parent: true, both_parents: false, mother_present: true, father_present: false,
+      parent_death: false, w6_cause: null, rights_deprived: false, deprivation_scope: null, parent_unemployed: true,
+      parent_incarcerated: false, parent_criminal: false, parent_addiction: true, parent_mental_health: false },
+    relatives: { kinship_care: false, kin_caregiver_relation: null, protective: true },
+    signals: { sibling_in_care: true, sibling_prior_violation: ["ssd", "in_care"], new_cohabitant_recent: false, kinship_care: false, single_parent_unemployed: true, household_churn: 1, parent_incarcerated: false, household_risk_density: 0.55 },
+    parental_contributions: [
+      { code: "P_sibling_in_care", dimension: "parental", severity: 0.4, value: 0.24, evidence: ["DITY"], observability: "signal-only", wall: "PSI на C1 · стіни сиблінга тримаються", safeguard: "контекст, не детермінізм" },
+      { code: "P_parent_addiction", dimension: "parental", severity: 0.45, value: 0.27, evidence: ["push"], observability: "push/consent", wall: "ЕСОЗ WALLED · медтаємниця (Основи 2801-XII)", safeguard: "факт не зміст; лікування/ремісія — протективний модифікатор" },
+    ],
+    walled_alerts: [{ topic: "addiction", present: true }, { topic: "mental_health", present: false }, { topic: "criminal", present: false }],
+    safeguards: { poverty_not_risk: "бідність — контекст, не флаг", parental_capped_below_child: "батьківські тяжкості ≤0.55", walls: "ЄРДР/ЕСОЗ ніколи не pull-яться" },
+  };
 }
 
 export async function postFeedback(input: FeedbackInput): Promise<boolean> {

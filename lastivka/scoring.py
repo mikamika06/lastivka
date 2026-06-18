@@ -44,8 +44,20 @@ def _vulnerability(det, entity, cfg, w) -> tuple[float, list[str]]:
         mult *= vw["no_guardian"]; factors.append("без опікуна")
     if "VPO" in regs or "W1_displacement" in vids:
         mult *= vw["displaced"]; factors.append("ВПО")
-    if "ERDR" in regs:
-        mult *= vw["parental_risk_factor"]; factors.append("фактор ризику (ЄРДР)")
+    # фактор батьківського ризику: ЄРДР-дитини АБО батьківський push-булеан (НЕ pull з walled)
+    parent_push = any(entity.get(k) for k in
+                      ("parent_criminal", "parent_incarcerated", "parent_addiction", "parent_mental_health"))
+    if "ERDR" in regs or parent_push:
+        mult *= vw["parental_risk_factor"]
+        factors.append("фактор батьківського ризику" if parent_push and "ERDR" not in regs else "фактор ризику (ЄРДР)")
+    density = float(entity.get("household_risk_density", 0.0) or 0.0)
+    if density > 0 and "household_density" in vw:
+        mult *= 1 + (vw["household_density"] - 1) * min(density, 1.0)
+        factors.append("щільність ризику сім'ї")
+    # родич-опікун — ПРОТЕКТИВНИЙ: знижує підсумкову вразливість (буфер, не порушення)
+    if entity.get("kinship_care") and "kinship_protective" in vw:
+        mult *= vw["kinship_protective"]
+        factors.append("родич-опікун (захисний)")
     return min(mult, vw["cap"]), factors
 
 
@@ -66,12 +78,25 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
         sev = sev_w.get(d["violation"], 0.4)
         ev = _evidence_mult(len(d["evidence"]), w)
         acu = w["acuity"].get(d["acuity"], 1.0)
-        contribs.append({"violation": d["violation"], "value": round(sev * ev * acu, 3),
-                         "severity": sev, "evidence": d["evidence"], "acuity": d["acuity"]})
+        c = {"violation": d["violation"], "value": round(sev * ev * acu, 3),
+             "severity": sev, "evidence": d["evidence"], "acuity": d["acuity"],
+             "dimension": d.get("dimension", "child")}
+        if d.get("escalated"):
+            c["escalated"] = True
+        if d.get("household_corroboration"):
+            c["household_corroboration"] = d["household_corroboration"]
+        contribs.append(c)
     contribs.sort(key=lambda c: c["value"], reverse=True)
 
-    sw = w["aggregation"]["secondary_weight"]
+    agg = w["aggregation"]
+    sw = agg["secondary_weight"]
     raw = contribs[0]["value"] + sw * sum(c["value"] for c in contribs[1:]) if contribs else 0.0
+    # інтейк-корроборація: підтверджене крос-реєстрово ↑, одиничне непідтверджене ↓ («помста-сусід»)
+    corroborated = entity.get("intake_corroborated")
+    if corroborated is True:
+        raw *= agg.get("intake_corroboration_mult", 1.0)
+    elif corroborated is False:
+        raw *= agg.get("intake_uncorroborated_mult", 1.0)
     vuln, vfactors = _vulnerability(det, entity, cfg, w)
     score = round(raw * vuln, 3)
 
@@ -94,8 +119,12 @@ def score_entity(det: list[dict], entity: dict, cfg: dict, w: dict) -> dict:
         "score": score, "tier": tier, "immediate": immediate,
         "vulnerability": round(vuln, 2), "vuln_factors": vfactors,
         "contributions": contribs,
-        "violations": [c["violation"] for c in contribs],
+        # лише дитячі порушення в чипах; батьківська вісь (dimension=parental) — у сімейному графі
+        "violations": [c["violation"] for c in contribs if c.get("dimension") != "parental"],
         "registries": entity.get("registries", []),
+        "household_risk_density": round(float(entity.get("household_risk_density", 0.0) or 0.0), 3),
+        "corroborated": corroborated,
+        "intake_source": entity.get("intake_source"),
     }
 
 
@@ -141,5 +170,7 @@ def score_all(detections: list[dict], entities_by_id: dict, cfg: dict, w: dict,
                 row["model_score"] = None
         queue.append(row)
     order = {"T0": 0, "T1": 1, "T2": 2}
-    queue.sort(key=lambda r: (order[r["tier"]], not r["immediate"], -r["score"]))
+    queue.sort(key=lambda r: (order[r["tier"]], not r["immediate"],
+                              -(1 if r.get("corroborated") else 0),
+                              -r.get("household_risk_density", 0.0), -r["score"]))
     return queue

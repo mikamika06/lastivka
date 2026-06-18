@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
-import { NAV, CASELOAD_NAV, CROSSBORDER_NAV, type NavItem } from "./nav";
+import { navForRole, type NavItem } from "./nav";
+import type { AppRole } from "@/lib/session";
 import { dataSource } from "@/lib/api";
 import { useTx } from "@/components/providers/I18nProvider";
 import { IconArrowRight } from "@/components/ui/icons";
 
-export function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
+export function SidebarContent({ onNavigate, role }: Readonly<{ onNavigate?: () => void; role?: AppRole }>) {
   const pathname = usePathname();
   const t = useTx();
 
@@ -58,19 +59,9 @@ export function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => voi
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         <p className="px-2 pb-2 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-faint">
-          {t({ uk: "Чотири стовпи продукту", en: "Four product pillars" })}
+          {t({ uk: "Розділи за вашою роллю", en: "Sections for your role" })}
         </p>
-        {NAV.map(renderItem)}
-
-        <p className="px-2 pb-2 pt-4 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-faint">
-          {t({ uk: "Робота служби · фаза 3", en: "Service operations · phase 3" })}
-        </p>
-        {CASELOAD_NAV.map(renderItem)}
-
-        <p className="px-2 pb-2 pt-4 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-faint">
-          {t({ uk: "Крос-кордон · фаза 4", en: "Cross-border · phase 4" })}
-        </p>
-        {CROSSBORDER_NAV.map(renderItem)}
+        {navForRole(role).map(renderItem)}
       </nav>
 
       <div className="mt-auto space-y-3 px-4 pb-5 pt-4">
