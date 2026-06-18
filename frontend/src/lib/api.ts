@@ -243,6 +243,24 @@ function MOCK_FAMILY(entityId: number, role: Role): FamilyGraph {
   };
 }
 
+/* ── Федеративна LRA-детекція (compute-to-data) ── */
+export interface FederatedStats {
+  children: number; active_lra_nodes: number; avg_nodes_per_child: number;
+  walled_push_signals: number; walled_blocked: number; aggregators: number;
+  mode: string; equivalence_sample: string;
+}
+export interface FederatedEnvelope { registry: string; blocked: boolean; signals: string[]; note?: string | null; }
+export interface FederatedTrace {
+  entity_id: number; active_lra_nodes: number; aggregators: number; pseudonym: string;
+  envelopes: FederatedEnvelope[]; detections: string[]; note: string;
+}
+export async function getFederatedStats(): Promise<FederatedStats | null> {
+  return tryFetch<FederatedStats>("/federated/stats");
+}
+export async function getFederatedTrace(id: number): Promise<FederatedTrace | null> {
+  return tryFetch<FederatedTrace>(`/federated/${id}`);
+}
+
 export async function postFeedback(input: FeedbackInput): Promise<boolean> {
   if (!USE_API) return true; // демо: рішення приймаємо локально (оптимістично)
   try {
