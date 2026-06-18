@@ -28,7 +28,7 @@ export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
           <div className="flex flex-wrap items-center gap-2">
             <time className="text-xs font-medium tnum text-muted">{formatDate(e.date, locale)}</time>
             <span
-              className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${
+              className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${
                 e.level1 ? "bg-lock-soft text-lock-ink" : "bg-brand-soft text-brand-ink"
               }`}
             >
@@ -37,7 +37,7 @@ export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
           </div>
           <p className="mt-1 text-sm text-ink-2">{e.label}</p>
           {e.level1 && (
-            <p className="mt-1 text-[11px] text-lock-ink/80">
+            <p className="mt-1 text-xs text-lock-ink/80">
               {t({
                 uk: "Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту. Повний доступ — лише за рішенням суду або в межах лікарської таємниці.",
                 en: "Most sensitive data: only a yes/no signal is visible, with no access to the content. Full access only by court order or within medical confidentiality.",

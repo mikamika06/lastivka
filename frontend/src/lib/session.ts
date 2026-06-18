@@ -1,6 +1,8 @@
 /** Демо-сесія та фінальна модель акторів (docs/FINAL_ACTOR_MODEL.md). Спільна частина — без next/headers.
  *  Кожна персона = окремий рівень авторизації з окремим landing/nav/скоупом даних (сегрегація в дата-шарі). */
 
+import type { Msg } from "./i18n";
+
 export type AppRole =
   | "ssd" // посадова особа ССД — інтегрований доступ, територія, з ПІБ
   | "police" // поліція (ювенальна превенція) — той самий профіль, що ССД, але вищий допуск (бачить ЄРДР)
@@ -21,10 +23,10 @@ export type DataScope =
 export interface Persona {
   id: string;
   email: string;
-  name: string;
+  name: Msg;
   role: AppRole;
   dataScope: DataScope;
-  scopeLabel: string;
+  scopeLabel: Msg;
   pii: boolean;
   oblast?: string; // територіальний скоуп (для демо громада = область)
   workerId?: string; // case-scope (cnsp)
@@ -37,19 +39,19 @@ export const DEMO_PASSWORD = "lastivka";
 
 export const PERSONAS: Persona[] = [
   {
-    id: "ssd", email: "ssd-chuhuiv@lastivka.demo", name: "Андрій Коваленко",
+    id: "ssd", email: "ssd-chuhuiv@lastivka.demo", name: { uk: "Андрій Коваленко", en: "Andrii Kovalenko" },
     role: "ssd", dataScope: "territory", oblast: "Харківська",
-    scopeLabel: "Фахівець ССД · Харківська громада", pii: true, landing: "/queue",
+    scopeLabel: { uk: "Фахівець ССД · Харківська громада", en: "Children's Services specialist · Kharkiv community" }, pii: true, landing: "/queue",
   },
   {
-    id: "police", email: "police@lastivka.demo", name: "Поліція · ювенальна превенція",
+    id: "police", email: "police@lastivka.demo", name: { uk: "Поліція · ювенальна превенція", en: "Police · juvenile prevention" },
     role: "police", dataScope: "national_pii", vertical: "ERDR",
-    scopeLabel: "Поліція · ювенальна превенція (вищий допуск)", pii: true, landing: "/queue",
+    scopeLabel: { uk: "Поліція · ювенальна превенція (вищий допуск)", en: "Police · juvenile prevention (elevated clearance)" }, pii: true, landing: "/queue",
   },
   {
-    id: "regional", email: "regional@lastivka.demo", name: "Сергій Левченко",
+    id: "regional", email: "regional@lastivka.demo", name: { uk: "Сергій Левченко", en: "Serhii Levchenko" },
     role: "regional", dataScope: "oblast_agg", oblast: "Харківська",
-    scopeLabel: "Регіональний менеджер · Харківська область", pii: false, landing: "/dashboard",
+    scopeLabel: { uk: "Регіональний менеджер · Харківська область", en: "Regional manager · Kharkiv oblast" }, pii: false, landing: "/dashboard",
   },
 ];
 

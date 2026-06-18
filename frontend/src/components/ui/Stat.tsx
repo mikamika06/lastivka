@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { RegistryCode } from "@/lib/types";
-import { REG_BY_CODE, regAccess } from "@/lib/registries";
+import type { Locale } from "@/lib/i18n";
+import { REG_BY_CODE, regAccess, regName, regFullName } from "@/lib/registries";
 import { formatNumber } from "@/lib/format";
 
 type Tone = "t0" | "t1" | "t2" | "brand" | "ok" | "neutral";
@@ -72,12 +73,15 @@ export function Chip({ children, title }: Readonly<{ children: ReactNode; title?
 }
 
 /** Чіп реєстру-силоса з позначкою рівня доступу. */
-export function RegistryChip({ code }: Readonly<{ code: RegistryCode }>) {
+export function RegistryChip({ code, locale = "uk" }: Readonly<{ code: RegistryCode; locale?: Locale }>) {
   const meta = REG_BY_CODE[code];
   const level1 = regAccess(code) === 1;
+  const accessWord = locale === "en" ? "access level" : "рівень доступу";
+  // EN: власник реєстру (кирилиця) пропускаємо, щоб у tooltip не було кирилиці.
+  const ownerPart = locale === "en" ? "" : `${meta?.owner} · `;
   return (
     <span
-      title={meta ? `${meta.ua} · ${meta.owner} · рівень доступу ${meta.access}` : code}
+      title={meta ? `${regFullName(code, locale)} · ${ownerPart}${accessWord} ${meta.access}` : code}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${
         level1
           ? "border-lock/30 bg-lock-soft text-lock-ink"
@@ -85,7 +89,7 @@ export function RegistryChip({ code }: Readonly<{ code: RegistryCode }>) {
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${level1 ? "bg-lock" : "bg-brand"}`} />
-      {meta?.short ?? code}
+      {regName(code, locale)}
     </span>
   );
 }

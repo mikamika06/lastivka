@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { navForRole, type NavItem } from "./nav";
 import type { AppRole } from "@/lib/session";
-import { dataSource } from "@/lib/api";
 import { useTx } from "@/components/providers/I18nProvider";
 import { IconArrowRight } from "@/components/ui/icons";
 
@@ -58,36 +57,18 @@ export function SidebarContent({ onNavigate, role }: Readonly<{ onNavigate?: () 
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        <p className="px-2 pb-2 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-faint">
+        <p className="px-2 pb-2 pt-2 text-xs font-semibold uppercase tracking-[0.14em] text-faint">
           {t({ uk: "Розділи за вашою роллю", en: "Sections for your role" })}
         </p>
         {navForRole(role).map(renderItem)}
       </nav>
 
       <div className="mt-auto space-y-3 px-4 pb-5 pt-4">
-        <div className="rounded-xl border border-line bg-paper/50 p-3">
-          <p className="text-[11px] leading-relaxed text-muted">
-            <span className="font-semibold text-ink-2">
-              {t({ uk: "Підтримка рішень, не вирок.", en: "Decision support, not a verdict." })}
-            </span>{" "}
-            {t({
-              uk: "Система лише розставляє пріоритети й пояснює — рішення ухвалює фахівець.",
-              en: "The system only prioritises and explains — the specialist makes the decision.",
-            })}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-[11px] text-faint">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${dataSource === "api" ? "bg-ok" : "bg-brand-2"}`}
-            />
-            {dataSource === "api" ? t({ uk: "Дані: API", en: "Data: API" }) : t({ uk: "Демо-дані", en: "Demo data" })}
-          </span>
+        <div className="flex items-center justify-end">
           <Link
             href="/"
             onClick={onNavigate}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
           >
             {t({ uk: "Про проєкт", en: "About" })}
             <IconArrowRight className="h-3 w-3" />

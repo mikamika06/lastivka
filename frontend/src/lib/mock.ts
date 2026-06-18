@@ -39,6 +39,22 @@ const OBLASTS = [
 ];
 const OBLAST_W = [12, 20, 9, 14, 10, 16, 18, 7, 6, 8, 5, 5];
 
+/** EN-довідник назв областей (офіційні англомовні форми, не транслітерація). */
+export const OBLAST_EN: Record<string, string> = {
+  "Київська": "Kyiv",
+  "Харківська": "Kharkiv",
+  "Львівська": "Lviv",
+  "Дніпропетровська": "Dnipropetrovsk",
+  "Одеська": "Odesa",
+  "Запорізька": "Zaporizhzhia",
+  "Донецька": "Donetsk",
+  "Полтавська": "Poltava",
+  "Вінницька": "Vinnytsia",
+  "Чернігівська": "Chernihiv",
+  "Закарпатська": "Zakarpattia",
+  "Івано-Франківська": "Ivano-Frankivsk",
+};
+
 const LAST = ["Коваленко", "Бондаренко", "Ткаченко", "Мельник", "Шевченко", "Кравчук", "Бойко", "Поліщук", "Савченко", "Гнатюк", "Лисенко", "Марченко", "Гончар", "Руденко", "Захарченко", "Петренко"];
 const FIRST_M = ["Олександр", "Михайло", "Данило", "Артем", "Максим", "Назар", "Дмитро", "Богдан", "Андрій", "Іван", "Тимофій", "Владислав"];
 const FIRST_F = ["Софія", "Анна", "Марія", "Олена", "Дарина", "Вероніка", "Катерина", "Поліна", "Злата", "Ангеліна", "Юлія", "Соломія"];
@@ -736,6 +752,19 @@ export const mockData = {
 
 export function mockOblastOf(entityId: number): string {
   return DATA.entities[entityId]?.oblast ?? "—";
+}
+
+/** Назва області на показ: EN-довідник для en, кирилиця для uk. */
+export function oblastName(uaName: string | null | undefined, locale: "uk" | "en"): string {
+  if (!uaName || uaName === "—") return "—";
+  return locale === "en" ? (OBLAST_EN[uaName] ?? uaName) : uaName;
+}
+
+/** Назва області з суфіксом регіону: «Харківська обл.» / «Kharkiv oblast». */
+export function oblastLabel(uaName: string | null | undefined, locale: "uk" | "en"): string {
+  const name = oblastName(uaName, locale);
+  if (name === "—") return "—";
+  return locale === "en" ? `${name} oblast` : `${name} обл.`;
 }
 
 /* ── Фаза 3: персональні черги наглядачів + штат + feedback ── */

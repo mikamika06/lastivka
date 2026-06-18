@@ -4,13 +4,22 @@ import { useMemo, useState } from "react";
 import type { QueueItem, Tier } from "@/lib/types";
 import { violName } from "@/lib/registries";
 import { pluralLoc } from "@/lib/format";
-import { oblastOfItem } from "@/lib/api";
+import { oblastOfItem, oblastName, oblastLabel } from "@/lib/api";
+import { displayName } from "@/lib/translit";
 import { CaseCard } from "./CaseCard";
 import { IconSearch, IconFilter } from "@/components/ui/icons";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
 import type { Msg } from "@/lib/i18n";
 
 const TIERS: Tier[] = ["T0", "T1", "T2"];
+const TIER_ORDER: Record<Tier, number> = { T0: 0, T1: 1, T2: 2 };
+
+type SortKey = "urgency" | "name" | "rank";
+const SORT_OPTIONS: { key: SortKey; label: Msg }[] = [
+  { key: "urgency", label: { uk: "Терміновість", en: "Urgency" } },
+  { key: "name", label: { uk: "Імʼя", en: "Name" } },
+  { key: "rank", label: { uk: "Ранг", en: "Rank" } },
+];
 
 function tierChipClassName(tier: Tier, on: boolean): string {
   if (!on) return "bg-surface text-faint ring-line hover:text-ink-2";
@@ -27,6 +36,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
   const [violFilter, setViolFilter] = useState<Set<string>>(new Set());
   const [regionFilter, setRegionFilter] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("urgency");
   const [limit, setLimit] = useState(30);
 
   const violOptions = useMemo(() => {
@@ -41,20 +51,43 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
       const o = oblastOfItem(i);
       if (o !== "—") s.add(o);
     });
-    return [...s].sort((a, b) => a.localeCompare(b, locale));
+    return [...s].sort((a, b) => oblastName(a, locale).localeCompare(oblastName(b, locale), locale));
   }, [items, locale]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return items.filter((i) => {
+    const list = items.filter((i) => {
       if (!tiers.has(i.tier)) return false;
       if (immediateOnly && !i.immediate) return false;
       if (violFilter.size && !i.violations.some((v) => violFilter.has(v))) return false;
       if (regionFilter.size && !regionFilter.has(oblastOfItem(i))) return false;
-      if (q && !i.pib.toLowerCase().includes(q) && !String(i.unzr ?? "").includes(q)) return false;
+      if (
+        q &&
+        !i.pib.toLowerCase().includes(q) &&
+        !displayName(i.pib, locale).toLowerCase().includes(q) &&
+        !String(i.unzr ?? "").includes(q)
+      )
+        return false;
       return true;
     });
-  }, [items, tiers, immediateOnly, violFilter, regionFilter, search]);
+
+    const sorted = [...list];
+    if (sortBy === "name") {
+      sorted.sort((a, b) =>
+        displayName(a.pib, locale).localeCompare(displayName(b.pib, locale), locale),
+      );
+    } else if (sortBy === "rank") {
+      sorted.sort((a, b) => a.rank - b.rank);
+    } else {
+      sorted.sort(
+        (a, b) =>
+          TIER_ORDER[a.tier] - TIER_ORDER[b.tier] ||
+          Number(b.immediate) - Number(a.immediate) ||
+          b.score - a.score,
+      );
+    }
+    return sorted;
+  }, [items, tiers, immediateOnly, violFilter, regionFilter, search, sortBy, locale]);
 
   const shown = filtered.slice(0, limit);
 
@@ -98,15 +131,38 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
             </button>
           </div>
 
-          <div className="relative w-full lg:w-72">
-            <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label={t({ uk: "Пошук за ПІБ або УНЗР", en: "Search by name or UNZR" })}
-              placeholder={t({ uk: "Пошук за ПІБ або УНЗР…", en: "Search by name or UNZR…" })}
-              className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-faint focus:border-brand"
-            />
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-0.5 text-xs font-medium text-muted">
+                {t({ uk: "Сортувати", en: "Sort" })}
+              </span>
+              {SORT_OPTIONS.map((opt) => {
+                const on = sortBy === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => setSortBy(opt.key)}
+                    aria-pressed={on}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 transition ${
+                      on ? "bg-primary text-primary-fg ring-primary" : "bg-surface text-faint ring-line hover:text-ink-2"
+                    }`}
+                  >
+                    {t(opt.label)}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label={t({ uk: "Пошук за ПІБ або УНЗР", en: "Search by name or UNZR" })}
+                placeholder={t({ uk: "Пошук за ПІБ або УНЗР…", en: "Search by name or UNZR…" })}
+                className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-faint focus:border-brand"
+              />
+            </div>
           </div>
         </div>
 
@@ -125,7 +181,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
           label={t({ uk: "Регіон", en: "Region" })}
           options={regionOptions.map((o) => ({
             value: o,
-            label: t({ uk: `${o} обл.`, en: `${o} oblast` }),
+            label: oblastLabel(o, locale),
           }))}
           selected={regionFilter}
           onToggle={(v) => setRegionFilter((s) => toggle(s, v))}
@@ -143,7 +199,12 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
           { uk: ["дитина", "дитини", "дітей"], en: ["child", "children"] },
           locale,
         )}
-        . {t({ uk: "Спочатку — найтерміновіші.", en: "Most urgent first." })}
+        .{" "}
+        {sortBy === "urgency"
+          ? t({ uk: "Спочатку — найтерміновіші.", en: "Most urgent first." })
+          : sortBy === "name"
+            ? t({ uk: "За абеткою.", en: "Alphabetical." })
+            : t({ uk: "За рангом.", en: "By rank." })}
       </p>
 
       {/* список */}
@@ -197,7 +258,7 @@ function FilterChips({
             key={o.value}
             onClick={() => onToggle(o.value)}
             aria-pressed={on}
-            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition ${
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition ${
               on ? "bg-primary text-primary-fg ring-primary" : "bg-surface text-muted ring-line hover:text-ink-2"
             }`}
           >
@@ -206,7 +267,7 @@ function FilterChips({
         );
       })}
       {selected.size > 0 && (
-        <button onClick={onReset} className="text-[11px] font-medium text-brand hover:underline">
+        <button onClick={onReset} className="text-xs font-medium text-brand hover:underline">
           {t({ uk: "скинути", en: "reset" })}
         </button>
       )}

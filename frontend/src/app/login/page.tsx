@@ -15,11 +15,11 @@ export default function LoginPage() {
 
   const enter = () => {
     if (!selected) {
-      setError(t({ uk: "Оберіть демо-користувача.", en: "Pick a demo user." }));
+      setError(t({ uk: "Оберіть користувача.", en: "Select a user." }));
       return;
     }
     if (password !== DEMO_PASSWORD) {
-      setError(t({ uk: "Невірний пароль (підказка: lastivka).", en: "Wrong password (hint: lastivka)." }));
+      setError(t({ uk: "Невірний пароль.", en: "Wrong password." }));
       return;
     }
     setSessionCookie(selected.id);
@@ -33,12 +33,12 @@ export default function LoginPage() {
         <div className="mb-7 flex flex-col items-center text-center">
           <Logo />
           <h1 className="h-display mt-5 text-2xl font-bold text-ink">
-            {t({ uk: "Демо-вхід за роллю", en: "Role-based demo login" })}
+            {t({ uk: "Вхід за роллю", en: "Role-based sign-in" })}
           </h1>
           <p className="mt-1.5 text-sm text-muted">
             {t({
-              uk: "Доступ до даних залежить від ролі: ССД бачить свою територію з іменами, фахівець ЦНСП — лише власні кейси, регіональний менеджер — агрегати області без імен, поліція — кейси на перевірку, нагляд — максимум легально.",
-              en: "Access depends on role: SSD sees its territory with names, a CNSP specialist only their cases, a regional manager de-identified oblast aggregates, police cases to check, oversight the maximum allowed by law.",
+              uk: "Доступ до даних залежить від ролі.",
+              en: "Data access depends on your role.",
             })}
           </p>
         </div>
@@ -57,13 +57,13 @@ export default function LoginPage() {
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg text-sm font-bold ${
                   p.pii ? "bg-brand text-primary-fg" : "bg-paper-2 text-ink-2"
                 }`}>
-                  {(p.name.match(/[А-ЯІЇЄҐA-Z]/g) ?? ["?"]).slice(0, 2).join("")}
+                  {(t(p.name).match(/[А-ЯІЇЄҐA-Z]/g) ?? ["?"]).slice(0, 2).join("")}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-ink">{p.name}</span>
-                  <span className="block text-xs text-muted">{p.scopeLabel}</span>
+                  <span className="block text-sm font-semibold text-ink">{t(p.name)}</span>
+                  <span className="block text-xs text-muted">{t(p.scopeLabel)}</span>
                 </span>
-                <span className="text-right text-[11px]">
+                <span className="text-right text-xs">
                   <span className="block text-muted">{p.email}</span>
                   <span className={`mt-0.5 inline-block rounded px-1.5 py-0.5 font-semibold ${
                     p.pii ? "bg-brand-soft text-brand-ink" : "border border-line text-faint"
@@ -94,8 +94,8 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="mt-4 text-center text-[11px] text-faint">
-          {t({ uk: "Демо: спільний пароль", en: "Demo: shared password" })} <span className="font-mono">lastivka</span>
+        <p className="mt-4 text-center text-xs text-faint">
+          {t({ uk: "Спільний пароль", en: "Shared password" })} <span className="font-mono">lastivka</span>
         </p>
       </div>
     </div>

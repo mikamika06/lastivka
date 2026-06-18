@@ -1,14 +1,16 @@
 import { getQueue, scopeAndRedact } from "@/lib/api";
-import { getT } from "@/lib/i18n.server";
+import { getT, getLocale, pageTitle } from "@/lib/i18n.server";
 import { getSession } from "@/lib/session.server";
 import { SectionHeading } from "@/components/ui/Card";
 import { QueueExplorer } from "@/components/queue/QueueExplorer";
 
-export const metadata = { title: "Черга реагування — Ластівка" };
+export async function generateMetadata() {
+  return { title: await pageTitle({ uk: "Черга реагування", en: "Response queue" }) };
+}
 
 export default async function QueuePage() {
-  const [all, session, t] = await Promise.all([getQueue(), getSession(), getT()]);
-  const items = scopeAndRedact(all, session); // територіальна ізоляція + вирізання ПІБ із сесії
+  const [all, session, t, locale] = await Promise.all([getQueue(), getSession(), getT(), getLocale()]);
+  const items = scopeAndRedact(all, session, locale); // територіальна ізоляція + вирізання ПІБ із сесії
 
   const regional = session?.role === "regional";
   return (
@@ -18,24 +20,17 @@ export default async function QueuePage() {
         title={t({ uk: "Черга реагування", en: "Response queue" })}
         subtitle={
           session
-            ? t({
-                uk: `${session.scopeLabel} · ${items.length} ${regional ? "знеособлених кейсів (без ПІБ)" : "кейсів за вашою територією"}. Кожна картка пояснює рішення.`,
-                en: `${session.scopeLabel} · ${items.length} ${regional ? "de-identified cases (no PII)" : "cases in your territory"}. Each card explains the decision.`,
-              })
+            ? `${t(session.scopeLabel)} · ${items.length} ${t(
+                regional
+                  ? { uk: "знеособлених кейсів (без ПІБ)", en: "de-identified cases (no PII)" }
+                  : { uk: "кейсів за вашою територією", en: "cases in your territory" },
+              )}`
             : t({
-                uk: "Список дітей, упорядкований за терміновістю. Кожна картка розкривається в пояснення.",
-                en: "Children ordered by urgency. Each card expands into an explanation.",
+                uk: "Список дітей, упорядкований за терміновістю.",
+                en: "Children ordered by urgency.",
               })
         }
       />
-      {regional && (
-        <div className="rounded-xl border border-line bg-paper/50 px-4 py-2.5 text-xs text-muted">
-          {t({
-            uk: "Режим регіонала: персональні дані (ПІБ, УНЗР, дата народження) вирізано в шарі даних. Для роботи з конкретною дитиною — увійдіть як працівник громади.",
-            en: "Regional mode: personal data (name, UNZR, DOB) is stripped in the data layer. To work a specific child, sign in as a community worker.",
-          })}
-        </div>
-      )}
       <QueueExplorer items={items} />
     </div>
   );

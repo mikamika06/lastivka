@@ -43,7 +43,7 @@ export function AccessLockBadge({ registries }: Readonly<{ registries: string[] 
   const t = useTx();
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full bg-lock-soft px-2 py-0.5 text-[11px] font-medium text-lock-ink"
+      className="inline-flex items-center gap-1 rounded-full bg-lock-soft px-2 py-0.5 text-xs font-medium text-lock-ink"
       title={t({
         uk: "Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту. Повний доступ — тільки за рішенням суду (лікарська таємниця).",
         en: "Most sensitive data: only a yes/no signal is visible, with no access to the content. Full access requires a court order (medical confidentiality).",
@@ -65,7 +65,7 @@ export function AcuityTag({ acuity }: Readonly<{ acuity: Acuity }>) {
   const t = useTx();
   const color = acuityColor(acuity);
   return (
-    <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${color}`}>
+    <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${color}`}>
       {t(ACUITY_MSG[acuity])}
     </span>
   );

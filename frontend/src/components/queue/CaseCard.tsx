@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { QueueItem } from "@/lib/types";
-import { violName, regName, regAccess, ACUITY_MSG, vulnFactorLabel } from "@/lib/registries";
+import { violName, regName, regAccess, vulnFactorLabel } from "@/lib/registries";
 import { ageLabel, formatScore } from "@/lib/format";
-import { oblastOfItem } from "@/lib/api";
+import { oblastOfItem, oblastLabel } from "@/lib/api";
+import { displayName } from "@/lib/translit";
 import { TierBadge, ImmediateBadge, AccessLockBadge, AcuityTag } from "@/components/ui/badges";
 import { IconChevronDown, IconArrowRight, IconCheck, IconProfile } from "@/components/ui/icons";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
@@ -40,31 +41,31 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate font-semibold text-ink">{item.pib}</span>
+            <span className="truncate font-semibold text-ink">{displayName(item.pib, locale)}</span>
             <span className="text-xs text-faint">· {ageLabel(item.age, locale)}</span>
             {item.immediate && <ImmediateBadge />}
             {(item.country === "UA+EE" || item.country === "EE") && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-brand-line bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink">
+              <span className="inline-flex items-center gap-1 rounded-md border border-brand-line bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-brand-ink">
                 {t({ uk: "Естонський слід", en: "Estonia trace" })}
               </span>
             )}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {item.violations.slice(0, 3).map((v) => (
-              <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
+              <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-xs font-medium text-ink-2">
                 {violName(v, locale)}
               </span>
             ))}
             {item.violations.length > 3 && (
-              <span className="text-[11px] text-faint">+{item.violations.length - 3}</span>
+              <span className="text-xs text-faint">+{item.violations.length - 3}</span>
             )}
             {item.violations.some((v) => v.startsWith("P_")) && (
-              <span className="rounded-md border border-line px-2 py-0.5 text-[11px] font-medium text-muted">
+              <span className="rounded-md border border-line px-2 py-0.5 text-xs font-medium text-muted">
                 {t({ uk: "сімейний ризик", en: "family risk" })}
               </span>
             )}
             {oblast !== "—" && (
-              <span className="text-[11px] text-faint">· {oblast} {t({ uk: "обл.", en: "oblast" })}</span>
+              <span className="text-xs text-faint">· {oblastLabel(oblast, locale)}</span>
             )}
           </div>
         </div>
@@ -84,9 +85,9 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
 
       {/* розкрите пояснення */}
       {open && (
-        <div className="grid gap-5 border-t border-line bg-paper/30 px-4 py-5 sm:px-5 lg:grid-cols-[1fr_300px]">
+        <div className="grid gap-5 border-t border-line bg-paper/30 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_300px]">
           {/* пояснення індексу терміновості */}
-          <div>
+          <div className="min-w-0">
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
               {t({ uk: "Чому в черзі — пояснення індексу терміновості", en: "Why in queue — urgency index explained" })}
             </h4>
@@ -110,13 +111,13 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                       <AcuityTag acuity={c.acuity} />
                     </div>
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-faint">
+                      <span className="text-xs text-faint">
                         {t({ uk: "збіг сигналів з кількох реєстрів:", en: "signal overlap across registries:" })}
                       </span>
                       {c.evidence.map((e) => (
                         <span
                           key={e}
-                          className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+                          className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${
                             regAccess(e) === 1 ? "bg-lock-soft text-lock-ink" : "bg-brand-soft text-brand-ink"
                           }`}
                         >
@@ -133,22 +134,6 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                 );
               })}
             </ul>
-            <p className="mt-3 text-[11px] leading-relaxed text-faint">
-              {t({
-                uk: "Жодне порушення не доводить один реєстр — доводить ",
-                en: "No single registry proves a violation — it is proven by the ",
-              })}
-              <span className="font-medium">{t({ uk: "збіг сигналів", en: "signal overlap" })}</span>{" "}
-              {t({
-                uk: "з кількох реєстрів. Свіжість сигналу",
-                en: "across several registries. Signal recency",
-              })}{" "}
-              ({Object.values(ACUITY_MSG).map((m) => t(m)).join(" / ")}){" "}
-              {t({
-                uk: "показує, наскільки недавно почалося погіршення.",
-                en: "shows how recently the deterioration began.",
-              })}
-            </p>
           </div>
 
           {/* права колонка: індекс терміновості + дія */}
@@ -175,7 +160,7 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
               {item.vuln_factors.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {item.vuln_factors.map((f) => (
-                    <span key={f} className="rounded-md bg-paper-2 px-1.5 py-0.5 text-[11px] text-muted">
+                    <span key={f} className="rounded-md bg-paper-2 px-1.5 py-0.5 text-xs text-muted">
                       {vulnFactorLabel(f, locale)}
                     </span>
                   ))}
@@ -204,13 +189,6 @@ export function CaseCard({ item, defaultOpen = false }: Readonly<{ item: QueueIt
                 <IconArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-
-            <p className="text-[11px] leading-relaxed text-faint">
-              {t({
-                uk: "Підтримка рішень, не вирок: остаточне рішення ухвалює фахівець. «Взяти в роботу» — демо-приклад зміни статусу дитини.",
-                en: "Decision support, not a verdict: the final decision is made by a specialist. “Take on” is a demo example of changing a child's status.",
-              })}
-            </p>
           </div>
         </div>
       )}
@@ -222,7 +200,7 @@ function Row({ label, value, mono }: Readonly<{ label: string; value: string; mo
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-muted">{label}</span>
-      <span className={`text-right font-medium text-ink-2 ${mono ? "tnum text-[11px]" : ""}`}>{value}</span>
+      <span className={`text-right font-medium text-ink-2 ${mono ? "tnum text-xs" : ""}`}>{value}</span>
     </div>
   );
 }

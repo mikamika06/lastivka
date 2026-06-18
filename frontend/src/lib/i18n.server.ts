@@ -4,7 +4,8 @@ import { LOCALE_COOKIE, ROLE_COOKIE, isRole, pick, type Locale, type Role, type 
 
 export async function getLocale(): Promise<Locale> {
   const c = await cookies();
-  return c.get(LOCALE_COOKIE)?.value === "en" ? "en" : "uk";
+  // EN — мова за замовчуванням; UK лишається опцією через перемикач.
+  return c.get(LOCALE_COOKIE)?.value === "uk" ? "uk" : "en";
 }
 
 export async function getRole(): Promise<Role> {
@@ -17,4 +18,10 @@ export async function getRole(): Promise<Role> {
 export async function getT(): Promise<(m: Msg) => string> {
   const locale = await getLocale();
   return (m: Msg) => pick(locale, m);
+}
+
+/** Локалізований <title> сторінки: «Розділ — Ластівка» / «Section — Lastivka». */
+export async function pageTitle(m: Msg): Promise<string> {
+  const t = await getT();
+  return `${t(m)} — ${t({ uk: "Ластівка", en: "Lastivka" })}`;
 }

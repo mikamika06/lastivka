@@ -200,19 +200,38 @@ export const TIER_COLOR: Record<Tier, string> = {
   T2: "var(--color-t2)",
 };
 
-/** Монохромна шкала для діаграм (синій акцент, від темного до світлого). */
-export const CHART_PALETTE = [
-  "#1b4fa0",
-  "#2f7bf5",
-  "#5e97f7",
-  "#7fb0f8",
-  "#9ac2fa",
-  "#b5d2fb",
-  "#c9defc",
-  "#d8e6fd",
-  "#e4edfd",
-  "#eef3fe",
-  "#f4f8ff",
-  "#f7faff",
-  "#fbfdff",
-];
+/**
+ * Рівномірна читабельна шкала для діаграм (синій акцент).
+ * Лінійна інтерполяція в HSL між темним і помірно-світлим синім —
+ * рівно `n` відтінків, без wrap і без майже-білих кольорів,
+ * читабельних і у світлій, і в темній темі.
+ */
+function hslToHex(h: number, s: number, l: number): string {
+  const a = (s * Math.min(l, 1 - l)) / 100;
+  const f = (n: number): string => {
+    const k = (n + h / 30) % 12;
+    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * c)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+// Кінці діапазону: темний насичений → помірно світлий (НЕ майже-білий).
+const SCALE_FROM = { h: 217, s: 72, l: 30 }; // ~#1b4fa0
+const SCALE_TO = { h: 213, s: 90, l: 72 }; // ~#7fb0f8
+
+export function chartScale(n: number): string[] {
+  if (n <= 0) return [];
+  if (n === 1) return ["#2f7bf5"];
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const tStep = i / (n - 1);
+    const h = SCALE_FROM.h + (SCALE_TO.h - SCALE_FROM.h) * tStep;
+    const s = SCALE_FROM.s + (SCALE_TO.s - SCALE_FROM.s) * tStep;
+    const l = (SCALE_FROM.l + (SCALE_TO.l - SCALE_FROM.l) * tStep) / 100;
+    out.push(hslToHex(h, s, l));
+  }
+  return out;
+}

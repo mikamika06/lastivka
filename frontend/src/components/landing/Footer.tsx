@@ -14,7 +14,7 @@ export async function LandingFooter() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-fg">
                 <SwallowMark className="h-5 w-5" />
               </span>
-              <span className="font-display text-lg font-bold text-ink">Ластівка</span>
+              <span className="font-display text-lg font-bold text-ink">{t({ uk: "Ластівка", en: "Lastivka" })}</span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
               {t({
@@ -41,7 +41,7 @@ export async function LandingFooter() {
             <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">{t({ uk: "Контекст", en: "Context" })}</h4>
             <ul className="mt-3 space-y-2 text-sm text-ink-2">
               <li>{t({ uk: "Українсько-естонське партнерство", en: "Ukrainian-Estonian partnership" })}</li>
-              <li>{t({ uk: "AI Hackathon · 16–18.06.2026", en: "AI Hackathon · 16–18.06.2026" })}</li>
+              <li>{t({ uk: "16–18.06.2026", en: "16–18.06.2026" })}</li>
               <li>{t({ uk: "Сумісність із Trembita / X-Road (державна шина обміну даними)", en: "Compatible with Trembita / X-Road (the state data exchange bus)" })}</li>
             </ul>
           </div>
@@ -49,18 +49,9 @@ export async function LandingFooter() {
 
         <div className="mt-10 border-t border-line pt-6 text-xs leading-relaxed text-faint">
           <p>
-            <span className="font-medium text-muted">{t({ uk: "Етика:", en: "Ethics:" })}</span>{" "}
             {t({
-              uk: "Підтримка рішень, не вирок. Бачимо, коли дитина реально позбавлена прав (записана в школі чи ні), а не «прогнозуємо злочинність». Зрозумілий індекс терміновості — система пояснює кожне рішення, а останнє слово завжди за людиною.",
-              en: "Decision support, not a verdict. We see when a child is actually deprived of their rights (enrolled in school or not), rather than \"predicting criminality\". A clear urgency index — the system explains every decision, and the final word always belongs to a human.",
-            })}
-          </p>
-          <p className="mt-2">
-            {t({ uk: "Демонстрація на", en: "Demo on" })}{" "}
-            <span className="font-medium text-muted">{t({ uk: "синтетичних", en: "synthetic" })}</span>{" "}
-            {t({
-              uk: "даних, структурно ідентичних реальним реєстрам. Жодних справжніх персональних даних.",
-              en: "data, structurally identical to real registries. No real personal data whatsoever.",
+              uk: "Працює на синтетичних даних, структурно ідентичних державним реєстрам. Жодних справжніх персональних даних.",
+              en: "Runs on synthetic data, structurally identical to state registries. No real personal data whatsoever.",
             })}
           </p>
         </div>

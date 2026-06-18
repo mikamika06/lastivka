@@ -1,10 +1,13 @@
 import { SwallowMark } from "@/components/ui/Logo";
 import { LockIcon } from "@/components/ui/badges";
-import { getT } from "@/lib/i18n.server";
+import { getT, getLocale } from "@/lib/i18n.server";
+import { displayName } from "@/lib/translit";
+import { oblastLabel } from "@/lib/api";
 
 /** Превʼю продукту для hero: дитина «у щілині», зібрана з окремих реєстрів. */
 export async function HeroPreview() {
   const t = await getT();
+  const locale = await getLocale();
   return (
     <div className="card animate-fade-up p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -14,15 +17,14 @@ export async function HeroPreview() {
           </span>{" "}
           {t({ uk: "Черга реагування", en: "Response queue" })}
         </span>
-        <span className="rounded-full bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-muted">{t({ uk: "демо", en: "demo" })}</span>
       </div>
 
       <div className="flex items-start gap-3">
         <span className="mt-0.5 h-12 w-1 rounded-full bg-t0" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-ink">Ткаченко Софія</span>
-            <span className="text-xs text-faint">{t({ uk: "8 років", en: "8 y.o." })} · Харківська обл.</span>
+            <span className="font-semibold text-ink">{displayName("Ткаченко Софія", locale)}</span>
+            <span className="text-xs text-faint">{t({ uk: "8 років", en: "8 y.o." })} · {oblastLabel("Харківська", locale)}</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {[
@@ -30,7 +32,7 @@ export async function HeroPreview() {
               t({ uk: "Поза освітою", en: "Out of education" }),
               t({ uk: "Обмеження медицини", en: "Limited healthcare" }),
             ].map((v) => (
-              <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
+              <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-xs font-medium text-ink-2">
                 {v}
               </span>
             ))}
@@ -40,20 +42,20 @@ export async function HeroPreview() {
           <span className="inline-flex items-center gap-1 rounded-full bg-t0-soft px-2.5 py-1 text-xs font-semibold text-t0-ink ring-1 ring-t0-line">
             <span className="h-1.5 w-1.5 rounded-full bg-t0" /> T0
           </span>
-          <span className="mt-1 text-[11px] text-faint">
+          <span className="mt-1 text-xs text-faint">
             {t({ uk: "індекс терміновості", en: "urgency index" })} <span className="font-semibold tnum text-ink-2">2.41</span>
           </span>
         </div>
       </div>
 
       <div className="mt-4 rounded-xl border border-line bg-paper/50 p-3">
-        <p className="text-[11px] font-medium text-muted">{t({ uk: "Підтверджено збігом сигналів з кількох реєстрів:", en: "Confirmed by matching signals across several registries:" })}</p>
+        <p className="text-xs font-medium text-muted">{t({ uk: "Підтверджено збігом сигналів з кількох реєстрів:", en: "Confirmed by matching signals across several registries:" })}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Chip>{t({ uk: "ВПО → переміщення", en: "IDP → displacement" })}</Chip>
           <Chip>{t({ uk: "ЄДЕБО → вихід зі школи", en: "EDEBO → left school" })}</Chip>
           <Chip>{t({ uk: "eHealth → декларацію закрито", en: "eHealth → declaration closed" })}</Chip>
         </div>
-        <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-muted">
+        <p className="mt-2.5 flex items-center gap-1.5 text-xs text-muted">
           <LockIcon className="h-3 w-3 text-lock" />
           {t({ uk: "Найчутливіші дані (Рівень 1) — лише сигнал «є / немає», повний доступ за рішенням суду", en: "Most sensitive data (Tier 1) — yes/no signal only, full access by court order" })}
         </p>
@@ -64,7 +66,7 @@ export async function HeroPreview() {
 
 function Chip({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-ink">
+    <span className="rounded-md bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-ink">
       {children}
     </span>
   );

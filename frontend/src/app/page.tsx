@@ -174,16 +174,16 @@ const TASKS: { icon: typeof IconGlobe; title: Msg; text: Msg }[] = [
     icon: IconShield,
     title: { uk: "Проактивне виявлення ризиків", en: "Proactive risk detection" },
     text: {
-      uk: "Алгоритми автоматично виявляють червоні прапорці до того, як виникне критична ситуація.",
-      en: "Algorithms automatically flag red flags before a critical situation arises.",
+      uk: "Система виявляє ознаки ризику до того, як виникне критична ситуація.",
+      en: "The system detects signs of risk before a critical situation arises.",
     },
   },
   {
     icon: IconScale,
     title: { uk: "Підтримка ведення випадків", en: "Case-management support" },
     text: {
-      uk: "Інструмент на основі даних: підтримка рішень, не вирок — для раннього втручання та супроводу дітей службами захисту.",
-      en: "A data-driven tool: decision support, not a verdict — for early intervention and support of children by protection services.",
+      uk: "Інструмент на основі даних для раннього втручання та супроводу дітей службами захисту.",
+      en: "A data-driven tool for early intervention and support of children by protection services.",
     },
   },
 ];
@@ -390,8 +390,8 @@ function CtaBand({ t }: Readonly<{ t: T }>) {
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-white/70">
             {t({
-              uk: "Жива демонстрація на навчальних даних: управлінська панель, зрозуміла черга реагування з поясненням і профіль дитини, зібраний з кількох реєстрів.",
-              en: "A live demo on training data: the management dashboard, a clear response queue with explanations, and a child profile assembled from several registries.",
+              uk: "Управлінська панель, зрозуміла черга реагування з поясненням і профіль дитини, зібраний з кількох реєстрів.",
+              en: "The management dashboard, a clear response queue with explanations, and a child profile assembled from several registries.",
             })}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
