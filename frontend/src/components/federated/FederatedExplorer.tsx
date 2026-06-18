@@ -7,6 +7,7 @@ import { violName } from "@/lib/registries";
 import { useTx, useLocale } from "@/components/providers/I18nProvider";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { IconChevronDown } from "@/components/ui/icons";
+import { FederatedGraph } from "./FederatedGraph";
 
 const REG_LABEL: Record<string, string> = {
   DRACS: "ДРАЦС", EDDR: "ЄДДР", EHEALTH: "ЕСОЗ", EDEBO: "ЄДЕБО", AIKOM: "АІКОМ/ІСУО",
@@ -77,68 +78,45 @@ export function FederatedExplorer({ items, stats }: Readonly<{ items: QueueItem[
         </div>
       </div>
 
-      {/* ПОТІК: вузли → агрегатор → порушення */}
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_0.8fr_1fr]">
-        {/* col 1: LRA-вузли */}
+      {/* ГРАФ ЗВ'ЯЗКІВ: реєстри-вузли → лінії-докази → порушення */}
+      <Card className="p-5">
+        <CardTitle hint={t({ uk: "реєстри → докази → порушення", en: "registries → evidence → violations" })}>
+          {t({ uk: "Граф детекції: як сигнали перетворюються на порушення", en: "Detection graph: how signals become violations" })}
+        </CardTitle>
+        {loading || !trace ? <Loader /> : trace.detections.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted">{t({ uk: "У цієї дитини порушень не виявлено — граф порожній.", en: "No violations for this child — empty graph." })}</p>
+        ) : <FederatedGraph trace={trace} />}
+      </Card>
+
+      {/* деталь: що віддав кожен вузол (envelope) */}
+      {trace && !loading && (emitted.length > 0 || blocked.length > 0) && (
         <Card className="p-5">
-          <CardTitle hint={t({ uk: "кожен реєстр рахує локально", en: "each registry computes locally" })}>
-            {t({ uk: "1 · Реєстри-сховища (LRA-вузли)", en: "1 · Registry stores (LRA nodes)" })}
+          <CardTitle hint={t({ uk: "лише похідні сигнали, не рядки", en: "only derived signals, not rows" })}>
+            {t({ uk: "Що віддав кожен LRA-вузол (envelope)", en: "What each LRA node emitted (envelope)" })}
           </CardTitle>
-          {loading ? <Loader /> : (
-            <div className="space-y-2">
-              {emitted.map((e) => (
-                <div key={e.registry} className="rounded-lg border border-line bg-surface p-2.5">
-                  <div className="mb-1 text-xs font-semibold text-ink">{REG_LABEL[e.registry] ?? e.registry}</div>
-                  <div className="flex flex-wrap gap-1">
-                    {e.signals.map((s) => (
-                      <span key={s} className="rounded bg-brand-soft px-1.5 py-px font-mono text-[10px] text-brand-ink">{s}</span>
-                    ))}
-                  </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {emitted.map((e) => (
+              <div key={e.registry} className="rounded-lg border border-line bg-surface p-2.5">
+                <div className="mb-1 text-xs font-semibold text-ink">{REG_LABEL[e.registry] ?? e.registry}</div>
+                <div className="flex flex-wrap gap-1">
+                  {e.signals.map((s) => (
+                    <span key={s} className="rounded bg-brand-soft px-1.5 py-px font-mono text-[10px] text-brand-ink">{s}</span>
+                  ))}
                 </div>
-              ))}
-              {blocked.map((e) => (
-                <div key={e.registry} className="rounded-lg border border-lock/30 bg-lock-soft/50 p-2.5">
-                  <div className="text-xs font-semibold text-lock-ink">{REG_LABEL[e.registry] ?? e.registry} · {t({ uk: "WALLED", en: "WALLED" })}</div>
-                  <div className="mt-0.5 text-[10px] leading-tight text-faint">{t({ uk: "pull заборонено — лише авторизований push", en: "pull blocked — authorized push only" })}</div>
-                </div>
-              ))}
-              {silent.length > 0 && (
-                <div className="text-[11px] text-faint">
-                  {t({ uk: "Без сигналів: ", en: "No signals: " })}{silent.map((e) => REG_LABEL[e.registry] ?? e.registry).join(", ")}
-                </div>
-              )}
-            </div>
+              </div>
+            ))}
+            {blocked.map((e) => (
+              <div key={e.registry} className="rounded-lg border border-lock/30 bg-lock-soft/50 p-2.5">
+                <div className="text-xs font-semibold text-lock-ink">{REG_LABEL[e.registry] ?? e.registry} · WALLED</div>
+                <div className="mt-0.5 text-[10px] leading-tight text-faint">{t({ uk: "pull заборонено — лише push", en: "pull blocked — push only" })}</div>
+              </div>
+            ))}
+          </div>
+          {silent.length > 0 && (
+            <p className="mt-2 text-[11px] text-faint">{t({ uk: "Без сигналів: ", en: "No signals: " })}{silent.map((e) => REG_LABEL[e.registry] ?? e.registry).join(", ")}</p>
           )}
         </Card>
-
-        {/* col 2: агрегатор */}
-        <Card className="flex flex-col items-center justify-center p-5 text-center">
-          <div className="text-xs font-semibold uppercase tracking-wide text-faint">{t({ uk: "2 · C1-агрегатор", en: "2 · C1 aggregator" })}</div>
-          <div className="my-2 text-3xl text-brand">→</div>
-          <div className="text-sm font-medium text-ink">{t({ uk: "зведення за псевдонімом", en: "intersect by pseudonym" })}</div>
-          <div className="mt-1 break-all rounded bg-paper-2 px-2 py-1 font-mono text-[10px] text-muted">{trace?.pseudonym?.slice(0, 24)}…</div>
-          <div className="mt-2 text-[11px] text-faint">{trace?.active_lra_nodes} {t({ uk: "вузлів → 1 агрегатор", en: "nodes → 1 aggregator" })}</div>
-          <div className="mt-2 text-[10px] leading-tight text-faint">{t({ uk: "HMAC(УНЗР), не сам УНЗР", en: "HMAC(UNZR), not UNZR" })}</div>
-        </Card>
-
-        {/* col 3: порушення */}
-        <Card className="p-5">
-          <CardTitle hint={t({ uk: "перетин сигналів", en: "signal intersection" })}>
-            {t({ uk: "3 · Виявлені порушення", en: "3 · Detected violations" })}
-          </CardTitle>
-          {loading ? <Loader /> : (
-            <div className="flex flex-wrap gap-1.5">
-              {(trace?.detections ?? []).filter((d) => !d.startsWith("P_")).length === 0 && (trace?.detections ?? []).length === 0 ? (
-                <span className="text-xs text-muted">{t({ uk: "Порушень не виявлено.", en: "No violations." })}</span>
-              ) : (trace?.detections ?? []).map((d) => (
-                <span key={d} className={`rounded-md px-2 py-1 text-[12px] font-medium ${d.startsWith("P_") ? "border border-line bg-paper-2 text-ink-2" : "bg-brand-soft text-brand-ink"}`}>
-                  {violName(d, locale)}
-                </span>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
+      )}
 
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-xs leading-relaxed text-muted">
         <span className="font-medium text-ink-2">{t({ uk: "Сирі рядки силосів не залишали реєстр.", en: "Raw silo rows never left the registry." })}</span>{" "}
