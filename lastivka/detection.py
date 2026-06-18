@@ -202,7 +202,13 @@ def _earliest(*months):
 
 
 def detect_entity(ent, cfg) -> list[dict]:
-    s = _signals(ent, cfg)
+    return _apply_rules(_signals(ent, cfg))
+
+
+def _apply_rules(s) -> list[dict]:
+    """Правила детекції над ЗІБРАНИМ словником сигналів `s`. Не читає сирих рядків —
+    тож працює однаково і для централізованого _signals, і для федеративного зведення
+    envelope'ів (lastivka/federated.py). Так LRA-вузли й централь дають ІДЕНТИЧНІ порушення."""
     T = s["T"]
     found = []
 
