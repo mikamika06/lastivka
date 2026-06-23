@@ -31,6 +31,10 @@ severity:
   E5_voice: 0.30
   W9_identity: 0.70
   F1_psych_violence: 0.60
+  X1_gap: 0.78               # щілина між системами (дитина у EE, але в жодному сервісі)
+  X2_uasc: 0.90             # неповнолітн(ій) без супроводу
+  X3_med_rupture: 0.70
+  X4_edu_rupture: 0.62
   # immediate-порушення теж мають severity (для впорядкування всередині T0)
   W5_deportation: 1.00
   W7_trafficking: 1.00

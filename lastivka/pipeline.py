@@ -9,7 +9,7 @@ import sqlite3
 import yaml
 
 
-from . import matching, detection, scoring, validation, caseload
+from . import matching, detection, scoring, validation, caseload, crossborder
 from .storage import OUT
 
 
@@ -21,8 +21,10 @@ def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.
     weights = scoring.load_weights(scoring_path)
 
     entities = matching.match()
-    entities_by_id = {e["entity_id"]: e for e in entities}
     detections = detection.detect_all(entities, cfg)
+    # крос-кордон UA↔EE: лінк PPRL, узгодження W3/W8, X-ризики
+    entities, detections, cb_stats = crossborder.apply(entities, detections, cfg)
+    entities_by_id = {e["entity_id"]: e for e in entities}
     queue = scoring.score_all(detections, entities_by_id, cfg, weights)
 
     # розподіл по кейсворкерах (територія + ємність за нормативом)
@@ -34,13 +36,15 @@ def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.
     m_priv = validation.eval_privacy(entities, cfg)
 
     _write_pipeline_db(queue, cl,
-                       {"matching": m_match, "detection": m_detect, "privacy": m_priv},
+                       {"matching": m_match, "detection": m_detect, "privacy": m_priv,
+                        "crossborder": cb_stats},
                        matching.LAST_STATS)
     if log_to_mlflow:
         validation.log_mlflow(m_match, m_detect, m_priv, cfg)
 
-    return {"queue": queue, "n_detected": len(detections), "caseload": cl,
-            "metrics": {"matching": m_match, "detection": m_detect, "privacy": m_priv},
+    return {"queue": queue, "n_detected": len(detections), "caseload": cl, "crossborder": cb_stats,
+            "metrics": {"matching": m_match, "detection": m_detect, "privacy": m_priv,
+                        "crossborder": cb_stats},
             "match_stats": matching.LAST_STATS}
 
 
@@ -51,13 +55,13 @@ def _write_pipeline_db(queue, cl, metrics, match_stats):
     worker_of = {a["entity_id"]: a["worker_id"] for a in cl["assignments"]}
     con.execute("DROP TABLE IF EXISTS queue")
     con.execute("""CREATE TABLE queue (
-        rank INTEGER, entity_id INTEGER, unzr TEXT, pib TEXT, birth_date TEXT, age INTEGER,
-        oblast TEXT, worker_id TEXT, tier TEXT, score REAL, immediate INTEGER,
+        rank INTEGER, entity_id INTEGER, unzr TEXT, isikukood TEXT, pib TEXT, birth_date TEXT, age INTEGER,
+        country TEXT, oblast TEXT, worker_id TEXT, tier TEXT, score REAL, immediate INTEGER,
         vulnerability REAL, vuln_factors TEXT, violations TEXT, registries TEXT, contributions TEXT)""")
     for i, r in enumerate(queue, 1):
-        con.execute("INSERT INTO queue VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
-            i, r["entity_id"], r["unzr"], r["pib"], r["birth_date"], r["age"],
-            r.get("oblast"), worker_of.get(r["entity_id"]),
+        con.execute("INSERT INTO queue VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+            i, r["entity_id"], r["unzr"], r.get("isikukood"), r["pib"], r["birth_date"], r["age"],
+            r.get("country", "UA"), r.get("oblast"), worker_of.get(r["entity_id"]),
             r["tier"], r["score"], int(r["immediate"]), r["vulnerability"],
             json.dumps(r["vuln_factors"], ensure_ascii=False),
             json.dumps(r["violations"], ensure_ascii=False),

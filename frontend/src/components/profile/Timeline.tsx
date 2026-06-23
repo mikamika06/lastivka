@@ -1,11 +1,16 @@
+"use client";
+
 import type { TimelineEvent } from "@/lib/types";
 import { regName } from "@/lib/registries";
 import { formatDate } from "@/lib/format";
 import { LockIcon } from "@/components/ui/badges";
+import { useTx, useLocale } from "@/components/providers/I18nProvider";
 
 export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
+  const t = useTx();
+  const locale = useLocale();
   if (events.length === 0) {
-    return <p className="text-sm text-muted">Подій для відображення немає.</p>;
+    return <p className="text-sm text-muted">{t({ uk: "Подій для відображення немає.", en: "No events to display." })}</p>;
   }
 
   return (
@@ -21,20 +26,22 @@ export function Timeline({ events }: Readonly<{ events: TimelineEvent[] }>) {
             {e.level1 && <LockIcon className="h-2.5 w-2.5 text-white" />}
           </span>
           <div className="flex flex-wrap items-center gap-2">
-            <time className="text-xs font-medium tnum text-muted">{formatDate(e.date)}</time>
+            <time className="text-xs font-medium tnum text-muted">{formatDate(e.date, locale)}</time>
             <span
               className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${
                 e.level1 ? "bg-lock-soft text-lock-ink" : "bg-brand-soft text-brand-ink"
               }`}
             >
-              {regName(e.registry)}
+              {regName(e.registry, locale)}
             </span>
           </div>
-          <p className="mt-1 text-sm text-ink-2">{e.label}</p>
+          <p className="mt-1 text-sm text-ink-2">{t(e.label)}</p>
           {e.level1 && (
             <p className="mt-1 text-[11px] text-lock-ink/80">
-              Рівень-1: сигнал отримано як PSI-булеан. Повний доступ — за законним правом
-              (ухвала суду / медична таємниця).
+              {t({
+                uk: "Найчутливіші дані: видно лише сигнал «є / немає», без доступу до вмісту. Повний доступ — лише за рішенням суду або в межах лікарської таємниці.",
+                en: "Most sensitive data: only a yes/no signal is visible, with no access to the content. Full access only by court order or within medical confidentiality.",
+              })}
             </p>
           )}
         </li>

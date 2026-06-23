@@ -1,29 +1,35 @@
 import { SwallowMark } from "@/components/ui/Logo";
 import { LockIcon } from "@/components/ui/badges";
+import { getT } from "@/lib/i18n.server";
 
-/** Превʼю продукту для hero: кейс «дитина у щілині» зібраний із силосів. */
-export function HeroPreview() {
+/** Превʼю продукту для hero: дитина «у щілині», зібрана з окремих реєстрів. */
+export async function HeroPreview() {
+  const t = await getT();
   return (
     <div className="card animate-fade-up p-5">
       <div className="mb-4 flex items-center justify-between">
         <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-ink text-white">
+          <span className="grid h-6 w-6 place-items-center rounded-md bg-primary text-primary-fg">
             <SwallowMark className="h-3.5 w-3.5" />
           </span>{" "}
-          Черга реагування
+          {t({ uk: "Черга реагування", en: "Response queue" })}
         </span>
-        <span className="rounded-full bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-muted">демо</span>
+        <span className="rounded-full bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-muted">{t({ uk: "демо", en: "demo" })}</span>
       </div>
 
       <div className="flex items-start gap-3">
         <span className="mt-0.5 h-12 w-1 rounded-full bg-t0" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-ink">Ткаченко Софія</span>
-            <span className="text-xs text-faint">8 років · Харківська обл.</span>
+            <span className="font-semibold text-ink">{t({ uk: "Ткаченко Софія", en: "Sofiia Tkachenko" })}</span>
+            <span className="text-xs text-faint">{t({ uk: "8 років · Харківська обл.", en: "8 y.o. · Kharkiv oblast" })}</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {["Вимушене переміщення", "Поза освітою", "Обмеження медицини"].map((v) => (
+            {[
+              t({ uk: "Вимушене переміщення", en: "Forced displacement" }),
+              t({ uk: "Поза освітою", en: "Out of education" }),
+              t({ uk: "Обмеження медицини", en: "Limited healthcare" }),
+            ].map((v) => (
               <span key={v} className="rounded-md bg-paper-2 px-2 py-0.5 text-[11px] font-medium text-ink-2">
                 {v}
               </span>
@@ -35,21 +41,21 @@ export function HeroPreview() {
             <span className="h-1.5 w-1.5 rounded-full bg-t0" /> T0
           </span>
           <span className="mt-1 text-[11px] text-faint">
-            score <span className="font-semibold tnum text-ink-2">2.41</span>
+            {t({ uk: "індекс терміновості", en: "urgency index" })} <span className="font-semibold tnum text-ink-2">2.41</span>
           </span>
         </div>
       </div>
 
       <div className="mt-4 rounded-xl border border-line bg-paper/50 p-3">
-        <p className="text-[11px] font-medium text-muted">Доведено перетином реєстрів:</p>
+        <p className="text-[11px] font-medium text-muted">{t({ uk: "Підтверджено збігом сигналів з кількох реєстрів:", en: "Confirmed by matching signals across several registries:" })}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <Chip>ВПО → переміщення</Chip>
-          <Chip>ЄДЕБО → вихід зі школи</Chip>
-          <Chip>eHealth → декларацію закрито</Chip>
+          <Chip>{t({ uk: "ВПО → переміщення", en: "IDP → displacement" })}</Chip>
+          <Chip>{t({ uk: "ЄДЕБО → вихід зі школи", en: "EDEBO → left school" })}</Chip>
+          <Chip>{t({ uk: "eHealth → декларацію закрито", en: "eHealth → declaration closed" })}</Chip>
         </div>
         <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-muted">
           <LockIcon className="h-3 w-3 text-lock" />
-          Дані Рівня-1 — лише як PSI-булеан
+          {t({ uk: "Найчутливіші дані (Рівень 1) — лише сигнал «є / немає», повний доступ за рішенням суду", en: "Most sensitive data (Tier 1) — yes/no signal only, full access by court order" })}
         </p>
       </div>
     </div>

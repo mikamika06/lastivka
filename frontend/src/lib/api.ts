@@ -12,10 +12,24 @@ import type {
   Tier,
   CaseloadOverview,
   WorkerQueue,
+  WorkerCase,
   FeedbackStats,
   FeedbackInput,
+  CrossBorderStats,
 } from "./types";
-import { mockData, mockOblastOf, mockWorkers, mockWorkerQueue, MOCK_FEEDBACK_STATS } from "./mock";
+import { mockData, mockOblastOf, mockHromadaOf, MOCK_FEEDBACK_STATS } from "./mock";
+import type { Role } from "./auth";
+
+/**
+ * Скоуп доступу до даних, виведений із сесії (див. auth.server.ts).
+ * Передається у функції шару даних — скоуп НЕ виводиться з параметрів,
+ * які надсилає клієнт, тож IDOR і витоки між громадами закриті на джерелі.
+ */
+export interface DataScope {
+  role: Role;
+  oblast: string;
+  hromada: string | null;
+}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") ?? "";
 const USE_API = API_BASE.length > 0;
@@ -40,9 +54,47 @@ export interface QueueFilter {
   search?: string;
 }
 
-export async function getQueue(filter: QueueFilter = {}): Promise<QueueItem[]> {
+const REDACTED_PII = "—";
+
+/** Прибрати персональні дані з кейсу (для regional / агрегатних шляхів). */
+function redactQueueItem(i: QueueItem): QueueItem {
+  return { ...i, pib: REDACTED_PII, unzr: null, isikukood: null, birth_date: null };
+}
+
+function redactEntity(e: Entity): Entity {
+  return { ...e, pib: REDACTED_PII, unzr: null, birth_date: null };
+}
+
+/** Чи входить кейс у скоуп користувача (громада для community, область для regional). */
+function inScope(item: { oblast?: string | null; hromada?: string | null; entity_id: number }, scope: DataScope): boolean {
+  if (scope.role === "community") {
+    const h = item.hromada ?? mockHromadaOf(item.entity_id);
+    return h === scope.hromada;
+  }
+  // regional: уся область
+  const o = item.oblast ?? mockOblastOf(item.entity_id);
+  return o === scope.oblast;
+}
+
+/**
+ * Застосувати скоуп до списку кейсів:
+ * - community: жорстко фільтрує по власній громаді (без редагування ПІБ);
+ * - regional: фільтрує по області ТА знеособлює (без ПІБ/УНЗР/дат);
+ * - scope = null (немає сесії): порожньо.
+ */
+function applyScope(items: QueueItem[], scope: DataScope | null): QueueItem[] {
+  if (!scope) return [];
+  const scoped = items.filter((i) => inScope(i, scope));
+  return scope.role === "regional" ? scoped.map(redactQueueItem) : scoped;
+}
+
+/**
+ * Черга реагування у межах скоупу користувача.
+ * Скоуп обовʼязковий: без сесії повертається порожньо (захист на джерелі).
+ */
+export async function getQueue(scope: DataScope | null, filter: QueueFilter = {}): Promise<QueueItem[]> {
   const remote = await tryFetch<{ items: QueueItem[] }>("/queue?limit=500");
-  let items = remote?.items ?? mockData.items;
+  let items = applyScope(remote?.items ?? mockData.items, scope);
 
   if (filter.tiers?.length) items = items.filter((i) => filter.tiers!.includes(i.tier));
   if (filter.immediateOnly) items = items.filter((i) => i.immediate);
@@ -57,22 +109,42 @@ export async function getQueue(filter: QueueFilter = {}): Promise<QueueItem[]> {
   return items;
 }
 
-export async function getQueueItem(entityId: number): Promise<QueueItem | null> {
-  const all = await getQueue();
+/**
+ * Повний (нескоуплений) перелік кейсів — ЛИШЕ для агрегатних обчислень
+ * (dashboard / caseload), які за визначенням знеособлені. Не віддавати у UI ПІБ.
+ */
+async function getAllForAggregates(): Promise<QueueItem[]> {
+  const remote = await tryFetch<{ items: QueueItem[] }>("/queue?limit=500");
+  return remote?.items ?? mockData.items;
+}
+
+export async function getQueueItem(scope: DataScope | null, entityId: number): Promise<QueueItem | null> {
+  const all = await getQueue(scope); // вже відфільтровано/знеособлено за скоупом
   return all.find((i) => i.entity_id === entityId) ?? null;
 }
 
-export async function getEntity(entityId: number): Promise<Entity | null> {
+/**
+ * Профіль дитини. Доступ лише якщо дитина у скоупі користувача —
+ * інакше null (закриває IDOR через ?id= у URL).
+ */
+export async function getEntity(scope: DataScope | null, entityId: number): Promise<Entity | null> {
+  if (!scope) return null;
   const remote = await tryFetch<Entity>(`/entity/${entityId}`);
-  return remote ?? mockData.entities[entityId] ?? null;
+  const e = remote ?? mockData.entities[entityId] ?? null;
+  if (!e) return null;
+  if (!inScope({ ...e, entity_id: entityId }, scope)) return null;
+  return scope.role === "regional" ? redactEntity(e) : e;
 }
 
-export async function getTimeline(entityId: number): Promise<TimelineEvent[]> {
+export async function getTimeline(scope: DataScope | null, entityId: number): Promise<TimelineEvent[]> {
+  // доступ до таймлайну лише для дитини у скоупі (закриває IDOR)
+  if (!(await getEntity(scope, entityId))) return [];
   const remote = await tryFetch<{ events: TimelineEvent[] }>(`/entity/${entityId}/timeline`);
   return remote?.events ?? mockData.timelines[entityId] ?? [];
 }
 
-export async function getAttendance(entityId: number): Promise<AttendanceSeries | null> {
+export async function getAttendance(scope: DataScope | null, entityId: number): Promise<AttendanceSeries | null> {
+  if (!(await getEntity(scope, entityId))) return null;
   const remote = await tryFetch<AttendanceSeries>(`/entity/${entityId}/attendance`);
   return remote ?? mockData.attendance[entityId] ?? null;
 }
@@ -97,36 +169,58 @@ export async function getCaseload(): Promise<CaseloadOverview | null> {
   return remote ?? mockData.caseload;
 }
 
-export interface WorkerSummary {
-  worker_id: string;
-  oblast: string;
-  count: number;
-  t0: number;
-}
+const TIER_RANK: Record<Tier, number> = { T0: 0, T1: 1, T2: 2 };
 
-export async function getWorkers(): Promise<WorkerSummary[]> {
-  if (!USE_API) return mockWorkers();
-  // у реальному API окремого списку немає — зводимо з /queue
-  const items = await getQueue();
-  const idx = new Map<string, WorkerSummary>();
-  for (const i of items) {
-    if (!i.worker_id) continue;
-    const w = idx.get(i.worker_id) ?? { worker_id: i.worker_id, oblast: i.oblast ?? "—", count: 0, t0: 0 };
-    w.count += 1;
-    if (i.tier === "T0") w.t0 += 1;
-    idx.set(i.worker_id, w);
+/**
+ * Персональна черга фахівця ССД = усі кейси його ВЛАСНОЇ громади,
+ * упорядковані за терміновістю. Скоуп визначає сесія, а не клієнт,
+ * тож фахівець іншої громади не отримає чужі кейси.
+ * Для regional повертається порожньо (це operator-екран із ПІБ).
+ */
+export async function getMyQueue(scope: DataScope | null): Promise<WorkerQueue> {
+  const workerId = scope?.hromada ?? "—";
+  if (!scope || scope.role !== "community") {
+    return { worker_id: workerId, count: 0, cases: [] };
   }
-  return [...idx.values()].sort((a, b) => b.t0 - a.t0 || b.count - a.count);
-}
-
-export async function getWorkerQueue(workerId: string): Promise<WorkerQueue> {
-  const remote = await tryFetch<WorkerQueue>(`/caseload/worker/${encodeURIComponent(workerId)}`);
-  return remote ?? mockWorkerQueue(workerId);
+  const items = await getQueue(scope); // вже жорстко відфільтровано по громаді
+  const cases: WorkerCase[] = items
+    .map((i) => ({
+      rank: i.rank,
+      entity_id: i.entity_id,
+      pib: i.pib,
+      age: i.age,
+      oblast: i.oblast,
+      hromada: i.hromada,
+      tier: i.tier,
+      score: i.score,
+      immediate: i.immediate,
+      violations: i.violations,
+    }))
+    .sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier] || b.score - a.score);
+  return { worker_id: workerId, count: cases.length, cases };
 }
 
 export async function getFeedbackStats(): Promise<FeedbackStats> {
   const remote = await tryFetch<FeedbackStats>("/feedback/stats");
   return remote ?? MOCK_FEEDBACK_STATS;
+}
+
+const MOCK_CROSSBORDER: CrossBorderStats = {
+  ee_entities: 563,
+  linked: 533,
+  ee_unmatched: 30,
+  link_rate: 0.947,
+};
+
+export async function getCrossBorder(): Promise<CrossBorderStats> {
+  const remote = await tryFetch<CrossBorderStats>("/crossborder");
+  return remote ?? MOCK_CROSSBORDER;
+}
+
+/** Крос-кордонні кейси (country = EE або UA+EE) у межах скоупу користувача. */
+export async function getCrossBorderCases(scope: DataScope | null): Promise<QueueItem[]> {
+  const items = await getQueue(scope);
+  return items.filter((i) => i.country === "UA+EE" || i.country === "EE");
 }
 
 export async function postFeedback(input: FeedbackInput): Promise<boolean> {
@@ -156,7 +250,9 @@ export interface DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const items = await getQueue();
+  // Управлінська панель — суто агрегати (без ПІБ). Регіональний менеджер
+  // бачить картину по всій території; персональні поля сюди не потрапляють.
+  const items = await getAllForAggregates();
   const t0 = items.filter((i) => i.tier === "T0").length;
   const t1 = items.filter((i) => i.tier === "T1").length;
   const t2 = items.filter((i) => i.tier === "T2").length;

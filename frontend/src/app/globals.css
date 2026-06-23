@@ -54,6 +54,13 @@
   --color-lock-soft: #eef1f5;
   --color-lock-ink: #3a4250;
 
+  /* ── інверсні поверхні (primary-кнопки, знак лого) — адаптуються до теми ── */
+  --color-primary: #0b0b0c;
+  --color-primary-fg: #ffffff;
+  /* темний блок (CTA-банер) — лишається темним в обох темах */
+  --color-band: #0d1117;
+  --color-band-fg: #ffffff;
+
   /* ── радіуси (Дія: 8 контролі / 12 картки / 16 великі) ── */
   --radius-xl: 0.5rem;
   --radius-2xl: 0.75rem;
@@ -95,6 +102,58 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ============================================================
+   Темна тема (у стилі держпродуктів — чорно-біла основа, плоско).
+   Перевизначає ті самі CSS-змінні; утиліти Tailwind підхоплюють автоматично.
+   ============================================================ */
+html.dark {
+  --color-paper: #0d0f12;
+  --color-paper-2: #181b21;
+  --color-surface: #15171c;
+  --color-ink: #f4f6f9;
+  --color-ink-2: rgba(255, 255, 255, 0.74);
+  --color-muted: rgba(255, 255, 255, 0.60);
+  --color-faint: rgba(255, 255, 255, 0.46);
+  --color-line: #272b33;
+  --color-line-2: #1f232a;
+
+  --color-brand: #4f93f7;
+  --color-brand-2: #6aa6f9;
+  --color-brand-ink: #9cc2fb;
+  --color-brand-soft: #15243c;
+  --color-brand-line: #294461;
+
+  --color-t0: #f1655c;
+  --color-t0-soft: #2a1512;
+  --color-t0-ink: #f4a8a2;
+  --color-t0-line: #4a2521;
+
+  --color-t1: #ef8a3e;
+  --color-t1-soft: #281a0f;
+  --color-t1-ink: #f1bb8b;
+  --color-t1-line: #46301a;
+
+  --color-t2: #ddb02a;
+  --color-t2-soft: #25200d;
+  --color-t2-ink: #e8d384;
+  --color-t2-line: #443916;
+
+  --color-ok: #2bd07d;
+  --color-ok-soft: #0f2a1d;
+  --color-ok-ink: #79e0ad;
+  --color-lock: #8b93a5;
+  --color-lock-soft: #1b1f27;
+  --color-lock-ink: #c2c8d4;
+
+  --color-primary: #f4f6f9;
+  --color-primary-fg: #0b0b0c;
+  --color-band: #11151c;
+  --color-band-fg: #ffffff;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+}
+
 body {
   background-color: var(--color-paper);
   color: var(--color-ink-2);
@@ -105,7 +164,7 @@ body {
 }
 
 ::selection {
-  background-color: var(--color-ink);
+  background-color: var(--color-brand);
   color: #fff;
 }
 

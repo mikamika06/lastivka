@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 import type { QueueItem, Tier } from "@/lib/types";
-import { violName } from "@/lib/registries";
-import { plural } from "@/lib/format";
+import { violName, oblastLabel } from "@/lib/registries";
+import { pluralLoc } from "@/lib/format";
 import { oblastOfItem } from "@/lib/api";
 import { CaseCard } from "./CaseCard";
 import { IconSearch, IconFilter } from "@/components/ui/icons";
+import { useTx, useLocale } from "@/components/providers/I18nProvider";
+import type { Msg } from "@/lib/i18n";
 
 const TIERS: Tier[] = ["T0", "T1", "T2"];
 
@@ -18,6 +20,8 @@ function tierChipClassName(tier: Tier, on: boolean): string {
 }
 
 export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
+  const t = useTx();
+  const locale = useLocale();
   const [tiers, setTiers] = useState<Set<Tier>>(new Set(["T0", "T1", "T2"]));
   const [immediateOnly, setImmediateOnly] = useState(false);
   const [violFilter, setViolFilter] = useState<Set<string>>(new Set());
@@ -28,8 +32,8 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
   const violOptions = useMemo(() => {
     const s = new Set<string>();
     items.forEach((i) => i.violations.forEach((v) => s.add(v)));
-    return [...s].sort((a, b) => violName(a).localeCompare(violName(b), "uk"));
-  }, [items]);
+    return [...s].sort((a, b) => violName(a, locale).localeCompare(violName(b, locale), locale));
+  }, [items, locale]);
 
   const regionOptions = useMemo(() => {
     const s = new Set<string>();
@@ -37,8 +41,8 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
       const o = oblastOfItem(i);
       if (o !== "—") s.add(o);
     });
-    return [...s].sort((a, b) => a.localeCompare(b, "uk"));
-  }, [items]);
+    return [...s].sort((a, b) => a.localeCompare(b, locale));
+  }, [items, locale]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -68,7 +72,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted">
-              <IconFilter className="h-3.5 w-3.5" /> Рівень
+              <IconFilter className="h-3.5 w-3.5" /> {t({ uk: "Терміновість", en: "Urgency" })}
             </span>
             {TIERS.map((t) => {
               const on = tiers.has(t);
@@ -90,7 +94,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
                 immediateOnly ? "bg-t0 text-white ring-t0" : "bg-surface text-faint ring-line hover:text-ink-2"
               }`}
             >
-              Лише негайні
+              {t({ uk: "Лише негайні", en: "Immediate only" })}
             </button>
           </div>
 
@@ -99,8 +103,8 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              aria-label="Пошук за ПІБ або УНЗР"
-              placeholder="Пошук за ПІБ або УНЗР…"
+              aria-label={t({ uk: "Пошук за ПІБ або УНЗР", en: "Search by name or UNZR" })}
+              placeholder={t({ uk: "Пошук за ПІБ або УНЗР…", en: "Search by name or UNZR…" })}
               className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-faint focus:border-brand"
             />
           </div>
@@ -108,26 +112,38 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
 
         {/* типи порушень */}
         <FilterChips
-          label="Тип порушення"
-          options={violOptions.map((v) => ({ value: v, label: violName(v) }))}
+          label={t({ uk: "Тип порушення", en: "Violation type" })}
+          options={violOptions.map((v) => ({ value: v, label: violName(v, locale) }))}
           selected={violFilter}
           onToggle={(v) => setViolFilter((s) => toggle(s, v))}
           onReset={() => setViolFilter(new Set())}
+          t={t}
         />
 
         {/* регіони */}
         <FilterChips
-          label="Регіон"
-          options={regionOptions.map((o) => ({ value: o, label: `${o} обл.` }))}
+          label={t({ uk: "Регіон", en: "Region" })}
+          options={regionOptions.map((o) => ({
+            value: o,
+            label: oblastLabel(o, locale),
+          }))}
           selected={regionFilter}
           onToggle={(v) => setRegionFilter((s) => toggle(s, v))}
           onReset={() => setRegionFilter(new Set())}
+          t={t}
         />
       </div>
 
       <p className="px-1 text-sm text-muted">
-        Показано <span className="font-semibold text-ink">{Math.min(shown.length, filtered.length)}</span> із{" "}
-        {plural(filtered.length, "сигнал", "сигнали", "сигналів")}. Сортування — за терміновістю.
+        {t({ uk: "Показано", en: "Showing" })}{" "}
+        <span className="font-semibold text-ink">{Math.min(shown.length, filtered.length)}</span>{" "}
+        {t({ uk: "із", en: "of" })}{" "}
+        {pluralLoc(
+          filtered.length,
+          { uk: ["дитина", "дитини", "дітей"], en: ["child", "children"] },
+          locale,
+        )}
+        . {t({ uk: "Спочатку — найтерміновіші.", en: "Most urgent first." })}
       </p>
 
       {/* список */}
@@ -137,7 +153,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
         ))}
         {filtered.length === 0 && (
           <div className="card grid place-items-center py-16 text-center text-sm text-muted">
-            За цими фільтрами кейсів немає.
+            {t({ uk: "За цими фільтрами дітей немає.", en: "No children match these filters." })}
           </div>
         )}
       </div>
@@ -148,7 +164,7 @@ export function QueueExplorer({ items }: Readonly<{ items: QueueItem[] }>) {
             onClick={() => setLimit((l) => l + 30)}
             className="rounded-xl border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink-2 hover:bg-paper-2"
           >
-            Показати ще ({filtered.length - shown.length})
+            {t({ uk: "Показати ще", en: "Show more" })} ({filtered.length - shown.length})
           </button>
         </div>
       )}
@@ -162,12 +178,14 @@ function FilterChips({
   selected,
   onToggle,
   onReset,
+  t,
 }: Readonly<{
   label: string;
   options: { value: string; label: string }[];
   selected: Set<string>;
   onToggle: (v: string) => void;
   onReset: () => void;
+  t: (m: Msg) => string;
 }>) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
@@ -180,7 +198,7 @@ function FilterChips({
             onClick={() => onToggle(o.value)}
             aria-pressed={on}
             className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition ${
-              on ? "bg-ink text-white ring-ink" : "bg-surface text-muted ring-line hover:text-ink-2"
+              on ? "bg-primary text-primary-fg ring-primary" : "bg-surface text-muted ring-line hover:text-ink-2"
             }`}
           >
             {o.label}
@@ -189,7 +207,7 @@ function FilterChips({
       })}
       {selected.size > 0 && (
         <button onClick={onReset} className="text-[11px] font-medium text-brand hover:underline">
-          скинути
+          {t({ uk: "скинути", en: "reset" })}
         </button>
       )}
     </div>

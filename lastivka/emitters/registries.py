@@ -80,6 +80,27 @@ REGISTRIES = [
      "subsystem": "HOTLINE_prod", "owner": "Ла Страда / УКЦ", "db": "hotline.db", "access": 2,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "child_unzr", "rnokpp": "child_rnokpp", "dob": "child_birth_date"}},
+    # ── ЕСТОНІЯ (X-tee, оператор RIA) — окремі силоси, isikukood як ключ, БЕЗ УНЗР ──
+    {"code": "RAHV", "ua": "Rahvastikuregister (народонаселення, EE)", "member": "EE/GOV/70000898",
+     "subsystem": "RR_prod", "owner": "Siseministeerium (МВС Естонії)", "db": "ee_rahv.db", "access": 2,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
+    {"code": "EHIS_EE", "ua": "EHIS (освіта, EE)", "member": "EE/GOV/70000740",
+     "subsystem": "EHIS_prod", "owner": "Haridus- ja Teadusministeerium", "db": "ee_ehis.db", "access": 2,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
+    {"code": "TERVIS", "ua": "Tervise infosüsteem (здоровʼя, EE)", "member": "EE/GOV/70009770",
+     "subsystem": "TIS_prod", "owner": "TEHIK / Sotsiaalministeerium", "db": "ee_tervis.db", "access": 1,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
+    {"code": "SKAIS", "ua": "SKAIS (соцзахист/опіка, EE)", "member": "EE/GOV/70001940",
+     "subsystem": "SKAIS_prod", "owner": "Sotsiaalkindlustusamet (SKA)", "db": "ee_skais.db", "access": 2,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
 ]
 REG_BY_CODE = {r["code"]: r for r in REGISTRIES}
 
@@ -492,8 +513,8 @@ def emit_eisss(child, cfg, rng):
 
 # ════════════ R13 ЄДРСР (судові рішення) ════════════
 def emit_edrsr(child, cfg, rng):
-    # рішення про позбавлення/обмеження батьківських прав (для сирітства/опіки)
-    if not ("W6_orphanhood" in child.labels or child.family_type in ("no_parental_care", "guardianship")):
+    # рішення про позбавлення батьківських прав — лише для сирітства/втрати піклування
+    if "W6_orphanhood" not in child.labels:
         return []
     if rng.random() < 0.4:  # не всі справи у відкритому реєстрі
         return []
@@ -620,9 +641,95 @@ def emit_hotline(child, cfg, rng):
     }]
 
 
+# ════════════ ЕСТОНСЬКІ РЕЄСТРИ (X-tee) — для дітей під тимчасовим захистом ════════════
+_EE_CITY = ["Tallinn", "Tartu", "Narva", "Pärnu", "Kohtla-Järve", "Viljandi"]
+
+
+def _ee_name(child, cfg, rng):
+    """Латинське імʼя на естонському боці — з розбіжністю транслітерації (крос-кордонний виклик)."""
+    from ..transliteration import alt_spellings, translit_official
+    eesnimi = alt_spellings(child.first_name, rng)                    # Yuliia / Julia / Julija ...
+    perekonnanimi = corrupt_name(translit_official(child.last_name), rng, 0.4)
+    return perekonnanimi, eesnimi
+
+
+def _ee_sex(child):
+    return "N" if child.gender == "FEMALE" else "M"
+
+
+def emit_rahv(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and child.ee_registered):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    m = child.ee_arrival_month
+    return [{
+        "isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn, "sugu": _ee_sex(child),
+        "synniaeg": child.birth_date.isoformat(), "synnikoht": "Ukraina",
+        "kodakondsus": "UA", "elukoht": f"{rng.choice(_EE_CITY)}, Eesti",
+        "elamisluba": "ajutine kaitse",  # тимчасовий захист
+        "hooldusoigus": "eestkostja määramata" if child.ee_uasc else "vanem",
+        "seos_vanemaga": "puudub" if child.ee_uasc else "ema/isa",
+        "kande_kuupaev": month_date(cfg, m).isoformat(),
+    }]
+
+
+def emit_ehis_ee(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and child.ee_in_school):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    m = child.ee_arrival_month
+    return [{
+        "isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn,
+        "synniaeg": child.birth_date.isoformat(),
+        "oppeasutus": f"{rng.choice(_EE_CITY)} kool", "haridustase": "põhiharidus",
+        "klass": str(rng.randint(1, 9)),
+        "erivajadus": "jah" if child.has_disability else "ei",
+        "oppe_staatus": "õpib", "immatrikuleerimise_kuupaev": month_date(cfg, m + 1).isoformat(),
+    }]
+
+
+def emit_tervis(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and child.ee_in_health):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    rows = []
+    base = {"isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn,
+            "synniaeg": child.birth_date.isoformat(), "perearst": f"dr {_rid(rng, 4)}"}
+    m = child.ee_arrival_month
+    rows.append({**base, "dokumendi_tyyp": "epikriis", "kuupaev": month_date(cfg, m + 1).isoformat(),
+                 "diagnoos_RHK10": "Z76" if not child.has_chronic else rng.choice(["E10", "J45", "G40"]),
+                 "staatus": "kinnitatud"})
+    if not child.has_chronic or rng.random() < 0.6:
+        rows.append({**base, "dokumendi_tyyp": "immuniseerimine", "kuupaev": month_date(cfg, m + 2).isoformat(),
+                     "vaktsiin": rng.choice(["DTP", "MMR"]), "staatus": "tehtud"})
+    return rows
+
+
+def emit_skais(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and (child.ee_gets_benefit or child.ee_uasc)):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    m = child.ee_arrival_month
+    htype = []
+    if child.ee_gets_benefit:
+        htype.append("lapsetoetus")
+    if child.ee_uasc:
+        htype.append("lastekaitse juhtum")  # child-protection case (UASC)
+    return [{
+        "isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn,
+        "synniaeg": child.birth_date.isoformat(),
+        "huvitis_tyyp": "; ".join(htype) or "lapsetoetus", "staatus": "aktiivne",
+        "hooldus": "eestkoste menetlus" if child.ee_uasc else "—",
+        "teenus": "lastekaitsetöötaja" if child.ee_uasc else "peretoetus",
+        "kov": rng.choice(_EE_CITY),  # local government
+        "maaramise_kuupaev": month_date(cfg, m).isoformat(),
+    }]
+
+
 EMITTERS = {
     "DRACS": emit_dracs, "EDDR": emit_eddr, "EHEALTH": emit_ehealth, "EDEBO": emit_edebo,
     "AIKOM": emit_aikom, "VPO": emit_vpo, "CHILDWAR": emit_childwar, "DITY": emit_dity,
     "ERDR": emit_erdr, "DV": emit_dv, "CBI": emit_cbi, "EISSS": emit_eisss, "EDRSR": emit_edrsr,
     "SKAID": emit_skaid, "PFU": emit_pfu, "DRRP": emit_drrp, "HOTLINE": emit_hotline,
+    "RAHV": emit_rahv, "EHIS_EE": emit_ehis_ee, "TERVIS": emit_tervis, "SKAIS": emit_skais,
 }

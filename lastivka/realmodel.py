@@ -12,6 +12,7 @@ import random
 
 from .entity import Child, birth_date_from_band, make_child, weighted_choice
 from .trajectory import MonthState
+from . import identifiers as ids
 
 
 def _set_from(states, t0, **kw):
@@ -167,6 +168,70 @@ def build_states(child: Child, sim_start: date, T: int, rng: random.Random) -> N
         _set_from(states, L["F1_psych_violence"], family="stressed", safety="abuse_risk")
 
 
+def _clamp_school_by_age(child: Child, sim_start: date) -> None:
+    """Узгодити шкільний стан із віком: <6 р. — дошкільня (не «зник зі школи»), >17 — випускник.
+    Прибирає хибні ЄДЕБО/ІСУО-записи для дітей не шкільного віку."""
+    for t, s in enumerate(child.states):
+        age = child.age_at(sim_start, t)
+        if age < 6:
+            s.school = "preschool"
+        elif age > 17:
+            s.school = "graduated"
+    # якщо порушення стосувалося освіти, але дитина не шкільного віку — зняти мітку
+    if not any(s.school in ("enrolled", "at_risk", "dropped") for s in child.states):
+        for vid in ("W3_out_of_education", "F4_child_labor", "E1_bullying", "E4_inclusion", "X4_edu_rupture"):
+            child.labels.pop(vid, None)
+
+
+def sample_crossborder(child: Child, epi: dict, sim_start: date, T: int, rng: random.Random) -> None:
+    """Хто з дітей став біженцем у Естонії (тимчасовий захист) + естонська ідентичність,
+    EE-присутність у сервісах і КРОС-КОРДОННІ ризики. Спільного ключа з УНЗР немає."""
+    cb = epi.get("crossborder_ee", {})
+    child.abroad_ee = False
+    child.isikukood = None
+    for f in ("ee_registered", "ee_in_school", "ee_in_health", "ee_gets_benefit", "ee_uasc"):
+        setattr(child, f, False)
+    if not cb:
+        return
+    # депортовані (РФ/ТОТ) НЕ є біженцями в Естонії — статуси взаємовиключні
+    if "W5_deportation" in child.labels:
+        return
+    war = child.geo_tier in ("frontline", "deoccupied", "occupied")
+    p = cb.get("abroad_rate", 0.05) * (cb.get("war_mult", 2.0) if war else 1.0) * (1.4 if child.is_idp else 1.0)
+    child.abroad_ee = rng.random() < min(p, 0.5)
+    if not child.abroad_ee:
+        return
+
+    child.ee_arrival_month = rng.randint(2, max(3, T - 5))
+    age_end = child.age_at(sim_start, T - 1)
+    school_age = 6 <= age_end <= 17
+    child.isikukood = ids.gen_isikukood(child.birth_date, child.gender, rng)
+    child.ee_registered = rng.random() < cb.get("ee_registered", 0.9)
+    child.ee_in_school = school_age and rng.random() < cb.get("ee_in_school", 0.6)
+    child.ee_in_health = rng.random() < cb.get("ee_in_health", 0.55)
+    child.ee_gets_benefit = rng.random() < cb.get("ee_gets_benefit", 0.7)
+    child.ee_uasc = (child.family_type == "no_parental_care") or rng.random() < cb.get("uasc_rate", 0.04)
+
+    # домашні (UA) трактування W3/W8 недійсні для емігранта — їх заступають крос-кордонні X-ризики
+    child.labels.pop("W3_out_of_education", None)
+    child.labels.pop("W8_medical_access", None)
+    child.labels.pop("W1_displacement", None)
+
+    m = child.ee_arrival_month
+    L = child.labels
+    if child.ee_registered and school_age and not child.ee_in_school and not child.ee_in_health:
+        L["X1_gap"] = m                              # у EE, але в жодному сервісі
+    if school_age and not child.ee_in_school:
+        L["X4_edu_rupture"] = m                        # розрив освіти через кордон
+    if child.has_chronic and not child.ee_in_health:
+        L["X3_med_rupture"] = m                        # розрив медичної безперервності
+    if child.ee_uasc:
+        L["X2_uasc"] = m                               # неповнолітн(ій) без супроводу
+
+    # UA-сторона: дитина залишила українські школу й лікаря (сигнали виїзду)
+    _set_from(child.states, m, school="dropped", health="lapsed", residence="abroad")
+
+
 def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:
     pop = cfg["population"]
     sim_start = date(pop["start_year"], 1, 1)
@@ -186,5 +251,7 @@ def build_population(cfg: dict, epi: dict, rng: random.Random) -> list[Child]:
         sample_context(child, epi, rng)
         assign_violations(child, epi, sim_start, T, rng)
         build_states(child, sim_start, T, rng)
+        sample_crossborder(child, epi, sim_start, T, rng)
+        _clamp_school_by_age(child, sim_start)  # дошкільнят не «виключають зі школи»
         children.append(child)
     return children
