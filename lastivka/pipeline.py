@@ -5,24 +5,42 @@
 from __future__ import annotations
 import json
 import os
+import random
 import sqlite3
 import yaml
 
 
-from . import matching, detection, scoring, validation, caseload
+from . import matching, detection, scoring, validation, caseload, crossborder, familygraph, intake
 from .storage import OUT
 
 
 def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.yaml",
-                 log_to_mlflow=True) -> dict:
+                 log_to_mlflow=True, federated=False) -> dict:
     cfg = yaml.safe_load(open(config_path, encoding="utf-8"))
     epi_path = os.path.join(os.path.dirname(config_path), "epidemiology.yaml")
     epi = yaml.safe_load(open(epi_path, encoding="utf-8"))
     weights = scoring.load_weights(scoring_path)
 
     entities = matching.match()
+    entities = familygraph.rollup(entities, cfg)   # C1-rollup: household/сиблінги (до детекції)
+    if federated:
+        # ПРОД-режим: детекція через федеративні LRA-вузли (compute-to-data, стіни push-only)
+        from . import federated as _fed
+        detections = _fed.federated_detect_all(entities, cfg, push_walled=True)
+    else:
+        detections = detection.detect_all(entities, cfg)
+    # крос-кордон UA↔EE: лінк PPRL, узгодження W3/W8, X-ризики
+    entities, detections, cb_stats = crossborder.apply(entities, detections, cfg)
     entities_by_id = {e["entity_id"]: e for e in entities}
-    detections = detection.detect_all(entities, cfg)
+
+    # ── ІНТЕЙК-перші двері: повідомлення відкривають кейс; крос-реєстр = тріаж/корроборація ──
+    reports = intake.synth_reports(entities, detections, cfg, random.Random(cfg.get("seed", 0) + 555))
+    det_by_id = {d["entity_id"]: d["detections"] for d in detections}
+    intake_tri = intake.triage(reports, det_by_id, cfg)
+    for eid, info in intake_tri["by_entity"].items():
+        if eid in entities_by_id:
+            entities_by_id[eid].update(info)   # intake_source + intake_corroborated → у скоринг
+
     queue = scoring.score_all(detections, entities_by_id, cfg, weights)
 
     # розподіл по кейсворкерах (територія + ємність за нормативом)
@@ -34,13 +52,17 @@ def run_pipeline(config_path="config/config.yaml", scoring_path="config/scoring.
     m_priv = validation.eval_privacy(entities, cfg)
 
     _write_pipeline_db(queue, cl,
-                       {"matching": m_match, "detection": m_detect, "privacy": m_priv},
+                       {"matching": m_match, "detection": m_detect, "privacy": m_priv,
+                        "crossborder": cb_stats,
+                        "intake": {"cases": intake_tri["cases"], "n_reports": len(reports),
+                                   "household": familygraph.household_summary(entities)}},
                        matching.LAST_STATS)
     if log_to_mlflow:
         validation.log_mlflow(m_match, m_detect, m_priv, cfg)
 
-    return {"queue": queue, "n_detected": len(detections), "caseload": cl,
-            "metrics": {"matching": m_match, "detection": m_detect, "privacy": m_priv},
+    return {"queue": queue, "n_detected": len(detections), "caseload": cl, "crossborder": cb_stats,
+            "metrics": {"matching": m_match, "detection": m_detect, "privacy": m_priv,
+                        "crossborder": cb_stats},
             "match_stats": matching.LAST_STATS}
 
 
@@ -51,18 +73,22 @@ def _write_pipeline_db(queue, cl, metrics, match_stats):
     worker_of = {a["entity_id"]: a["worker_id"] for a in cl["assignments"]}
     con.execute("DROP TABLE IF EXISTS queue")
     con.execute("""CREATE TABLE queue (
-        rank INTEGER, entity_id INTEGER, unzr TEXT, pib TEXT, birth_date TEXT, age INTEGER,
-        oblast TEXT, worker_id TEXT, tier TEXT, score REAL, immediate INTEGER,
-        vulnerability REAL, vuln_factors TEXT, violations TEXT, registries TEXT, contributions TEXT)""")
+        rank INTEGER, entity_id INTEGER, unzr TEXT, isikukood TEXT, pib TEXT, birth_date TEXT, age INTEGER,
+        country TEXT, oblast TEXT, worker_id TEXT, tier TEXT, score REAL, immediate INTEGER,
+        vulnerability REAL, vuln_factors TEXT, violations TEXT, registries TEXT, contributions TEXT,
+        household_risk REAL, corroborated INTEGER, intake_source TEXT)""")
     for i, r in enumerate(queue, 1):
-        con.execute("INSERT INTO queue VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
-            i, r["entity_id"], r["unzr"], r["pib"], r["birth_date"], r["age"],
-            r.get("oblast"), worker_of.get(r["entity_id"]),
+        con.execute("INSERT INTO queue VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+            i, r["entity_id"], r["unzr"], r.get("isikukood"), r["pib"], r["birth_date"], r["age"],
+            r.get("country", "UA"), r.get("oblast"), worker_of.get(r["entity_id"]),
             r["tier"], r["score"], int(r["immediate"]), r["vulnerability"],
             json.dumps(r["vuln_factors"], ensure_ascii=False),
             json.dumps(r["violations"], ensure_ascii=False),
             json.dumps(r["registries"], ensure_ascii=False),
-            json.dumps(r["contributions"], ensure_ascii=False)))
+            json.dumps(r["contributions"], ensure_ascii=False),
+            r.get("household_risk_density", 0.0),
+            (None if r.get("corroborated") is None else int(bool(r.get("corroborated")))),
+            r.get("intake_source")))
     con.execute("DROP TABLE IF EXISTS metrics")
     con.execute("CREATE TABLE metrics (key TEXT, value TEXT)")
     for k, v in metrics.items():

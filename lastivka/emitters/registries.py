@@ -21,7 +21,7 @@ REGISTRIES = [
      "id_map": {"last": "surname", "first": "given_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
     {"code": "EHEALTH", "ua": "eHealth / ЕСОЗ", "member": "42032422",
-     "subsystem": "50_ESOZ_prod_ME_EHR", "owner": "НСЗУ", "db": "ehealth.db", "access": 1,
+     "subsystem": "50_ESOZ_prod_ME_EHR", "owner": "НСЗУ", "db": "ehealth.db", "access": 3,
      "id_map": {"last": "last_name", "first": "first_name", "second": "second_name",
                 "unzr": "unzr", "rnokpp": "tax_id", "dob": "birth_date"}},
     {"code": "EDEBO", "ua": "ЄДЕБО — освіта", "member": "38621185",
@@ -45,14 +45,14 @@ REGISTRIES = [
      "id_map": {"last": "surname", "first": "given_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
     {"code": "ERDR", "ua": "ЄРДР — досудові розслідування", "member": "00034051",
-     "subsystem": "ERDR_prod", "owner": "Офіс Генпрокурора", "db": "erdr.db", "access": 1,
+     "subsystem": "ERDR_prod", "owner": "Офіс Генпрокурора", "db": "erdr.db", "access": 3,
      "id_map": {"last": "victim_last_name", "first": "victim_first_name", "second": "victim_patronymic",
                 "unzr": "victim_unzr", "rnokpp": "victim_rnokpp", "dob": "victim_date_of_birth"}},
     {"code": "DV", "ua": "Реєстр випадків домашнього насильства", "member": "00032684",
      "subsystem": "20_MVS_DN_prod", "owner": "МВС/Мінсоц", "db": "dv.db", "access": 2,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "child_unzr", "rnokpp": "child_rnokpp", "dob": "child_date_of_birth"}},
-    {"code": "CBI", "ua": "Центр. банк даних з інвалідності", "member": "37567866",
+    {"code": "CBI_DISABILITY", "ua": "ЦБІ_DISABILITY — центр. банк даних з інвалідності", "member": "37567866",
      "subsystem": "CBI_prod", "owner": "Мінсоцполітики", "db": "cbi.db", "access": 2,
      "id_map": {"last": "last_name", "first": "first_name", "second": "patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "birth_date"}},
@@ -61,7 +61,7 @@ REGISTRIES = [
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp_child", "dob": "birth_date_child"}},
     {"code": "EDRSR", "ua": "ЄДРСР — судові рішення", "member": "00018090",
-     "subsystem": "EDRSR_prod", "owner": "ДСА", "db": "edrsr.db", "access": 3,
+     "subsystem": "EDRSR_prod", "owner": "ДСА", "db": "edrsr.db", "access": 1,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "unzr", "rnokpp": "rnokpp", "dob": "child_birth_date"}},
     {"code": "SKAID", "ua": "ІКС «СКАЙД» — ювенальна превенція", "member": "00032684",
@@ -80,8 +80,50 @@ REGISTRIES = [
      "subsystem": "HOTLINE_prod", "owner": "Ла Страда / УКЦ", "db": "hotline.db", "access": 2,
      "id_map": {"last": "child_last_name", "first": "child_first_name", "second": "child_patronymic",
                 "unzr": "child_unzr", "rnokpp": "child_rnokpp", "dob": "child_birth_date"}},
+    # ── ЕСТОНІЯ (X-tee, оператор RIA) — окремі силоси, isikukood як ключ, БЕЗ УНЗР ──
+    {"code": "RAHV", "ua": "Rahvastikuregister (народонаселення, EE)", "member": "EE/GOV/70000898",
+     "subsystem": "RR_prod", "owner": "Siseministeerium (МВС Естонії)", "db": "ee_rahv.db", "access": 2,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
+    {"code": "EHIS_EE", "ua": "EHIS (освіта, EE)", "member": "EE/GOV/70000740",
+     "subsystem": "EHIS_prod", "owner": "Haridus- ja Teadusministeerium", "db": "ee_ehis.db", "access": 2,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
+    {"code": "TERVIS", "ua": "Tervise infosüsteem (здоровʼя, EE)", "member": "EE/GOV/70009770",
+     "subsystem": "TIS_prod", "owner": "TEHIK / Sotsiaalministeerium", "db": "ee_tervis.db", "access": 3,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
+    {"code": "SKAIS", "ua": "SKAIS (соцзахист/опіка, EE)", "member": "EE/GOV/70001940",
+     "subsystem": "SKAIS_prod", "owner": "Sotsiaalkindlustusamet (SKA)", "db": "ee_skais.db", "access": 2,
+     "country": "EE",
+     "id_map": {"last": "perekonnanimi", "first": "eesnimi", "second": "_none",
+                "unzr": "isikukood", "rnokpp": "_none", "dob": "synniaeg"}},
 ]
 REG_BY_CODE = {r["code"]: r for r in REGISTRIES}
+
+# ── LRA-кластери + клас доступу (docs/LRA_DESIGN.md, docs/ROLE_ACCESS_MATRIX.md §3).
+# Канон рівнів (поле "access"): 1=публічне … 3=особливо чутливе/таємниця/медтаємниця.
+# access_class — семантичний клас для логіки (НЕ функція int): WALLED не віддає навіть сигнал.
+_CLUSTER = {
+    "DRACS": "C0", "EDDR": "C0", "EHEALTH": "C4", "EDEBO": "C3", "AIKOM": "C3",
+    "VPO": "C2", "CHILDWAR": "C1", "DITY": "C1", "ERDR": "C5", "DV": "C5",
+    "CBI_DISABILITY": "C1", "EISSS": "C2", "EDRSR": "C5", "SKAID": "C5", "PFU": "C2",
+    "DRRP": "C7", "HOTLINE": "C6",
+    "RAHV": "EE", "EHIS_EE": "EE", "TERVIS": "EE", "SKAIS": "EE",
+}
+# WALLED — pull/emit заборонено (КПК ст.222 для ЄРДР; медтаємниця для ЕСОЗ/TERVIS).
+# OPEN — публічно-відкрите (ЄДРСР знеособлене; ДРРП ідентифіковане платне). Решта — GATED-L2.
+_ACCESS_CLASS = {"EHEALTH": "WALLED", "ERDR": "WALLED", "TERVIS": "WALLED",
+                 "EDRSR": "OPEN", "DRRP": "OPEN"}
+for _r in REGISTRIES:
+    _r["cluster"] = _CLUSTER.get(_r["code"], "?")
+    _r["access_class"] = _ACCESS_CLASS.get(_r["code"], "GATED-L2")
+ACCESS_CLASS = {r["code"]: r["access_class"] for r in REGISTRIES}
+CLUSTER = {r["code"]: r["cluster"] for r in REGISTRIES}
+WALLED = {code for code, ac in ACCESS_CLASS.items() if ac == "WALLED"}
 
 
 # ── helpers ──
@@ -328,10 +370,16 @@ def emit_childwar(child, cfg, rng):
         return []
     ln, fn, sn, unzr = _nm(child, cfg, rng)
     status_map = {"deported": "депортована/примусово переміщена", "displaced": "переміщена",
-                  "lost_parents": "втратила батьків"}
-    m = (child.labels.get("W5_deportation") or child.labels.get("W6_orphanhood")
+                  "lost_parents": "втратила батьків",
+                  "militarized": "залучена до збройних формувань / у зоні бойових дій",
+                  "injured": "постраждала від бойових дій (поранення/контузія)"}
+    m = (child.labels.get("W4_death_injury") or child.labels.get("W10_militarization")
+         or child.labels.get("W5_deportation") or child.labels.get("W6_orphanhood")
          or getattr(child, "idp_month", 3))
-    harm = "депортація" if child.war_status == "deported" else ("психологічна травма" if child.war_status == "displaced" else "втрата піклування")
+    harm = ("поранення внаслідок бойових дій" if child.war_status == "injured"
+            else "залучення до бойових дій" if child.war_status == "militarized"
+            else "депортація" if child.war_status == "deported"
+            else "психологічна травма" if child.war_status == "displaced" else "втрата піклування")
     return [{
         "last_name": ln, "first_name": fn, "patronymic": sn, "birth_date": child.birth_date.isoformat(),
         "age_at_incident": str(child.age_at(sim_start(cfg), m)), "gender": "ж" if child.gender == "FEMALE" else "ч",
@@ -404,11 +452,12 @@ def emit_erdr(child, cfg, rng):
 def emit_dv(child, cfg, rng):
     physical = "P1_physical_home" in child.labels
     psych = "F1_psych_violence" in child.labels
-    if not (physical or psych):  # запис у реєстр ДН — лише за зафіксованим насильством
+    witness = "F5_dv_witness" in child.labels and not (physical or psych)  # свідок ДН між дорослими
+    if not (physical or psych or witness):  # запис у реєстр ДН — лише за зафіксованим насильством
         return []
     ln, fn, sn, unzr = _nm(child, cfg, rng)
-    m = child.labels.get("P1_physical_home") or child.labels.get("F1_psych_violence") \
-        or getattr(child, "idp_month", rng.randint(3, 18))
+    m = (child.labels.get("P1_physical_home") or child.labels.get("F1_psych_violence")
+         or child.labels.get("F5_dv_witness") or getattr(child, "idp_month", rng.randint(3, 18)))
     child_victim = physical or psych
     rows = []
     for k in range(rng.randint(1, 3)):
@@ -420,10 +469,11 @@ def emit_dv(child, cfg, rng):
             "child_date_of_birth": child.birth_date.isoformat(), "child_unzr": unzr, "child_rnokpp": child.rnokpp,
             "child_sex": "ж" if child.gender == "FEMALE" else "ч",
             "child_witnessed_violence": "так", "presence_of_children_flag": "так",
-            "parents_are_abusers_flag": "так" if child_victim else "ні",
+            "child_role": "потерпілий" if child_victim else "свідок",
+            "parents_are_abusers_flag": "так",
             "abuser_full_name": "член родини", "incident_datetime": month_date(cfg, dm).isoformat(),
             "incident_place": f"{child.oblast} обл., {child.settlement}",
-            "form_of_violence": "фізичне" if physical else "психологічне",
+            "form_of_violence": "фізичне" if (physical or witness) else "психологічне",
             "primary_recurrent_flag": "повторний" if (physical and k > 0) else "первинний",
             "police_call": "так", "emergency_restraining_order": "так" if physical else "ні",
             "child_services_notification": "так",
@@ -492,8 +542,8 @@ def emit_eisss(child, cfg, rng):
 
 # ════════════ R13 ЄДРСР (судові рішення) ════════════
 def emit_edrsr(child, cfg, rng):
-    # рішення про позбавлення/обмеження батьківських прав (для сирітства/опіки)
-    if not ("W6_orphanhood" in child.labels or child.family_type in ("no_parental_care", "guardianship")):
+    # рішення про позбавлення батьківських прав — лише для сирітства/втрати піклування
+    if "W6_orphanhood" not in child.labels:
         return []
     if rng.random() < 0.4:  # не всі справи у відкритому реєстрі
         return []
@@ -620,9 +670,95 @@ def emit_hotline(child, cfg, rng):
     }]
 
 
+# ════════════ ЕСТОНСЬКІ РЕЄСТРИ (X-tee) — для дітей під тимчасовим захистом ════════════
+_EE_CITY = ["Tallinn", "Tartu", "Narva", "Pärnu", "Kohtla-Järve", "Viljandi"]
+
+
+def _ee_name(child, cfg, rng):
+    """Латинське імʼя на естонському боці — з розбіжністю транслітерації (крос-кордонний виклик)."""
+    from ..transliteration import alt_spellings, translit_official
+    eesnimi = alt_spellings(child.first_name, rng)                    # Yuliia / Julia / Julija ...
+    perekonnanimi = corrupt_name(translit_official(child.last_name), rng, 0.4)
+    return perekonnanimi, eesnimi
+
+
+def _ee_sex(child):
+    return "N" if child.gender == "FEMALE" else "M"
+
+
+def emit_rahv(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and child.ee_registered):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    m = child.ee_arrival_month
+    return [{
+        "isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn, "sugu": _ee_sex(child),
+        "synniaeg": child.birth_date.isoformat(), "synnikoht": "Ukraina",
+        "kodakondsus": "UA", "elukoht": f"{rng.choice(_EE_CITY)}, Eesti",
+        "elamisluba": "ajutine kaitse",  # тимчасовий захист
+        "hooldusoigus": "eestkostja määramata" if child.ee_uasc else "vanem",
+        "seos_vanemaga": "puudub" if child.ee_uasc else "ema/isa",
+        "kande_kuupaev": month_date(cfg, m).isoformat(),
+    }]
+
+
+def emit_ehis_ee(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and child.ee_in_school):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    m = child.ee_arrival_month
+    return [{
+        "isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn,
+        "synniaeg": child.birth_date.isoformat(),
+        "oppeasutus": f"{rng.choice(_EE_CITY)} kool", "haridustase": "põhiharidus",
+        "klass": str(rng.randint(1, 9)),
+        "erivajadus": "jah" if child.has_disability else "ei",
+        "oppe_staatus": "õpib", "immatrikuleerimise_kuupaev": month_date(cfg, m + 1).isoformat(),
+    }]
+
+
+def emit_tervis(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and child.ee_in_health):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    rows = []
+    base = {"isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn,
+            "synniaeg": child.birth_date.isoformat(), "perearst": f"dr {_rid(rng, 4)}"}
+    m = child.ee_arrival_month
+    rows.append({**base, "dokumendi_tyyp": "epikriis", "kuupaev": month_date(cfg, m + 1).isoformat(),
+                 "diagnoos_RHK10": "Z76" if not child.has_chronic else rng.choice(["E10", "J45", "G40"]),
+                 "staatus": "kinnitatud"})
+    if not child.has_chronic or rng.random() < 0.6:
+        rows.append({**base, "dokumendi_tyyp": "immuniseerimine", "kuupaev": month_date(cfg, m + 2).isoformat(),
+                     "vaktsiin": rng.choice(["DTP", "MMR"]), "staatus": "tehtud"})
+    return rows
+
+
+def emit_skais(child, cfg, rng):
+    if not (getattr(child, "abroad_ee", False) and (child.ee_gets_benefit or child.ee_uasc)):
+        return []
+    pn, en = _ee_name(child, cfg, rng)
+    m = child.ee_arrival_month
+    htype = []
+    if child.ee_gets_benefit:
+        htype.append("lapsetoetus")
+    if child.ee_uasc:
+        htype.append("lastekaitse juhtum")  # child-protection case (UASC)
+    return [{
+        "isikukood": child.isikukood, "eesnimi": en, "perekonnanimi": pn,
+        "synniaeg": child.birth_date.isoformat(),
+        "huvitis_tyyp": "; ".join(htype) or "lapsetoetus", "staatus": "aktiivne",
+        "hooldus": "eestkoste menetlus" if child.ee_uasc else "—",
+        "teenus": "lastekaitsetöötaja" if child.ee_uasc else "peretoetus",
+        "kov": rng.choice(_EE_CITY),  # local government
+        "maaramise_kuupaev": month_date(cfg, m).isoformat(),
+    }]
+
+
 EMITTERS = {
     "DRACS": emit_dracs, "EDDR": emit_eddr, "EHEALTH": emit_ehealth, "EDEBO": emit_edebo,
     "AIKOM": emit_aikom, "VPO": emit_vpo, "CHILDWAR": emit_childwar, "DITY": emit_dity,
-    "ERDR": emit_erdr, "DV": emit_dv, "CBI": emit_cbi, "EISSS": emit_eisss, "EDRSR": emit_edrsr,
+    "ERDR": emit_erdr, "DV": emit_dv, "CBI_DISABILITY": emit_cbi, "EISSS": emit_eisss, "EDRSR": emit_edrsr,
     "SKAID": emit_skaid, "PFU": emit_pfu, "DRRP": emit_drrp, "HOTLINE": emit_hotline,
+    "RAHV": emit_rahv, "EHIS_EE": emit_ehis_ee, "TERVIS": emit_tervis, "SKAIS": emit_skais,
 }

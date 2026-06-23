@@ -182,16 +182,27 @@ function tev(date: string, registry: RegistryCode, label: string): TimelineEvent
   return { date, registry, label, level1: regAccess(registry) === 1 };
 }
 
-/** Вибір набору порушень для згенерованого кейсу (зберігає порядок викликів PRNG). */
-function chooseViolations(r: () => number): string[] {
+/** Шкільні порушення — лише для шкільного віку (6–17), як гейт у detection.py. */
+const SCHOOL_VIOLS = new Set([
+  "W3_out_of_education",
+  "F4_child_labor",
+  "E1_bullying",
+  "F3_neglect",
+  "E4_inclusion",
+]);
+
+/** Вибір набору порушень для згенерованого кейсу (з урахуванням віку). */
+function chooseViolations(r: () => number, age: number): string[] {
+  const schoolAge = age >= 6 && age <= 17;
+  const nonImm = schoolAge ? NONIMMEDIATE : NONIMMEDIATE.filter((v) => !SCHOOL_VIOLS.has(v));
   const chosen: string[] = [];
-  if (r() < 0.08) {
+  if (r() < 0.05) {
     chosen.push(wpick(r, IMMEDIATE_LIST));
-    if (r() < 0.35) chosen.push(wpick(r, NONIMMEDIATE));
+    if (r() < 0.35) chosen.push(wpick(r, nonImm));
     return chosen;
   }
   const nViol = pickViolationCount(r);
-  const pool = [...NONIMMEDIATE];
+  const pool = [...nonImm];
   for (let k = 0; k < nViol && pool.length; k++) {
     const v = wpick(r, pool);
     chosen.push(v);
@@ -213,16 +224,16 @@ function buildContributions(chosen: string[], r: () => number): Contribution[] {
   return contribs;
 }
 
-/** Реєстри-докази для кейсу (база з внесків + службові EDDR/DRACS). */
-function buildRegistries(contribs: Contribution[], r: () => number): RegistryCode[] {
+/** Реєстри-докази для кейсу. EDDR і ДРАЦС присутні завжди (демографія + акт народження). */
+function buildRegistries(contribs: Contribution[]): RegistryCode[] {
   const registries = Array.from(new Set(contribs.flatMap((c) => c.evidence))) as RegistryCode[];
   if (!registries.includes("EDDR")) registries.push("EDDR");
-  if (r() < 0.6 && !registries.includes("DRACS")) registries.push("DRACS");
+  if (!registries.includes("DRACS")) registries.push("DRACS");
   return registries;
 }
 
-/* ── генератор одного кейсу ── */
-function genCase(i: number): FullCase {
+/* ── генератор одного кейсу (null = підпороговий, у чергу не потрапляє) ── */
+function genCase(i: number): FullCase | null {
   const r = rng(1000 + i * 2654435761);
   const { pib } = makeName(r);
   const age = 3 + Math.floor(r() * 15);
@@ -230,14 +241,16 @@ function genCase(i: number): FullCase {
   const birth_date = `${birthYear}-${String(1 + Math.floor(r() * 12)).padStart(2, "0")}-${String(1 + Math.floor(r() * 27)).padStart(2, "0")}`;
   const oblast = pickOblast(r);
 
-  const chosen = chooseViolations(r);
+  const chosen = chooseViolations(r, age);
   const contribs = buildContributions(chosen, r);
-  const registries = buildRegistries(contribs, r);
+  const registries = buildRegistries(contribs);
 
   const immediate = chosen.some((v) => IMMEDIATE_VIOLATIONS.has(v));
   const { mult: vuln, factors } = vulnerability(age, registries, chosen);
   const score = scoreOf(contribs, vuln);
-  const tier = tierOf(score, immediate) ?? "T2";
+  const tier = tierOf(score, immediate);
+  if (!tier) return null; // нижче порога T2 — система такого не флагує
+  const schoolAge = age >= 6 && age <= 17;
   const unzr = r() < 0.85 ? `${birth_date.replaceAll("-", "")}-${String(10000 + Math.floor(r() * 89999))}` : null;
 
   return {
@@ -257,13 +270,24 @@ function genCase(i: number): FullCase {
     contributions: contribs,
     oblast,
     worker_id: null,
-    timeline: deriveTimeline(registries, r),
-    attendance: registries.includes("AIKOM") ? deriveAttendance(r, contribs.some((c) => c.acuity === "acute")) : null,
+    timeline: deriveTimeline(registries, r, birth_date),
+    attendance:
+      schoolAge && registries.includes("AIKOM")
+        ? deriveAttendance(r, contribs.some((c) => c.acuity === "acute"))
+        : null,
   };
 }
 
+/** Дата реєстрації народження — у межах ~3 тижнів від дати народження дитини. */
+function birthActDate(birthDate: string, r: () => number): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(birthDate);
+  if (!m) return birthDate;
+  const day = Math.min(28, Number(m[3]) + 2 + Math.floor(r() * 16));
+  return `${m[1]}-${m[2]}-${String(day).padStart(2, "0")}`;
+}
+
 /* ── похідний таймлайн із доказових реєстрів ── */
-function deriveTimeline(registries: RegistryCode[], r: () => number): TimelineEvent[] {
+function deriveTimeline(registries: RegistryCode[], r: () => number, birthDate: string): TimelineEvent[] {
   const ev: TimelineEvent[] = [];
   const d = (mFrom = 0, mTo = 23) => {
     const m = mFrom + Math.floor(r() * (mTo - mFrom + 1));
@@ -272,7 +296,7 @@ function deriveTimeline(registries: RegistryCode[], r: () => number): TimelineEv
     return `${y}-${String(mm).padStart(2, "0")}-${String(5 + Math.floor(r() * 22)).padStart(2, "0")}`;
   };
   const has = (c: RegistryCode) => registries.includes(c);
-  ev.push(tev(d(0, 2), "DRACS", "Актовий запис про народження"));
+  ev.push(tev(birthActDate(birthDate, r), "DRACS", "Актовий запис про народження"));
   if (has("VPO")) ev.push(tev(d(2, 10), "VPO", "Взято на облік ВПО (переміщення)"));
   if (has("EHEALTH")) ev.push(tev(d(8, 16), "EHEALTH", "Декларацію із сімейним лікарем закрито"));
   if (has("EDEBO")) ev.push(tev(d(8, 18), "EDEBO", "Вихід зі школи (статус: переведено/відраховано)"));
@@ -284,7 +308,6 @@ function deriveTimeline(registries: RegistryCode[], r: () => number): TimelineEv
   if (has("EDRSR")) ev.push(tev(d(12, 22), "EDRSR", "Судове рішення щодо батьківських прав"));
   if (has("DRRP")) ev.push(tev(d(6, 20), "DRRP", "Відчуження житла дитини без дозволу опіки"));
   if (has("HOTLINE")) ev.push(tev(d(8, 22), "HOTLINE", "Звернення на гарячу лінію 116 111"));
-  if (has("SKAID")) ev.push(tev(d(10, 22), "SKAID", "Облік у ювенальній превенції"));
   if (has("ERDR")) ev.push(tev(d(14, 23), "ERDR", "Внесено до ЄРДР досудове розслідування"));
   return ev.sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -369,6 +392,7 @@ function hero(): FullCase[] {
       registries: ["EDDR", "VPO", "CHILDWAR", "DITY", "ERDR"],
       timeline: [
         tev("2023-03-10", "VPO", "Облік ВПО: переміщення із Запорізької обл."),
+        tev("2023-05-08", "CHILDWAR", "Статус «Діти війни»: переміщення із зони бойових дій"),
         tev("2024-01-22", "DITY", "Сигнал ССД: підозра на залучення до експлуатації"),
         tev("2024-02-05", "ERDR", "Досудове розслідування ст.149 ККУ (торгівля людьми)"),
       ],
@@ -378,10 +402,7 @@ function hero(): FullCase[] {
     makeHero({
       id: 5003, pib: "Мельник Данило Олександрович", birth: "2017-05-18", age: 7, oblast: "Дніпропетровська",
       unzr: "20170518-30945",
-      contribs: [
-        mkContribution("P1_physical_home", ["EHEALTH", "DV", "ERDR", "DITY"], "acute"),
-        mkContribution("W2_psych_trauma", ["EHEALTH"], "active"),
-      ],
+      contribs: [mkContribution("P1_physical_home", ["EHEALTH", "DV", "ERDR", "DITY"], "acute")],
       registries: ["EDDR", "DRACS", "EHEALTH", "DV", "ERDR", "DITY"],
       timeline: [
         tev("2023-10-03", "EHEALTH", "Звернення: травма (домашня обстановка)"),
@@ -418,7 +439,7 @@ function hero(): FullCase[] {
       id: 5006, pib: "Кравчук Злата Андріївна", birth: "2019-04-15", age: 5, oblast: "Полтавська",
       unzr: "20190415-19022",
       contribs: [mkContribution("W6_orphanhood", ["DRACS", "EDRSR", "DITY"], "active")],
-      registries: ["EDDR", "DRACS", "EDRSR", "DITY", "EHEALTH"],
+      registries: ["EDDR", "DRACS", "EDRSR", "DITY"],
       timeline: [
         tev("2023-12-02", "DRACS", "Актовий запис про смерть одного з батьків"),
         tev("2024-01-10", "EDRSR", "Судове рішення: позбавлення батьківських прав"),
@@ -458,7 +479,7 @@ function hero(): FullCase[] {
     makeHero({
       id: 5009, pib: "Руденко Богдан Олександрович", birth: "2014-08-22", age: 10, oblast: "Чернігівська",
       unzr: "20140822-28819",
-      contribs: [mkContribution("W2_psych_trauma", ["EHEALTH", "CHILDWAR"], "chronic")],
+      contribs: [mkContribution("W2_psych_trauma", ["EHEALTH", "CHILDWAR"], "active")],
       registries: ["EDDR", "EHEALTH", "CHILDWAR"],
       timeline: [
         tev("2023-05-14", "CHILDWAR", "Статус «Діти війни»: переміщення"),
@@ -509,7 +530,7 @@ function hero(): FullCase[] {
     // 13 ── Дитяча праця (НОВЕ порушення F4)
     makeHero({
       id: 5013, pib: "Поліщук Дмитро Васильович", birth: "2009-03-14", age: 15, oblast: "Закарпатська",
-      unzr: "20090314-2855",
+      unzr: "20090314-28557",
       contribs: [mkContribution("F4_child_labor", ["AIKOM"], "active")],
       registries: ["EDDR", "AIKOM"],
       timeline: [tev("2023-10-08", "AIKOM", "Систематичні денні пропуски без ознак булінгу/хвороби")],
@@ -524,7 +545,7 @@ function hero(): FullCase[] {
       registries: ["EDDR", "DRACS", "VPO", "EDEBO"],
       timeline: [
         tev("2023-03-22", "VPO", "Облік ВПО"),
-        tev("2023-09-01", "EDEBO", "Переведення до іншого закладу освіти"),
+        tev("2023-09-01", "EDEBO", "Вихід зі школи (переведено), нову не зафіксовано"),
       ],
     }),
   ];
@@ -615,7 +636,7 @@ function computeCaseload(all: FullCase[]): CaseloadOverview {
       t0: cases.filter((c) => c.tier === "T0").length,
       t1: cases.filter((c) => c.tier === "T1").length,
       t2: cases.filter((c) => c.tier === "T2").length,
-      utilization: capTotal ? +Math.min(covered / capTotal, 1).toFixed(2) : 0,
+      utilization: capTotal ? +(cases.length / capTotal).toFixed(2) : 0,
       urgent_uncovered: over.filter((c) => c.tier === "T0" || c.tier === "T1").length,
       extra_workers_needed: overflow ? Math.ceil(overflow / CAPACITY_PER_WORKER) : 0,
     });
@@ -641,7 +662,11 @@ function computeCaseload(all: FullCase[]): CaseloadOverview {
 function build() {
   const featured = hero();
   const generated: FullCase[] = [];
-  for (let i = 0; i < 235; i++) generated.push(genCase(i));
+  // генеруємо із запасом; підпорогові (genCase → null) у чергу не потрапляють
+  for (let i = 0; i < 300; i++) {
+    const c = genCase(i);
+    if (c) generated.push(c);
+  }
 
   const all = [...featured, ...generated];
   all.sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier] || Number(b.immediate) - Number(a.immediate) || b.score - a.score);

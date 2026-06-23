@@ -16,7 +16,8 @@ from rapidfuzz import fuzz
 from .emitters import REGISTRIES
 from .storage import REG_DIR
 
-FUZZY_THRESHOLD = 86
+FUZZY_THRESHOLD = 82   # аудит: sweep 78–90 показав 82 = вища реконструкція (0.889 vs 0.879@86), 0 impure
+_COUNTRY = {r["code"]: r.get("country", "UA") for r in REGISTRIES}
 
 
 def _norm(s) -> str:
@@ -130,11 +131,13 @@ def match(records: list[dict] | None = None) -> list[dict]:
 
     entities = []
     for c in clusters:
+        country = "EE" if any(_COUNTRY.get(rc) == "EE" for rc in c.rows_by_reg) else "UA"
         entities.append({
             "entity_id": c.id,
             "unzr": c.unzr,
             "pib": c.rep_name.title(),
             "birth_date": c.rep_dob,
+            "country": country,
             "registries": sorted(c.rows_by_reg.keys()),
             "n_registries": len(c.rows_by_reg),
             "rows_by_reg": c.rows_by_reg,

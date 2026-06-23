@@ -9,11 +9,11 @@ immediate_override:
   - W10_militarization
 
 # Тяжкість типу порушення (0..1)
+# severity лише для ПОРУШЕНЬ, що реально детектяться/інтейкуються (config = behavior).
+# Прибрано vestigial CRC-коди без сигналу: P3_institution/F2_punishment/P4_street/E2/E3/E5
+# (кандидати на intake-driven детекцію в майбутньому; severity повернути при реалізації).
 severity:
   P1_physical_home: 0.90
-  P3_physical_institution: 0.90
-  F2_physical_punishment: 0.85
-  P4_physical_street: 0.80
   W6_orphanhood: 0.85
   W8_medical_access: 0.75
   F3_neglect: 0.70
@@ -26,14 +26,21 @@ severity:
   W1_displacement: 0.55
   E4_inclusion: 0.50
   E1_bullying: 0.50
-  E2_discrimination: 0.45
-  E3_teacher_pressure: 0.40
-  E5_voice: 0.30
-  W9_identity: 0.70
-  F1_psych_violence: 0.60
+  X1_gap: 0.78               # щілина між системами (дитина у EE, але в жодному сервісі)
+  X2_uasc: 0.90             # неповнолітн(ій) без супроводу
+  X3_med_rupture: 0.70
+  X4_edu_rupture: 0.62
   # immediate-порушення теж мають severity (для впорядкування всередині T0)
   W5_deportation: 1.00
   W7_trafficking: 1.00
+  # батьківсько-сімейна вісь (dimension=parental) — ВСІ нижче за дитячі тяжкості (seed; калібрувати)
+  P_parent_criminal: 0.55   # батько-кривдник (push/post-conviction, не ЄРДР-контент)
+  P_parent_rights: 0.50     # позбавлення батьківських прав (ЄДРСР)
+  P_parent_addiction: 0.45  # залежність батька (медтаємниця: факт не зміст, push/consent)
+  P_parent_mh: 0.45         # психічне здоровʼя батька (медтаємниця: факт не зміст, push/consent)
+  P_sibling_violation: 0.45 # порушення в сиблінга (household)
+  P_sibling_in_care: 0.40   # сиблінг у догляді
+  P_household_watch: 0.45   # компаундний дифузний ризик (сума слабких факторів) → спостереження T2
   F6_sexual_abuse: 1.00
   W4_death_injury: 1.00
   W10_militarization: 0.95
@@ -61,11 +68,15 @@ vulnerability:
   no_guardian: 1.4
   displaced: 1.2
   parental_risk_factor: 1.25   # залежність/психіатрія/кримінал (через PSI-булеан)
+  household_density: 1.25      # щільність ризику сім'ї (familygraph: сиблінг-у-догляді/рецидив/депривація)
+  kinship_protective: 0.85     # родич-опікун ЗНИЖУЄ ризик (буфер/стабільність, не порушення)
   cap: 2.0
 
 # Збірка score = (max_contrib + 0.2*sum_other) * vulnerability
 aggregation:
   secondary_weight: 0.2
+  intake_corroboration_mult: 1.15   # звернення підтверджене крос-реєстрово
+  intake_uncorroborated_mult: 0.85  # одиничне непідтверджене (демпфер «помста-сусід»)
 
 # Пороги рівнів черги
 tiers:

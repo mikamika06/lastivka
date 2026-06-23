@@ -49,6 +49,19 @@ class Child:
     # батьки (для ДРАЦС/ЕІССС тощо)
     mother_rnokpp: str | None = None
     father_rnokpp: str | None = None
+    # сімейний граф / household (пост-прохід realmodel.build_family_graph; інертні дефолти)
+    household_id: int | None = None
+    sibling_internal_ids: list = field(default_factory=list)
+    sibling_in_care: bool = False
+    sibling_prior_violation: set = field(default_factory=set)
+    new_cohabitant_recent: bool = False
+    cohabitant_entry_month: int | None = None
+    kinship_care: bool = False
+    household_churn: int = 0
+    single_parent_unemployed: bool = False
+    parent_incarcerated: bool = False           # push/consent-only; ніколи з ЄРДР
+    household_risk_density: float = 0.0
+    w6_cause: str | None = None                  # death | deprivation
     # заповнюється realmodel:
     states: list = field(default_factory=list)
     shocks: list = field(default_factory=list)
